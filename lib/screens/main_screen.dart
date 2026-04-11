@@ -5,7 +5,7 @@ import 'home_screen.dart';
 import 'regions_screen.dart';
 import 'analysis_screen.dart';
 import 'profile_screen.dart';
-import 'paywall_dialog.dart';
+import '../widgets/paywall_dialog.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});

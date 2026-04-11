@@ -7,7 +7,8 @@ import '../models/article.dart';
 import '../models/article_detail.dart';
 import '../repositories/article_repository.dart';
 import '../services/auth_notifier.dart';
-import 'paywall_dialog.dart';
+import '../widgets/article_card.dart';
+import '../widgets/paywall_dialog.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
   final Article article;
@@ -34,6 +35,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
       widget.article.id,
       cookies: auth.state.cookies,
       restNonce: auth.restNonce,
+      onNonceExpired: () => context.read<AuthNotifier>().renewRestNonce(),
       onRefreshed: (fresh) {
         if (mounted) setState(() {
           _detailFuture = Future.value(fresh);
@@ -124,27 +126,36 @@ class _ArticleShell extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (article.isPremium)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0x33C0392B),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.lock_outline,
-                            color: Color(0xFFE57A72), size: 11),
-                        SizedBox(width: 4),
-                        Text('Exclusivo',
-                            style: TextStyle(
-                                color: Color(0xFFE57A72), fontSize: 11)),
-                      ],
-                    ),
-                  ),
+                // Badges: categoría + premium
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ArticleCategoryBadge(category: article.category),
+                    if (article.isPremium) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0x33C0392B),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.lock_outline,
+                                color: Color(0xFFE57A72), size: 11),
+                            SizedBox(width: 4),
+                            Text('Exclusivo',
+                                style: TextStyle(
+                                    color: Color(0xFFE57A72), fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 10),
                 Text(
                   article.title,
                   style: const TextStyle(
@@ -257,9 +268,12 @@ class _HtmlContent extends StatelessWidget {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Cargando artículo...'),
+                    content: Text(
+                      'Cargando artículo...',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     duration: Duration(seconds: 2),
-                    backgroundColor: Color(0xFF1A1A1A),
+                    backgroundColor: Color(0xFF2A2A2A),
                   ),
                 );
               }
@@ -485,8 +499,7 @@ class _PaywallBlock extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
-                  TabNavigator.of(context)?.jumpToProfile();
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,

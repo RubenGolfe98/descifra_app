@@ -5,8 +5,10 @@ import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../repositories/article_repository.dart';
 import '../services/auth_notifier.dart';
+import '../theme/app_colors.dart';
+import '../widgets/article_card.dart';
 import 'article_detail_screen.dart';
-import 'paywall_dialog.dart';
+import '../widgets/paywall_dialog.dart';
 
 // ─── Colores de la app ────────────────────────────────────────────────────────
 class AppColors {
@@ -242,7 +244,7 @@ class _ArticleFeed extends StatelessWidget {
           const SliverToBoxAdapter(child: _SectionTitle(title: 'Lo último')),
           SliverList(
             delegate: SliverChildBuilderDelegate(
-              (context, index) => _ArticleCard(article: restArticles[index]),
+              (context, index) => ArticleCard(article: restArticles[index]),
               childCount: restArticles.length,
             ),
           ),
@@ -359,7 +361,7 @@ class _FeaturedArticle extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        _CategoryBadge(category: article.category),
+                        ArticleCategoryBadge(category: article.category),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -385,97 +387,6 @@ class _FeaturedArticle extends StatelessWidget {
       ),
       ), // GestureDetector
     );
-  }
-}
-
-// ─── Tarjeta de lista ─────────────────────────────────────────────────────────
-class _ArticleCard extends StatelessWidget {
-  final Article article;
-
-  const _ArticleCard({required this.article});
-
-  void _handleTap(BuildContext context) {
-    final auth = context.read<AuthNotifier>();
-    final canAccess = !article.isPremium ||
-        (auth.state.isLoggedIn && auth.state.isSubscriber);
-
-    if (!canAccess) {
-      showPaywallDialog(
-        context,
-        onLoginTap: () => TabNavigator.of(context)?.jumpToProfile(),
-      );
-      return;
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ArticleDetailScreen(article: article),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _handleTap(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: _ArticleImage(url: article.imageUrl, width: 80, height: 64),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    article.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      height: 1.35,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    article.description,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      _CategoryBadge(category: article.category),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: _ArticleMeta(
-                            author: article.author, date: article.date),
-                      ),
-                      if (article.isPremium) const _PremiumBadge(),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ); // GestureDetector
   }
 }
 
@@ -569,59 +480,6 @@ class _Dot extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppColors.textMuted,
         shape: BoxShape.circle,
-      ),
-    );
-  }
-}
-
-class _PremiumBadge extends StatelessWidget {
-  const _PremiumBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.premiumBg,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          Icon(Icons.lock_outline, color: AppColors.premiumText, size: 8),
-          SizedBox(width: 3),
-          Text('Premium',
-              style: TextStyle(color: AppColors.premiumText, fontSize: 9)),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryBadge extends StatelessWidget {
-  final ArticleCategory category;
-  const _CategoryBadge({required this.category});
-
-  @override
-  Widget build(BuildContext context) {
-    final isAnalysis = category == ArticleCategory.analisis;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-      decoration: BoxDecoration(
-        color: isAnalysis
-            ? const Color(0x22185FA5)
-            : const Color(0x221D9E75),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        isAnalysis ? 'Análisis' : 'Noticia',
-        style: TextStyle(
-          color: isAnalysis
-              ? const Color(0xFF85B7EB)
-              : const Color(0xFF5DCAA5),
-          fontSize: 9,
-          fontWeight: FontWeight.w500,
-        ),
       ),
     );
   }

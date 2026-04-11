@@ -28,7 +28,7 @@ class AuthNotifier extends ChangeNotifier {
     // Pre-cargar el nonce REST si hay sesión activa
     if (_state.isLoggedIn && _state.cookies != null) {
       _restNonce = await _service.getRestNonce(_state.cookies!);
-      debugPrint('🔐 [Auth] Nonce REST pre-cargado: $_restNonce');
+      if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST pre-cargado: $_restNonce');
       notifyListeners();
     }
   }
@@ -45,12 +45,12 @@ class AuthNotifier extends ChangeNotifier {
       // Guardar nonce REST en caché tras login exitoso
       if (newState.cookies != null) {
         _restNonce = await _service.getRestNonce(newState.cookies!);
-        debugPrint('🔐 [Auth] Nonce REST tras login: $_restNonce');
+        if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST tras login: $_restNonce');
       }
     } on AuthException catch (e) {
       _errorMessage = e.message;
     } catch (e, stack) {
-      debugPrint('Login error: $e\n$stack');
+      if (kDebugMode) debugPrint('Login error: $e\n$stack');
       _errorMessage = 'Error al verificar la sesión. Inténtalo de nuevo.';
     } finally {
       _isLoading = false;
@@ -69,6 +69,15 @@ class AuthNotifier extends ChangeNotifier {
     _errorMessage = null;
     _restNonce = null;
     notifyListeners();
+  }
+
+  /// Renueva el nonce REST — llamar si una petición devuelve 401
+  Future<String?> renewRestNonce() async {
+    if (_state.cookies == null) return null;
+    _restNonce = await _service.getRestNonce(_state.cookies!);
+    if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST renovado: $_restNonce');
+    notifyListeners();
+    return _restNonce;
   }
 
   void clearError() {

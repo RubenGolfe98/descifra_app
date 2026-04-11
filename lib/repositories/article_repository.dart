@@ -14,6 +14,11 @@ class ArticleRepository {
   static const String _detailFields =
       'id,date,title,content,jetpack_featured_media_url,yoast_head_json.author,class_list';
 
+  // ─── Claves de caché ──────────────────────────────────────────────────────
+  static const String _cacheKeyLatest   = 'articles_latest';
+  static const String _cacheKeyAnalysis = 'articles_analysis';
+  static String _cacheKeyRegion(int id)  => 'articles_region_$id';
+
   final http.Client _client;
   final ArticleCache _cache;
 
@@ -30,16 +35,14 @@ class ArticleRepository {
     int page = 1,
     void Function(List<Article>)? onRefreshed,
   }) async {
-    final cached = await _cache.getList();
+    final cached = await _cache.getList(key: _cacheKeyLatest);
 
     if (cached != null) {
-      debugPrint('📦 [Cache] Listado desde caché');
+      if (kDebugMode) debugPrint('📦 [Cache] Listado desde caché');
       final articles = _parseList(cached);
-
-      // Refrescar en background si está obsoleto
-      final stale = await _cache.isListStale();
+      final stale = await _cache.isListStale(key: _cacheKeyLatest);
       if (stale) {
-        debugPrint('📦 [Cache] Listado obsoleto — refrescando en background');
+        if (kDebugMode) debugPrint('📦 [Cache] Listado obsoleto — refrescando en background');
         _fetchListFromNetwork(perPage, page).then((fresh) {
           if (fresh != null && onRefreshed != null) onRefreshed(fresh);
         });
@@ -47,8 +50,7 @@ class ArticleRepository {
       return articles;
     }
 
-    // Sin caché — esperar la red
-    debugPrint('📦 [Cache] Sin caché — cargando de red');
+    if (kDebugMode) debugPrint('📦 [Cache] Sin caché — cargando de red');
     final fresh = await _fetchListFromNetwork(perPage, page);
     return fresh ?? [];
   }
@@ -66,10 +68,10 @@ class ArticleRepository {
 
       if (response.statusCode != 200) return null;
 
-      await _cache.saveList(response.body);
+      await _cache.saveList(response.body, key: _cacheKeyLatest);
       return _parseList(response.body);
     } catch (e) {
-      debugPrint('📦 [Cache] Error red listado: $e');
+      if (kDebugMode) debugPrint('📦 [Cache] Error red listado: $e');
       return null;
     }
   }
@@ -87,7 +89,7 @@ class ArticleRepository {
     int page = 1,
     void Function(List<Article>)? onRefreshed,
   }) async {
-    final cacheKey = 'region_${regionId}_p$page';
+    final cacheKey = _cacheKeyRegion(regionId);
     final cached = await _cache.getList(key: cacheKey);
 
     if (cached != null) {
@@ -124,7 +126,7 @@ class ArticleRepository {
       await _cache.saveList(response.body, key: cacheKey);
       return _parseList(response.body);
     } catch (e) {
-      debugPrint('📦 [Repo] Error región $regionId: $e');
+      if (kDebugMode) debugPrint('📦 [Repo] Error región $regionId: $e');
       return null;
     }
   }
@@ -135,7 +137,7 @@ class ArticleRepository {
     int perPage = 10,
     void Function(List<Article>)? onRefreshed,
   }) async {
-    const cacheKey = 'analysis_p1';
+    const cacheKey = _cacheKeyAnalysis;
     final cached = await _cache.getList(key: cacheKey);
 
     if (cached != null) {
@@ -171,7 +173,7 @@ class ArticleRepository {
       if (response.statusCode != 200) return [];
       return _parseList(response.body);
     } catch (e) {
-      debugPrint('📦 [Repo] Error análisis p$page: $e');
+      if (kDebugMode) debugPrint('📦 [Repo] Error análisis p$page: $e');
       return [];
     }
   }
@@ -191,7 +193,7 @@ class ArticleRepository {
       await _cache.saveList(response.body, key: cacheKey);
       return _parseList(response.body);
     } catch (e) {
-      debugPrint('📦 [Repo] Error categoría $categoryId: $e');
+      if (kDebugMode) debugPrint('📦 [Repo] Error categoría $categoryId: $e');
       return null;
     }
   }
@@ -210,7 +212,7 @@ class ArticleRepository {
       if (response.statusCode != 200) return [];
       return _parseList(response.body);
     } catch (e) {
-      debugPrint('📦 [Repo] Error paginación p$page: $e');
+      if (kDebugMode) debugPrint('📦 [Repo] Error paginación p$page: $e');
       return [];
     }
   }
@@ -233,7 +235,7 @@ class ArticleRepository {
       if (response.statusCode != 200) return [];
       return _parseList(response.body);
     } catch (e) {
-      debugPrint('📦 [Repo] Error paginación región $regionId p$page: $e');
+      if (kDebugMode) debugPrint('📦 [Repo] Error paginación región $regionId p$page: $e');
       return [];
     }
   }
@@ -255,29 +257,34 @@ class ArticleRepository {
 
       return Article.fromJson(data.first);
     } catch (e) {
-      debugPrint('📦 [Repo] Error buscando slug "$slug": $e');
+      if (kDebugMode) debugPrint('📦 [Repo] Error buscando slug "$slug": $e');
       return null;
     }
   }
 
   /// Devuelve detalle de caché inmediatamente si existe,
   /// luego refresca en background si está obsoleto.
+  /// Si el nonce caduca (401), lo renueva automáticamente y reintenta.
   Future<ArticleDetail> fetchArticleDetail(
     int id, {
     String? cookies,
     String? restNonce,
+    Future<String?> Function()? onNonceExpired,
     void Function(ArticleDetail)? onRefreshed,
   }) async {
     final cached = await _cache.getDetail(id);
 
     if (cached != null) {
-      debugPrint('📦 [Cache] Detalle $id desde caché');
+      if (kDebugMode) debugPrint('📦 [Cache] Detalle $id desde caché');
       final detail = ArticleDetail.fromJson(jsonDecode(cached));
 
       final stale = await _cache.isDetailStale(id);
       if (stale) {
-        debugPrint('📦 [Cache] Detalle $id obsoleto — refrescando');
-        _fetchDetailFromNetwork(id, cookies: cookies, restNonce: restNonce)
+        if (kDebugMode) debugPrint('📦 [Cache] Detalle $id obsoleto — refrescando');
+        _fetchDetailFromNetwork(id,
+                cookies: cookies,
+                restNonce: restNonce,
+                onNonceExpired: onNonceExpired)
             .then((fresh) {
           if (fresh != null && onRefreshed != null) onRefreshed(fresh);
         });
@@ -285,10 +292,11 @@ class ArticleRepository {
       return detail;
     }
 
-    // Sin caché — esperar la red
-    debugPrint('📦 [Cache] Sin caché detalle $id — cargando de red');
+    if (kDebugMode) debugPrint('📦 [Cache] Sin caché detalle $id — cargando de red');
     final fresh = await _fetchDetailFromNetwork(id,
-        cookies: cookies, restNonce: restNonce);
+        cookies: cookies,
+        restNonce: restNonce,
+        onNonceExpired: onNonceExpired);
     if (fresh == null) throw Exception('Error al cargar el artículo');
     return fresh;
   }
@@ -297,6 +305,7 @@ class ArticleRepository {
     int id, {
     String? cookies,
     String? restNonce,
+    Future<String?> Function()? onNonceExpired,
   }) async {
     try {
       final uri =
@@ -310,16 +319,28 @@ class ArticleRepository {
         headers['X-WP-Nonce'] = restNonce;
       }
 
-      final response = await _client
+      var response = await _client
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 15));
+
+      // Si el nonce ha caducado (401), intentar renovarlo y reintentar una vez
+      if (response.statusCode == 401 && onNonceExpired != null) {
+        if (kDebugMode) debugPrint('📦 [Repo] Nonce caducado, renovando...');
+        final newNonce = await onNonceExpired();
+        if (newNonce != null) {
+          headers['X-WP-Nonce'] = newNonce;
+          response = await _client
+              .get(uri, headers: headers)
+              .timeout(const Duration(seconds: 15));
+        }
+      }
 
       if (response.statusCode != 200) return null;
 
       await _cache.saveDetail(id, response.body);
       return ArticleDetail.fromJson(jsonDecode(response.body));
     } catch (e) {
-      debugPrint('📦 [Cache] Error red detalle $id: $e');
+      if (kDebugMode) debugPrint('📦 [Cache] Error red detalle $id: $e');
       return null;
     }
   }
