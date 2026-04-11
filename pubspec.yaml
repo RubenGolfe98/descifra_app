@@ -16,11 +16,33 @@ dependencies:
   url_launcher: ^6.2.0
   flutter_inappwebview: ^6.0.0
   flutter_html: ^3.0.0
+  google_fonts: ^6.2.0
+  flutter_svg: ^2.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_native_splash: ^2.4.0
+  flutter_launcher_icons: ^0.14.0
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/
+
+flutter_native_splash:
+  color: "#0D0D0D"
+  image: assets/images/logo_dlg.png
+  android_12:
+    color: "#0D0D0D"
+    image: assets/images/logo_dlg.png
+  ios: true
+  web: false
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo_dlg.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/logo_dlg.png"

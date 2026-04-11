@@ -79,9 +79,164 @@ class ArticleRepository {
     return data.map((j) => Article.fromJson(j)).toList();
   }
 
-  // ─── Buscar por slug ───────────────────────────────────────────────────────
+  // ─── Artículos por región ─────────────────────────────────────────────────
 
-  /// Busca un artículo por su slug (la parte final de la URL de DLG).
+  Future<List<Article>> fetchArticlesByRegion(
+    int regionId, {
+    int perPage = 20,
+    int page = 1,
+    void Function(List<Article>)? onRefreshed,
+  }) async {
+    final cacheKey = 'region_${regionId}_p$page';
+    final cached = await _cache.getList(key: cacheKey);
+
+    if (cached != null) {
+      final articles = _parseList(cached);
+      final stale = await _cache.isListStale(key: cacheKey);
+      if (stale) {
+        _fetchRegionFromNetwork(regionId, perPage, page, cacheKey)
+            .then((fresh) {
+          if (fresh != null && onRefreshed != null) onRefreshed(fresh);
+        });
+      }
+      return articles;
+    }
+
+    final fresh =
+        await _fetchRegionFromNetwork(regionId, perPage, page, cacheKey);
+    return fresh ?? [];
+  }
+
+  Future<List<Article>?> _fetchRegionFromNetwork(
+      int regionId, int perPage, int page, String cacheKey) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'region': regionId.toString(),
+        'per_page': perPage.toString(),
+        'page': page.toString(),
+        '_fields': _listFields,
+      });
+
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return null;
+
+      await _cache.saveList(response.body, key: cacheKey);
+      return _parseList(response.body);
+    } catch (e) {
+      debugPrint('📦 [Repo] Error región $regionId: $e');
+      return null;
+    }
+  }
+
+  static const int _analysisCategoryId = 255;
+
+  Future<List<Article>> fetchAnalysisArticles({
+    int perPage = 10,
+    void Function(List<Article>)? onRefreshed,
+  }) async {
+    const cacheKey = 'analysis_p1';
+    final cached = await _cache.getList(key: cacheKey);
+
+    if (cached != null) {
+      final articles = _parseList(cached);
+      final stale = await _cache.isListStale(key: cacheKey);
+      if (stale) {
+        _fetchCategoryFromNetwork(_analysisCategoryId, perPage, 1, cacheKey)
+            .then((fresh) {
+          if (fresh != null && onRefreshed != null) onRefreshed(fresh);
+        });
+      }
+      return articles;
+    }
+
+    final fresh = await _fetchCategoryFromNetwork(
+        _analysisCategoryId, perPage, 1, cacheKey);
+    return fresh ?? [];
+  }
+
+  Future<List<Article>> fetchMoreAnalysisArticles({
+    required int page,
+    int perPage = 10,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'categories': _analysisCategoryId.toString(),
+        'per_page': perPage.toString(),
+        'page': page.toString(),
+        '_fields': _listFields,
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return [];
+      return _parseList(response.body);
+    } catch (e) {
+      debugPrint('📦 [Repo] Error análisis p$page: $e');
+      return [];
+    }
+  }
+
+  Future<List<Article>?> _fetchCategoryFromNetwork(
+      int categoryId, int perPage, int page, String cacheKey) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'categories': categoryId.toString(),
+        'per_page': perPage.toString(),
+        'page': page.toString(),
+        '_fields': _listFields,
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return null;
+      await _cache.saveList(response.body, key: cacheKey);
+      return _parseList(response.body);
+    } catch (e) {
+      debugPrint('📦 [Repo] Error categoría $categoryId: $e');
+      return null;
+    }
+  }
+  Future<List<Article>> fetchMoreArticles({
+    required int page,
+    int perPage = 10,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'per_page': perPage.toString(),
+        'page': page.toString(),
+        '_fields': _listFields,
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return [];
+      return _parseList(response.body);
+    } catch (e) {
+      debugPrint('📦 [Repo] Error paginación p$page: $e');
+      return [];
+    }
+  }
+
+  /// Carga más artículos de una región (página 2+) — sin caché
+  Future<List<Article>> fetchMoreArticlesByRegion({
+    required int regionId,
+    required int page,
+    int perPage = 10,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'region': regionId.toString(),
+        'per_page': perPage.toString(),
+        'page': page.toString(),
+        '_fields': _listFields,
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return [];
+      return _parseList(response.body);
+    } catch (e) {
+      debugPrint('📦 [Repo] Error paginación región $regionId p$page: $e');
+      return [];
+    }
+  }
   /// Devuelve null si no se encuentra.
   Future<Article?> fetchArticleBySlug(String slug) async {
     try {

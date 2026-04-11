@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_notifier.dart';
 import 'home_screen.dart';
+import 'regions_screen.dart';
+import 'analysis_screen.dart';
 import 'profile_screen.dart';
 import 'paywall_dialog.dart';
 
@@ -23,8 +25,8 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     const screens = [
       HomeScreen(),
-      _PlaceholderScreen(label: 'Regiones'),
-      _PlaceholderScreen(label: 'Análisis'),
+      RegionsScreen(),
+      AnalysisScreen(),
       ProfileScreen(),
     ];
 

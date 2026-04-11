@@ -6,6 +6,7 @@ class Article {
   final String author;
   final String imageUrl;
   final bool isPremium;
+  final ArticleCategory category;
 
   const Article({
     required this.id,
@@ -15,10 +16,16 @@ class Article {
     required this.author,
     required this.imageUrl,
     required this.isPremium,
+    this.category = ArticleCategory.noticia,
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
     final classList = List<String>.from(json['class_list'] ?? []);
+
+    ArticleCategory category = ArticleCategory.noticia;
+    if (classList.contains('category-analisis')) {
+      category = ArticleCategory.analisis;
+    }
 
     return Article(
       id: json['id'] as int,
@@ -28,9 +35,12 @@ class Article {
       author: json['yoast_head_json']?['author'] ?? '',
       imageUrl: json['jetpack_featured_media_url'] ?? '',
       isPremium: classList.contains('rcp-is-restricted'),
+      category: category,
     );
   }
 
   static String _stripHtml(String html) =>
       html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
 }
+
+enum ArticleCategory { noticia, analisis }

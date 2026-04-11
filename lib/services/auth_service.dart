@@ -15,6 +15,9 @@ class AuthService {
   static const String _keyDisplayName = 'dlg_user_display_name';
   static const String _keyIsSubscriber = 'dlg_is_subscriber';
   static const String _keySessionStatus = 'dlg_session_status';
+  static const String _keyMembershipName = 'dlg_membership_name';
+  static const String _keyMembershipStatus = 'dlg_membership_status';
+  static const String _keyMembershipExpires = 'dlg_membership_expires';
 
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -33,12 +36,27 @@ class AuthService {
     if (savedStatus == 'loggedIn') {
       final cookies = await _storage.read(key: _keyCookies);
       if (cookies == null || cookies.isEmpty) return const AuthState.unknown();
+
+      final membershipName = await _storage.read(key: _keyMembershipName);
+      final membershipStatus = await _storage.read(key: _keyMembershipStatus);
+      final membershipExpires = await _storage.read(key: _keyMembershipExpires);
+
+      MembershipInfo? membership;
+      if (membershipName != null && membershipStatus != null) {
+        membership = MembershipInfo(
+          name: membershipName,
+          status: membershipStatus,
+          expiresAt: membershipExpires,
+        );
+      }
+
       return AuthState(
         status: SessionStatus.loggedIn,
         cookies: cookies,
         userEmail: await _storage.read(key: _keyEmail),
         userDisplayName: await _storage.read(key: _keyDisplayName),
         isSubscriber: (await _storage.read(key: _keyIsSubscriber)) == 'true',
+        membership: membership,
       );
     }
     return const AuthState.unknown();
@@ -55,9 +73,12 @@ class AuthService {
 
     debugPrint('🔐 [Auth] Verificando sesión con cookies del WebView...');
 
-    // Obtener datos del usuario usando las cookies
     final userData = await _fetchUserData(cookieString);
     debugPrint('🔐 [Auth] Datos usuario: $userData');
+
+    // Obtener datos de membresía desde /mi-cuenta/
+    final membership = await _fetchMembership(cookieString);
+    debugPrint('🔐 [Auth] Membresía: ${membership?.name} / ${membership?.status}');
 
     final state = AuthState(
       status: SessionStatus.loggedIn,
@@ -65,10 +86,56 @@ class AuthService {
       userEmail: userData['email'],
       userDisplayName: userData['displayName'],
       isSubscriber: userData['isSubscriber'] as bool,
+      membership: membership,
     );
 
     await _persistSession(state);
     return state;
+  }
+
+  // ─── Membresía ──────────────────────────────────────────────────────────────
+
+  /// Parsea los datos de membresía desde el HTML de /mi-cuenta/
+  Future<MembershipInfo?> _fetchMembership(String cookies) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$_siteUrl/mi-cuenta/'),
+        headers: {'Cookie': cookies},
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode != 200) return null;
+
+      final html = response.body;
+
+      // Buscar dentro de #rcp-account-overview los span[data-th]
+      final nameRegex = RegExp(
+        "data-th=[\"']Membres[íi]a[\"'][^>]*>([^<]+)<",
+        caseSensitive: false,
+      );
+      final statusRegex = RegExp(
+        "data-th=[\"']Estado[\"'][^>]*>([^<]+)<",
+        caseSensitive: false,
+      );
+      final expiresRegex = RegExp(
+        "data-th=[\"']Expiration[^\"']*[\"'][^>]*>([^<]+)<",
+        caseSensitive: false,
+      );
+
+      final nameMatch = nameRegex.firstMatch(html);
+      final statusMatch = statusRegex.firstMatch(html);
+      final expiresMatch = expiresRegex.firstMatch(html);
+
+      if (nameMatch == null || statusMatch == null) return null;
+
+      return MembershipInfo(
+        name: nameMatch.group(1)!.trim(),
+        status: statusMatch.group(1)!.trim(),
+        expiresAt: expiresMatch?.group(1)?.trim(),
+      );
+    } catch (e) {
+      debugPrint('🔐 [Auth] Error obteniendo membresía: $e');
+      return null;
+    }
   }
 
   // ─── Guest ──────────────────────────────────────────────────────────────────
@@ -222,5 +289,13 @@ class AuthService {
     await _storage.write(key: _keyDisplayName, value: state.userDisplayName ?? '');
     await _storage.write(
         key: _keyIsSubscriber, value: state.isSubscriber.toString());
+    if (state.membership != null) {
+      await _storage.write(
+          key: _keyMembershipName, value: state.membership!.name);
+      await _storage.write(
+          key: _keyMembershipStatus, value: state.membership!.status);
+      await _storage.write(
+          key: _keyMembershipExpires, value: state.membership!.expiresAt ?? '');
+    }
   }
 }

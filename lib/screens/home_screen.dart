@@ -1,6 +1,6 @@
-import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../repositories/article_repository.dart';
@@ -31,33 +31,70 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _repository = ArticleRepository();
-  late Future<List<Article>> _articlesFuture;
+  final _scrollController = ScrollController();
+  final _articles = <Article>[];
+
+  late Future<List<Article>> _firstPageFuture;
+  int _currentPage = 1;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _load();
-  }
-
-  void _load() {
-    _articlesFuture = _repository.fetchLatestArticles(
+    _scrollController.addListener(_onScroll);
+    _firstPageFuture = _repository.fetchLatestArticles(
       onRefreshed: (fresh) {
-        // Cuando llega la actualización en background, refrescar la UI
         if (mounted) setState(() {
-          _articlesFuture = Future.value(fresh);
+          _articles
+            ..clear()
+            ..addAll(fresh);
         });
       },
     );
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 300 &&
+        !_isLoadingMore &&
+        _hasMore) {
+      _loadNextPage();
+    }
+  }
+
+  Future<void> _loadNextPage() async {
+    if (_isLoadingMore) return;
+    setState(() => _isLoadingMore = true);
+    final more = await _repository.fetchMoreArticles(page: _currentPage + 1);
+    if (mounted) {
+      setState(() {
+        if (more.isEmpty) {
+          _hasMore = false;
+        } else {
+          _articles.addAll(more);
+          _currentPage++;
+        }
+        _isLoadingMore = false;
+      });
+    }
+  }
+
   Future<void> _refresh() async {
-    // Pull-to-refresh fuerza la red ignorando caché
-    final completer = Completer<List<Article>>();
     setState(() {
-      _articlesFuture = completer.future;
+      _currentPage = 1;
+      _hasMore = true;
+      _articles.clear();
+      _initialized = false;
+      _firstPageFuture = _repository.fetchLatestArticles();
     });
-    final fresh = await _repository.fetchLatestArticles();
-    completer.complete(fresh);
   }
 
   @override
@@ -70,16 +107,31 @@ class _HomeScreenState extends State<HomeScreen> {
             const _AppHeader(),
             Expanded(
               child: FutureBuilder<List<Article>>(
-                future: _articlesFuture,
+                future: _firstPageFuture,
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      _articles.isEmpty) {
                     return const _LoadingView();
                   }
-                  if (snapshot.hasError) {
+                  if (snapshot.hasError && _articles.isEmpty) {
                     return _ErrorView(onRetry: _refresh);
                   }
-                  final articles = snapshot.data!;
-                  return _ArticleFeed(articles: articles, onRefresh: _refresh);
+                  // Inicializar _articles con la primera página
+                  if (!_initialized && snapshot.data != null) {
+                    _initialized = true;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted && _articles.isEmpty) {
+                        setState(() => _articles.addAll(snapshot.data!));
+                      }
+                    });
+                  }
+                  return _ArticleFeed(
+                    articles: _articles,
+                    onRefresh: _refresh,
+                    scrollController: _scrollController,
+                    isLoadingMore: _isLoadingMore,
+                    hasMore: _hasMore,
+                  );
                 },
               ),
             ),
@@ -131,13 +183,13 @@ class _AppHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          const Text(
+          Text(
             'Descifrando la Guerra',
-            style: TextStyle(
+            style: GoogleFonts.raleway(
               color: AppColors.textPrimary,
               fontSize: 15,
-              fontWeight: FontWeight.w500,
-              letterSpacing: -0.2,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
             ),
           ),
         ],
@@ -150,8 +202,17 @@ class _AppHeader extends StatelessWidget {
 class _ArticleFeed extends StatelessWidget {
   final List<Article> articles;
   final Future<void> Function() onRefresh;
+  final ScrollController scrollController;
+  final bool isLoadingMore;
+  final bool hasMore;
 
-  const _ArticleFeed({required this.articles, required this.onRefresh});
+  const _ArticleFeed({
+    required this.articles,
+    required this.onRefresh,
+    required this.scrollController,
+    required this.isLoadingMore,
+    required this.hasMore,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +231,7 @@ class _ArticleFeed extends StatelessWidget {
       color: AppColors.accent,
       backgroundColor: AppColors.surface,
       child: CustomScrollView(
+        controller: scrollController,
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
@@ -177,11 +239,37 @@ class _ArticleFeed extends StatelessWidget {
               child: _FeaturedArticle(article: featuredArticle),
             ),
           ),
-          const SliverToBoxAdapter(child: _SectionTitle(title: 'Últimas noticias')),
+          const SliverToBoxAdapter(child: _SectionTitle(title: 'Lo último')),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) => _ArticleCard(article: restArticles[index]),
               childCount: restArticles.length,
+            ),
+          ),
+          // Indicador de carga al final
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: isLoadingMore
+                  ? const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: AppColors.accent,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    )
+                  : hasMore
+                      ? const SizedBox.shrink()
+                      : const Center(
+                          child: Text(
+                            'No hay más artículos',
+                            style: TextStyle(
+                                color: AppColors.textMuted, fontSize: 12),
+                          ),
+                        ),
             ),
           ),
         ],
@@ -252,21 +340,27 @@ class _FeaturedArticle extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'DESTACADO',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.8),
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'DESTACADO',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.8),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        _CategoryBadge(category: article.category),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -366,6 +460,8 @@ class _ArticleCard extends StatelessWidget {
                   const SizedBox(height: 5),
                   Row(
                     children: [
+                      _CategoryBadge(category: article.category),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: _ArticleMeta(
                             author: article.author, date: article.date),
@@ -497,6 +593,35 @@ class _PremiumBadge extends StatelessWidget {
           Text('Premium',
               style: TextStyle(color: AppColors.premiumText, fontSize: 9)),
         ],
+      ),
+    );
+  }
+}
+
+class _CategoryBadge extends StatelessWidget {
+  final ArticleCategory category;
+  const _CategoryBadge({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    final isAnalysis = category == ArticleCategory.analisis;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: isAnalysis
+            ? const Color(0x22185FA5)
+            : const Color(0x221D9E75),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        isAnalysis ? 'Análisis' : 'Noticia',
+        style: TextStyle(
+          color: isAnalysis
+              ? const Color(0xFF85B7EB)
+              : const Color(0xFF5DCAA5),
+          fontSize: 9,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

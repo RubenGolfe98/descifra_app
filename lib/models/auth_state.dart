@@ -1,11 +1,28 @@
 enum SessionStatus { unknown, guest, loggedIn }
 
+class MembershipInfo {
+  final String name;
+  final String status;
+  final String? expiresAt;
+
+  const MembershipInfo({
+    required this.name,
+    required this.status,
+    this.expiresAt,
+  });
+
+  bool get isActive =>
+      status.toLowerCase().contains('activo') ||
+      status.toLowerCase().contains('active');
+}
+
 class AuthState {
   final SessionStatus status;
-  final String? cookies;       // sesión WooCommerce (nunca usuario/contraseña)
+  final String? cookies;
   final String? userEmail;
   final String? userDisplayName;
   final bool isSubscriber;
+  final MembershipInfo? membership;
 
   const AuthState({
     required this.status,
@@ -13,12 +30,13 @@ class AuthState {
     this.userEmail,
     this.userDisplayName,
     this.isSubscriber = false,
+    this.membership,
   });
 
   const AuthState.unknown() : this(status: SessionStatus.unknown);
   const AuthState.guest()   : this(status: SessionStatus.guest);
 
-  bool get isLoggedIn  => status == SessionStatus.loggedIn;
-  bool get isGuest     => status == SessionStatus.guest;
-  bool get hasDecided  => status != SessionStatus.unknown;
+  bool get isLoggedIn => status == SessionStatus.loggedIn;
+  bool get isGuest    => status == SessionStatus.guest;
+  bool get hasDecided => status != SessionStatus.unknown;
 }

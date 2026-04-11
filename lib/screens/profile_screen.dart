@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/auth_notifier.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/auth_state.dart';
+import '../services/auth_notifier.dart';
 import 'login_webview.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -41,13 +42,14 @@ class _LoggedInView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          // Avatar + nombre
+
+          // ── Avatar + nombre ─────────────────────────────────────────────
           Row(
             children: [
               Container(
@@ -83,14 +85,17 @@ class _LoggedInView extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      state.userEmail ?? '',
-                      style: const TextStyle(
-                        color: AppProfileColors.textSecondary,
-                        fontSize: 13,
+                    if (state.userEmail != null &&
+                        state.userEmail!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        state.userEmail!,
+                        style: const TextStyle(
+                          color: AppProfileColors.textSecondary,
+                          fontSize: 13,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -98,49 +103,70 @@ class _LoggedInView extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Badge suscripción
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppProfileColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                  color: state.isSubscriber
-                      ? const Color(0xFF2E5E2E)
-                      : AppProfileColors.border,
-                  width: 0.5),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  state.isSubscriber
-                      ? Icons.verified_outlined
-                      : Icons.lock_outline,
-                  color: state.isSubscriber
-                      ? const Color(0xFF4CAF50)
-                      : AppProfileColors.textMuted,
-                  size: 18,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  state.isSubscriber
-                      ? 'Suscriptor activo'
-                      : 'Sin suscripción',
-                  style: TextStyle(
+          // ── Tarjeta de membresía ─────────────────────────────────────────
+          if (state.membership != null) ...[
+            _MembershipCard(membership: state.membership!),
+            const SizedBox(height: 16),
+          ] else ...[
+            // Badge simple si no hay datos de membresía
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppProfileColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: state.isSubscriber
+                        ? const Color(0xFF2E5E2E)
+                        : AppProfileColors.border,
+                    width: 0.5),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    state.isSubscriber
+                        ? Icons.verified_outlined
+                        : Icons.lock_outline,
                     color: state.isSubscriber
                         ? const Color(0xFF4CAF50)
-                        : AppProfileColors.textSecondary,
-                    fontSize: 14,
+                        : AppProfileColors.textMuted,
+                    size: 18,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 10),
+                  Text(
+                    state.isSubscriber ? 'Suscriptor activo' : 'Sin suscripción',
+                    style: TextStyle(
+                      color: state.isSubscriber
+                          ? const Color(0xFF4CAF50)
+                          : AppProfileColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // ── Botón gestionar membresía ─────────────────────────────────
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _openMiCuenta,
+              icon: const Icon(Icons.open_in_new, size: 16),
+              label: const Text('Gestionar membresía en la web'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppProfileColors.textSecondary,
+                side: const BorderSide(
+                    color: AppProfileColors.border, width: 0.5),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
             ),
           ),
+          const SizedBox(height: 12),
 
-          const Spacer(),
-
-          // Cerrar sesión
+          // ── Cerrar sesión ─────────────────────────────────────────────
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -162,12 +188,116 @@ class _LoggedInView extends StatelessWidget {
     );
   }
 
+  Future<void> _openMiCuenta() async {
+    final uri = Uri.parse('https://www.descifrandolaguerra.es/mi-cuenta/');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   String _initials(String name) {
     final parts = name.trim().split(' ');
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+}
+
+// ─── Tarjeta de membresía ─────────────────────────────────────────────────────
+class _MembershipCard extends StatelessWidget {
+  final MembershipInfo membership;
+  const _MembershipCard({required this.membership});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppProfileColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: membership.isActive
+              ? const Color(0xFF2E5E2E)
+              : AppProfileColors.border,
+          width: 0.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cabecera
+          Row(
+            children: [
+              Icon(
+                membership.isActive
+                    ? Icons.verified_outlined
+                    : Icons.lock_outline,
+                color: membership.isActive
+                    ? const Color(0xFF4CAF50)
+                    : AppProfileColors.textMuted,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  membership.name,
+                  style: const TextStyle(
+                    color: AppProfileColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              // Badge estado
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: membership.isActive
+                      ? const Color(0x224CAF50)
+                      : const Color(0x22888888),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  membership.status,
+                  style: TextStyle(
+                    color: membership.isActive
+                        ? const Color(0xFF4CAF50)
+                        : AppProfileColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Fecha de expiración
+          if (membership.expiresAt != null &&
+              membership.expiresAt!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(
+                color: AppProfileColors.border, thickness: 0.5),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined,
+                    color: AppProfileColors.textMuted, size: 13),
+                const SizedBox(width: 6),
+                Text(
+                  'Renovación: ${membership.expiresAt}',
+                  style: const TextStyle(
+                    color: AppProfileColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

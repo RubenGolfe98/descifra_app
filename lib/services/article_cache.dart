@@ -19,29 +19,31 @@ class ArticleCache {
 
   // ─── Listado ───────────────────────────────────────────────────────────────
 
-  Future<String?> getList() async {
+  Future<String?> getList({String? key}) async {
     try {
-      return await _storage.read(key: _keyList);
+      return await _storage.read(key: key ?? _keyList);
     } catch (e) {
       debugPrint('📦 [Cache] Error leyendo listado: $e');
       return null;
     }
   }
 
-  Future<void> saveList(String json) async {
+  Future<void> saveList(String json, {String? key}) async {
     try {
-      await _storage.write(key: _keyList, value: json);
+      final k = key ?? _keyList;
+      await _storage.write(key: k, value: json);
       await _storage.write(
-          key: _keyListTs,
+          key: '${k}_ts',
           value: DateTime.now().millisecondsSinceEpoch.toString());
     } catch (e) {
       debugPrint('📦 [Cache] Error guardando listado: $e');
     }
   }
 
-  Future<bool> isListStale() async {
+  Future<bool> isListStale({String? key}) async {
     try {
-      final ts = await _storage.read(key: _keyListTs);
+      final k = key ?? _keyList;
+      final ts = await _storage.read(key: '${k}_ts');
       if (ts == null) return true;
       final saved = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
       return DateTime.now().difference(saved).inMinutes > _ttlMinutes;
