@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/article.dart';
 import '../models/article_detail.dart';
 import '../repositories/article_repository.dart';
@@ -33,6 +34,11 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
       widget.article.id,
       cookies: auth.state.cookies,
       restNonce: auth.restNonce,
+      onRefreshed: (fresh) {
+        if (mounted) setState(() {
+          _detailFuture = Future.value(fresh);
+        });
+      },
     );
   }
 
@@ -40,44 +46,36 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _Colors.background,
-      body: FutureBuilder<ArticleDetail>(
-        future: _detailFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const _LoadingView();
-          }
-          if (snapshot.hasError) {
-            return _ErrorView(
-              onRetry: () => setState(_loadDetail),
-            );
-          }
-          return _ArticleBody(detail: snapshot.data!);
-        },
+      // Mostramos la pantalla inmediatamente con los datos del listado
+      // El contenido se carga en segundo plano
+      body: _ArticleShell(
+        article: widget.article,
+        detailFuture: _detailFuture,
+        onRetry: () => setState(_loadDetail),
       ),
     );
   }
 }
 
-// ─── Cuerpo del artículo ──────────────────────────────────────────────────────
-class _ArticleBody extends StatelessWidget {
-  final ArticleDetail detail;
+// ─── Shell: cabecera inmediata + contenido async ──────────────────────────────
+class _ArticleShell extends StatelessWidget {
+  final Article article;
+  final Future<ArticleDetail> detailFuture;
+  final VoidCallback onRetry;
 
-  const _ArticleBody({required this.detail});
+  const _ArticleShell({
+    required this.article,
+    required this.detailFuture,
+    required this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthNotifier>();
-    final isLocked = detail.isPremium &&
-        !(auth.state.isLoggedIn && auth.state.isSubscriber);
-
-    // Si el servidor devolvió contenido, siempre mostrarlo
-    // (significa que el usuario tiene acceso aunque isSubscriber esté en false)
-    final hasContent = detail.content.trim().isNotEmpty;
-    final showPaywall = isLocked && !hasContent;
 
     return CustomScrollView(
       slivers: [
-        // App bar con imagen de cabecera
+        // ── Cabecera con imagen — disponible AL INSTANTE ──────────────────
         SliverAppBar(
           expandedHeight: 260,
           pinned: true,
@@ -91,19 +89,19 @@ class _ArticleBody extends StatelessWidget {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                if (detail.imageUrl.isNotEmpty)
+                if (article.imageUrl.isNotEmpty)
                   CachedNetworkImage(
-                    imageUrl: detail.imageUrl,
+                    imageUrl: article.imageUrl,
                     fit: BoxFit.cover,
                     memCacheWidth: 800,
                     memCacheHeight: 520,
-                    fadeInDuration: const Duration(milliseconds: 200),
+                    // La imagen ya está en caché del listado → instantánea
+                    fadeInDuration: const Duration(milliseconds: 150),
                     placeholder: (_, __) =>
                         Container(color: _Colors.surface),
                     errorWidget: (_, __, ___) =>
                         Container(color: _Colors.surface),
                   ),
-                // Gradiente para legibilidad
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -119,15 +117,14 @@ class _ArticleBody extends StatelessWidget {
           ),
         ),
 
-        // Contenido
+        // ── Título y meta — disponibles AL INSTANTE ───────────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Badge premium
-                if (detail.isPremium)
+                if (article.isPremium)
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(
@@ -148,10 +145,8 @@ class _ArticleBody extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                // Título
                 Text(
-                  detail.title,
+                  article.title,
                   style: const TextStyle(
                     color: _Colors.textPrimary,
                     fontSize: 22,
@@ -160,32 +155,24 @@ class _ArticleBody extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                // Meta: autor + fecha
                 Row(
                   children: [
                     const Icon(Icons.person_outline,
                         color: _Colors.textMuted, size: 14),
                     const SizedBox(width: 4),
-                    Text(
-                      detail.author,
-                      style: const TextStyle(
-                          color: _Colors.textMuted, fontSize: 12),
-                    ),
+                    Text(article.author,
+                        style: const TextStyle(
+                            color: _Colors.textMuted, fontSize: 12)),
                     const SizedBox(width: 12),
                     const Icon(Icons.calendar_today_outlined,
                         color: _Colors.textMuted, size: 12),
                     const SizedBox(width: 4),
-                    Text(
-                      _formatDate(detail.date),
-                      style: const TextStyle(
-                          color: _Colors.textMuted, fontSize: 12),
-                    ),
+                    Text(_formatDate(article.date),
+                        style: const TextStyle(
+                            color: _Colors.textMuted, fontSize: 12)),
                   ],
                 ),
                 const SizedBox(height: 20),
-
-                // Separador
                 const Divider(color: _Colors.border, thickness: 0.5),
                 const SizedBox(height: 8),
               ],
@@ -193,11 +180,30 @@ class _ArticleBody extends StatelessWidget {
           ),
         ),
 
-        // Contenido HTML o paywall
+        // ── Contenido — carga async sin bloquear la UI ────────────────────
         SliverToBoxAdapter(
-          child: showPaywall
-              ? _PaywallBlock(isLoggedIn: auth.state.isLoggedIn)
-              : _HtmlContent(html: detail.content),
+          child: FutureBuilder<ArticleDetail>(
+            future: detailFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const _ContentSkeleton();
+              }
+              if (snapshot.hasError) {
+                return _ContentError(onRetry: onRetry);
+              }
+
+              final detail = snapshot.data!;
+              final hasContent = detail.content.trim().isNotEmpty;
+              final isLocked = article.isPremium &&
+                  !(auth.state.isLoggedIn && auth.state.isSubscriber);
+              final showPaywall = isLocked && !hasContent;
+
+              if (showPaywall) {
+                return _PaywallBlock(isLoggedIn: auth.state.isLoggedIn);
+              }
+              return _HtmlContent(html: detail.content);
+            },
+          ),
         ),
 
         const SliverToBoxAdapter(child: SizedBox(height: 40)),
@@ -223,11 +229,63 @@ class _HtmlContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final repository = ArticleRepository();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Html(
         data: html,
+        onLinkTap: (url, _, __) async {
+          if (url == null || url.isEmpty) return;
+          final uri = Uri.tryParse(url);
+          if (uri == null) return;
+
+          // ¿Es una URL interna de Descifrando la Guerra?
+          final isInternal = uri.host.contains('descifrandolaguerra.es');
+
+          if (isInternal) {
+            // Extraer el slug — último segmento no vacío de la ruta
+            // Ej: /israel-en-libano-limpieza-etnica-ocupacion/ → ese slug
+            final segments = uri.pathSegments
+                .where((s) => s.isNotEmpty)
+                .toList();
+
+            if (segments.isNotEmpty) {
+              final slug = segments.last;
+
+              // Mostrar indicador de carga
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Cargando artículo...'),
+                    duration: Duration(seconds: 2),
+                    backgroundColor: Color(0xFF1A1A1A),
+                  ),
+                );
+              }
+
+              final article = await repository.fetchArticleBySlug(slug);
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              }
+
+              if (article != null && context.mounted) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ArticleDetailScreen(article: article),
+                  ),
+                );
+                return;
+              }
+            }
+          }
+
+          // URL externa o artículo no encontrado → abrir navegador
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        },
         style: {
           'body': Style(
             color: const Color(0xFFCCCCCC),
@@ -449,10 +507,8 @@ class _PaywallBlock extends StatelessWidget {
   }
 
   Future<void> _openSubscribe() async {
-    final uri =
-        Uri.parse('https://www.descifrandolaguerra.es/suscribete/');
-    // Usar url_launcher
-    // await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final uri = Uri.parse('https://www.descifrandolaguerra.es/suscribete/');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
 
@@ -466,44 +522,78 @@ class _Colors {
   static const textMuted = Color(0xFF555555);
 }
 
-// ─── Loading / Error ──────────────────────────────────────────────────────────
-class _LoadingView extends StatelessWidget {
-  const _LoadingView();
+// ─── Skeleton del contenido mientras carga ────────────────────────────────────
+class _ContentSkeleton extends StatelessWidget {
+  const _ContentSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF0D0D0D),
-      body: Center(
-        child: CircularProgressIndicator(
-            color: Color(0xFFC0392B), strokeWidth: 2),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Simula líneas de texto
+          ...List.generate(12, (i) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              height: 13,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              width: i % 4 == 3
+                  ? MediaQuery.of(context).size.width * 0.6
+                  : double.infinity,
+            );
+          }),
+          const SizedBox(height: 20),
+          // Simula una imagen
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          const SizedBox(height: 20),
+          ...List.generate(8, (i) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            height: 13,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            width: i % 3 == 2
+                ? MediaQuery.of(context).size.width * 0.5
+                : double.infinity,
+          )),
+        ],
       ),
     );
   }
 }
 
-class _ErrorView extends StatelessWidget {
+// ─── Error inline (no ocupa toda la pantalla) ─────────────────────────────────
+class _ContentError extends StatelessWidget {
   final VoidCallback onRetry;
-  const _ErrorView({required this.onRetry});
+  const _ContentError({required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Error al cargar el artículo',
-                style: TextStyle(color: Color(0xFF888888))),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('Reintentar',
-                  style: TextStyle(color: Color(0xFFC0392B))),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const Text('Error al cargar el contenido',
+              style: TextStyle(color: Color(0xFF888888))),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: onRetry,
+            child: const Text('Reintentar',
+                style: TextStyle(color: Color(0xFFC0392B))),
+          ),
+        ],
       ),
     );
   }

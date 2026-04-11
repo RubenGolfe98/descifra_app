@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -35,13 +36,28 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _articlesFuture = _repository.fetchLatestArticles();
+    _load();
+  }
+
+  void _load() {
+    _articlesFuture = _repository.fetchLatestArticles(
+      onRefreshed: (fresh) {
+        // Cuando llega la actualización en background, refrescar la UI
+        if (mounted) setState(() {
+          _articlesFuture = Future.value(fresh);
+        });
+      },
+    );
   }
 
   Future<void> _refresh() async {
+    // Pull-to-refresh fuerza la red ignorando caché
+    final completer = Completer<List<Article>>();
     setState(() {
-      _articlesFuture = _repository.fetchLatestArticles();
+      _articlesFuture = completer.future;
     });
+    final fresh = await _repository.fetchLatestArticles();
+    completer.complete(fresh);
   }
 
   @override
@@ -541,4 +557,3 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
-
