@@ -4,6 +4,34 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 
 ---
 
+## Capturas de pantalla
+
+### Inicio y lectura
+<p align="center">
+  <img src="screenshots/home_dark.png" width="180" alt="Inicio — tema oscuro"/>
+  <img src="screenshots/home_white.png" width="180" alt="Inicio — tema claro"/>
+  <img src="screenshots/detail_article_dark.png" width="180" alt="Detalle artículo — oscuro"/>
+  <img src="screenshots/detail_article_white.png" width="180" alt="Detalle artículo — claro"/>
+</p>
+
+### Secciones
+<p align="center">
+  <img src="screenshots/regions.png" width="180" alt="Regiones"/>
+  <img src="screenshots/analisis_list.png" width="180" alt="Listado análisis por región"/>
+  <img src="screenshots/analisis.png" width="180" alt="Análisis"/>
+</p>
+
+### Perfil, ajustes y acceso
+<p align="center">
+  <img src="screenshots/login_app.png" width="180" alt="Pantalla de login"/>
+  <img src="screenshots/login_web.png" width="180" alt="Login web seguro"/>
+  <img src="screenshots/logged_profile.png" width="180" alt="Perfil con membresía"/>
+  <img src="screenshots/settings.png" width="180" alt="Ajustes"/>
+  <img src="screenshots/exclusive_content.png" width="180" alt="Contenido exclusivo"/>
+</p>
+
+---
+
 ## Características
 
 - **Listado de noticias y análisis** con paginación infinita
