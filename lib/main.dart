@@ -1,10 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_notifier.dart';
+import 'services/theme_notifier.dart';
 import 'screens/main_screen.dart';
+import 'theme/app_colors.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,12 +13,8 @@ void main() {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
-
-  // Límite de caché de imágenes en RAM: 50MB y máximo 100 imágenes
-  // (por defecto Flutter usa 100MB sin límite de número)
   PaintingBinding.instance.imageCache.maximumSize = 100;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
-
   runApp(const DlgApp());
 }
 
@@ -26,28 +23,60 @@ class DlgApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthNotifier()..initialize(),
-      child: MaterialApp(
-        title: 'Descifrando la Guerra',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF0D0D0D),
-          textTheme: GoogleFonts.ralewayTextTheme(
-            ThemeData.dark().textTheme,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthNotifier()..initialize()),
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()..initialize()),
+      ],
+      child: const _AppRoot(),
+    );
+  }
+}
+
+class _AppRoot extends StatelessWidget {
+  const _AppRoot();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<ThemeNotifier>();
+    final isDark = theme.isDark;
+    final scale = theme.fontSize.scale;
+
+    // Ajustar tasa de refresco
+    if (theme.refreshRate == AppRefreshRate.high) {
+      timeDilation = 1.0; // sin ralentización de animaciones
+    }
+
+    return MaterialApp(
+      title: 'Descifrando la Guerra',
+      debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        // Aplicar escala de fuente global
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(scale),
           ),
-          splashFactory: NoSplash.splashFactory,
-          highlightColor: Colors.transparent,
+          child: child!,
+        );
+      },
+      theme: ThemeData(
+        brightness: isDark ? Brightness.dark : Brightness.light,
+        scaffoldBackgroundColor: AppColors.bg(isDark),
+        textTheme: theme.font.textTheme(
+          isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
         ),
-        home: const _AppGate(),
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
       ),
+      home: _AppGate(isDark: isDark, font: theme.font),
     );
   }
 }
 
 class _AppGate extends StatefulWidget {
-  const _AppGate();
+  final bool isDark;
+  final AppFont font;
+  const _AppGate({required this.isDark, required this.font});
 
   @override
   State<_AppGate> createState() => _AppGateState();
@@ -59,7 +88,6 @@ class _AppGateState extends State<_AppGate> {
   @override
   void initState() {
     super.initState();
-    // Mostrar la splash de Flutter al menos 1.5 segundos
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) setState(() => _minTimeElapsed = true);
     });
@@ -72,14 +100,14 @@ class _AppGateState extends State<_AppGate> {
 
     if (!ready) {
       return Scaffold(
-        backgroundColor: const Color(0xFF0D0D0D),
+        backgroundColor: AppColors.bg(widget.isDark),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const ClipOval(
+              ClipOval(
                 child: Image(
-                  image: AssetImage('assets/images/logo_dlg.png'),
+                  image: AssetImage(widget.isDark ? 'assets/images/logo_dlg_dark.png' : 'assets/images/logo_dlg.png'),
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
@@ -88,8 +116,8 @@ class _AppGateState extends State<_AppGate> {
               const SizedBox(height: 16),
               Text(
                 'DESCIFRANDO LA GUERRA',
-                style: GoogleFonts.raleway(
-                  color: Colors.white,
+                style: widget.font.style(
+                  color: AppColors.textPri(widget.isDark),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 2,
@@ -100,7 +128,7 @@ class _AppGateState extends State<_AppGate> {
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
-                  color: Color(0xFFC0392B),
+                  color: AppColors.accent,
                   strokeWidth: 2,
                 ),
               ),

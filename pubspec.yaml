@@ -33,12 +33,14 @@ flutter:
 
 flutter_native_splash:
   color: "#0D0D0D"
-  image: assets/images/logo_dlg.png
+  image: assets/images/splash_image_dark.png
   android_12:
     color: "#0D0D0D"
-    image: assets/images/logo_dlg.png
+    image: assets/images/splash_image_dark.png
   ios: true
   web: false
+  android_gravity: center
+  ios_content_mode: center
 
 flutter_launcher_icons:
   android: true

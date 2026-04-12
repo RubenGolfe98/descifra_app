@@ -1,27 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../repositories/article_repository.dart';
 import '../services/auth_notifier.dart';
+import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
 import 'article_detail_screen.dart';
 import '../widgets/paywall_dialog.dart';
-
-// ─── Colores de la app ────────────────────────────────────────────────────────
-class AppColors {
-  static const background = Color(0xFF0D0D0D);
-  static const surface = Color(0xFF1A1A1A);
-  static const border = Color(0xFF242424);
-  static const textPrimary = Color(0xFFFFFFFF);
-  static const textSecondary = Color(0xFF888888);
-  static const textMuted = Color(0xFF555555);
-  static const accent = Color(0xFFC0392B);
-  static const premiumBg = Color(0x33C0392B);
-  static const premiumText = Color(0xFFE57A72);
-}
 
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 class HomeScreen extends StatefulWidget {
@@ -101,24 +88,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bg(isDark),
       body: SafeArea(
         child: Column(
           children: [
-            const _AppHeader(),
+            _AppHeader(isDark: isDark),
             Expanded(
               child: FutureBuilder<List<Article>>(
                 future: _firstPageFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting &&
                       _articles.isEmpty) {
-                    return const _LoadingView();
+                    return _LoadingView(isDark: isDark);
                   }
                   if (snapshot.hasError && _articles.isEmpty) {
-                    return _ErrorView(onRetry: _refresh);
+                    return _ErrorView(onRetry: _refresh, isDark: isDark);
                   }
-                  // Inicializar _articles con la primera página
                   if (!_initialized && snapshot.data != null) {
                     _initialized = true;
                     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -133,6 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     scrollController: _scrollController,
                     isLoadingMore: _isLoadingMore,
                     hasMore: _hasMore,
+                    isDark: isDark,
                   );
                 },
               ),
@@ -146,49 +134,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 class _AppHeader extends StatelessWidget {
-  const _AppHeader();
+  final bool isDark;
+  const _AppHeader({required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           ClipOval(
-            child: CachedNetworkImage(
-              imageUrl:
-                  'https://www.descifrandolaguerra.es/wp-content/uploads/2023/01/logotipo-dlg-300x300-1.png',
+            child: Image.asset(
+              isDark ? 'assets/images/logo_dlg_dark.png' : 'assets/images/logo_dlg.png',
               width: 32,
               height: 32,
               fit: BoxFit.cover,
-              placeholder: (_, __) => Container(
-                width: 32,
-                height: 32,
-                color: AppColors.surface,
-              ),
-              errorWidget: (_, __, ___) => Container(
-                width: 32,
-                height: 32,
-                color: AppColors.surface,
-                child: const Center(
-                  child: Text('DLG',
-                      style: TextStyle(
-                          color: AppColors.accent,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold)),
-                ),
-              ),
             ),
           ),
           const SizedBox(width: 10),
           Text(
-            'Descifrando la Guerra',
-            style: GoogleFonts.raleway(
-              color: AppColors.textPrimary,
+            'DESCIFRANDO LA GUERRA',
+            style: context.read<ThemeNotifier>().font.style(
+              color: AppColors.accent,
               fontSize: 15,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.2,
@@ -207,6 +178,7 @@ class _ArticleFeed extends StatelessWidget {
   final ScrollController scrollController;
   final bool isLoadingMore;
   final bool hasMore;
+  final bool isDark;
 
   const _ArticleFeed({
     required this.articles,
@@ -214,14 +186,15 @@ class _ArticleFeed extends StatelessWidget {
     required this.scrollController,
     required this.isLoadingMore,
     required this.hasMore,
+    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
     if (articles.isEmpty) {
-      return const Center(
+      return Center(
         child: Text('No hay noticias disponibles',
-            style: TextStyle(color: AppColors.textSecondary)),
+            style: TextStyle(color: AppColors.textSec(isDark))),
       );
     }
 
@@ -231,47 +204,31 @@ class _ArticleFeed extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       color: AppColors.accent,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.surf(isDark),
       child: CustomScrollView(
         controller: scrollController,
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-              child: _FeaturedArticle(article: featuredArticle),
+              child: _FeaturedArticle(article: featuredArticle, isDark: isDark),
             ),
           ),
-          const SliverToBoxAdapter(child: _SectionTitle(title: 'Lo último')),
+          SliverToBoxAdapter(child: _SectionTitle(title: 'Lo último', isDark: isDark)),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) => ArticleCard(article: restArticles[index]),
               childCount: restArticles.length,
             ),
           ),
-          // Indicador de carga al final
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: isLoadingMore
-                  ? const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: AppColors.accent,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                    )
+                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)))
                   : hasMore
                       ? const SizedBox.shrink()
-                      : const Center(
-                          child: Text(
-                            'No hay más artículos',
-                            style: TextStyle(
-                                color: AppColors.textMuted, fontSize: 12),
-                          ),
-                        ),
+                      : Center(child: Text('No hay más artículos', style: TextStyle(color: AppColors.textMut(isDark), fontSize: 12))),
             ),
           ),
         ],
@@ -283,27 +240,18 @@ class _ArticleFeed extends StatelessWidget {
 // ─── Tarjeta destacada ────────────────────────────────────────────────────────
 class _FeaturedArticle extends StatelessWidget {
   final Article article;
+  final bool isDark;
 
-  const _FeaturedArticle({required this.article});
+  const _FeaturedArticle({required this.article, required this.isDark});
 
   void _handleTap(BuildContext context) {
     final auth = context.read<AuthNotifier>();
-    final canAccess = !article.isPremium ||
-        (auth.state.isLoggedIn && auth.state.isSubscriber);
-
+    final canAccess = !article.isPremium || (auth.state.isLoggedIn && auth.state.isSubscriber);
     if (!canAccess) {
-      showPaywallDialog(
-        context,
-        onLoginTap: () => TabNavigator.of(context)?.jumpToProfile(),
-      );
+      showPaywallDialog(context, onLoginTap: () => TabNavigator.of(context)?.jumpToProfile());
       return;
     }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ArticleDetailScreen(article: article),
-      ),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => ArticleDetailScreen(article: article)));
   }
 
   @override
@@ -311,81 +259,59 @@ class _FeaturedArticle extends StatelessWidget {
     return GestureDetector(
       onTap: () => _handleTap(context),
       child: ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: SizedBox(
-        height: 210,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _ArticleImage(url: article.imageUrl, height: 210),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: [0.0, 0.45, 1.0],
-                  colors: [
-                    Colors.transparent,
-                    Color(0x33000000),
-                    Color(0xE0000000),
-                  ],
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          height: 210,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _ArticleImage(url: article.imageUrl, height: 210, isDark: isDark),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0.0, 0.45, 1.0],
+                    colors: [Colors.transparent, Color(0x33000000), Color(0xE0000000)],
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.accent,
-                            borderRadius: BorderRadius.circular(4),
+              Positioned(
+                bottom: 0, left: 0, right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(4)),
+                            child: const Text('DESTACADO', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w500, letterSpacing: 0.8)),
                           ),
-                          child: const Text(
-                            'DESTACADO',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.8),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        ArticleCategoryBadge(category: article.category),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      article.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        height: 1.35,
+                          const SizedBox(width: 6),
+                          ArticleCategoryBadge(category: article.category),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    _ArticleMeta(author: article.author, date: article.date),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        article.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500, height: 1.35),
+                      ),
+                      const SizedBox(height: 6),
+                      _ArticleMeta(author: article.author, date: article.date, isDark: isDark),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      ), // GestureDetector
     );
   }
 }
@@ -395,8 +321,9 @@ class _ArticleImage extends StatelessWidget {
   final String url;
   final double? width;
   final double? height;
+  final bool isDark;
 
-  const _ArticleImage({required this.url, this.width, this.height});
+  const _ArticleImage({required this.url, this.width, this.height, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -407,17 +334,10 @@ class _ArticleImage extends StatelessWidget {
       fit: BoxFit.cover,
       memCacheWidth: width != null ? (width! * 2).toInt() : 400,
       fadeInDuration: const Duration(milliseconds: 200),
-      placeholder: (_, __) => Container(
-        width: width,
-        height: height,
-        color: AppColors.surface,
-      ),
+      placeholder: (_, __) => Container(width: width, height: height, color: AppColors.surf(isDark)),
       errorWidget: (_, __, ___) => Container(
-        width: width,
-        height: height,
-        color: AppColors.surface,
-        child: const Icon(Icons.image_not_supported,
-            color: AppColors.textMuted, size: 20),
+        width: width, height: height, color: AppColors.surf(isDark),
+        child: Icon(Icons.image_not_supported, color: AppColors.textMut(isDark), size: 20),
       ),
     );
   }
@@ -427,8 +347,9 @@ class _ArticleImage extends StatelessWidget {
 class _ArticleMeta extends StatelessWidget {
   final String author;
   final DateTime date;
+  final bool isDark;
 
-  const _ArticleMeta({required this.author, required this.date});
+  const _ArticleMeta({required this.author, required this.date, required this.isDark});
 
   String _formatDate(DateTime date) {
     final now = DateTime.now();
@@ -438,56 +359,29 @@ class _ArticleMeta extends StatelessWidget {
     return '${date.day} ${_months[date.month - 1]}';
   }
 
-  static const _months = [
-    'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-    'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
-  ];
+  static const _months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
   @override
   Widget build(BuildContext context) {
+    final mut = AppColors.textSec(isDark);
     return Row(
       children: [
-        Flexible(
-          child: Text(
-            author,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
-          ),
+        Flexible(child: Text(author, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: mut, fontSize: 10))),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          child: Container(width: 2, height: 2, decoration: BoxDecoration(color: mut, shape: BoxShape.circle)),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5),
-          child: _Dot(),
-        ),
-        Text(
-          _formatDate(date),
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
-        ),
+        Text(_formatDate(date), style: TextStyle(color: mut, fontSize: 10)),
       ],
     );
   }
 }
 
 // ─── Widgets auxiliares ───────────────────────────────────────────────────────
-class _Dot extends StatelessWidget {
-  const _Dot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 2,
-      height: 2,
-      decoration: const BoxDecoration(
-        color: AppColors.textMuted,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-}
-
 class _SectionTitle extends StatelessWidget {
   final String title;
-  const _SectionTitle({required this.title});
+  final bool isDark;
+  const _SectionTitle({required this.title, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -495,31 +389,26 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
-          color: AppColors.textMuted,
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 1,
-        ),
+        style: TextStyle(color: AppColors.textMut(isDark), fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 1),
       ),
     );
   }
 }
 
 class _LoadingView extends StatelessWidget {
-  const _LoadingView();
+  final bool isDark;
+  const _LoadingView({required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(color: AppColors.accent),
-    );
+    return const Center(child: CircularProgressIndicator(color: AppColors.accent));
   }
 }
 
 class _ErrorView extends StatelessWidget {
   final VoidCallback onRetry;
-  const _ErrorView({required this.onRetry});
+  final bool isDark;
+  const _ErrorView({required this.onRetry, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -527,14 +416,9 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Error al cargar las noticias',
-              style: TextStyle(color: AppColors.textSecondary)),
+          Text('Error al cargar las noticias', style: TextStyle(color: AppColors.textSec(isDark))),
           const SizedBox(height: 12),
-          TextButton(
-            onPressed: onRetry,
-            child: const Text('Reintentar',
-                style: TextStyle(color: AppColors.accent)),
-          ),
+          TextButton(onPressed: onRetry, child: const Text('Reintentar', style: TextStyle(color: AppColors.accent))),
         ],
       ),
     );

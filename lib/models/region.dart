@@ -14,7 +14,6 @@ class Region {
   });
 }
 
-/// Regiones hardcodeadas — las imágenes son SVGs fijos del tema de WordPress
 const List<Region> kRegions = [
   Region(
     id: 101,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/theme_notifier.dart';
+import '../theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../repositories/article_repository.dart';
@@ -92,25 +94,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: AppColors.bg(isDark),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
               child: Text(
                 'Análisis',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPri(isDark),
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            // Lista
             Expanded(
               child: FutureBuilder<List<Article>>(
                 future: _firstPageFuture,
@@ -130,13 +131,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Error al cargar los análisis',
-                              style: TextStyle(color: Color(0xFF888888))),
+                          Text('Error al cargar los análisis',
+                              style: TextStyle(color: AppColors.textSec(isDark))),
                           const SizedBox(height: 12),
                           TextButton(
                             onPressed: _refresh,
                             child: const Text('Reintentar',
-                                style: TextStyle(color: Color(0xFFC0392B))),
+                                style: TextStyle(color: AppColors.accent)),
                           ),
                         ],
                       ),
@@ -156,7 +157,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
                   return RefreshIndicator(
                     onRefresh: _refresh,
-                    color: const Color(0xFFC0392B),
+                    color: AppColors.accent,
                     backgroundColor: const Color(0xFF1A1A1A),
                     child: ListView.builder(
                       controller: _scrollController,
@@ -178,11 +179,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                   )
                                 : _hasMore
                                     ? const SizedBox.shrink()
-                                    : const Center(
+                                    : Center(
                                         child: Text(
                                           'No hay más análisis',
                                           style: TextStyle(
-                                            color: Color(0xFF555555),
+                                            color: AppColors.textMut(isDark),
                                             fontSize: 12,
                                           ),
                                         ),

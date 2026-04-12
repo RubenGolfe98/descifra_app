@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import '../models/region.dart';
+import '../services/theme_notifier.dart';
+import '../theme/app_colors.dart';
 import 'region_articles_screen.dart';
 
 class RegionsScreen extends StatelessWidget {
@@ -8,8 +11,9 @@ class RegionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: AppColors.bg(isDark),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -19,9 +23,9 @@ class RegionsScreen extends StatelessWidget {
               child: Text(
                 'Regiones',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: AppColors.textPri(isDark),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             Expanded(
@@ -35,7 +39,7 @@ class RegionsScreen extends StatelessWidget {
                 ),
                 itemCount: kRegions.length,
                 itemBuilder: (context, index) =>
-                    _RegionCard(region: kRegions[index]),
+                    _RegionCard(region: kRegions[index], isDark: isDark),
               ),
             ),
           ],
@@ -47,26 +51,27 @@ class RegionsScreen extends StatelessWidget {
 
 class _RegionCard extends StatelessWidget {
   final Region region;
+  final bool isDark;
 
-  const _RegionCard({required this.region});
+  const _RegionCard({required this.region, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
+    final surf = AppColors.surf(isDark);
+    final gradientEnd = isDark ? const Color(0xDD1A1A1A) : const Color(0xDDEDE8DF);
+
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => RegionArticlesScreen(region: region),
-        ),
+        MaterialPageRoute(builder: (_) => RegionArticlesScreen(region: region)),
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: surf,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF242424), width: 0.5),
+          border: Border.all(color: AppColors.bord(isDark), width: 0.5),
         ),
         child: Stack(
           children: [
-            // Mapa SVG
             Positioned.fill(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(14),
@@ -75,34 +80,27 @@ class _RegionCard extends StatelessWidget {
                   child: SvgPicture.network(
                     region.imageUrl,
                     fit: BoxFit.contain,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0x55C0392B),
-                      BlendMode.srcIn,
-                    ),
+                    colorFilter: const ColorFilter.mode(Color(0x55C0392B), BlendMode.srcIn),
                     placeholderBuilder: (_) => const SizedBox.shrink(),
                   ),
                 ),
               ),
             ),
-            // Gradiente inferior
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: [0.3, 1.0],
-                    colors: [Colors.transparent, Color(0xDD1A1A1A)],
+                    stops: const [0.3, 1.0],
+                    colors: [Colors.transparent, gradientEnd],
                   ),
                 ),
               ),
             ),
-            // Nombre + count
             Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
+              bottom: 0, left: 0, right: 0,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -113,8 +111,8 @@ class _RegionCard extends StatelessWidget {
                       region.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.textPri(isDark),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         height: 1.3,
@@ -123,10 +121,7 @@ class _RegionCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       '${region.count} artículos',
-                      style: const TextStyle(
-                        color: Color(0xFF555555),
-                        fontSize: 10,
-                      ),
+                      style: TextStyle(color: AppColors.textMut(isDark), fontSize: 10),
                     ),
                   ],
                 ),

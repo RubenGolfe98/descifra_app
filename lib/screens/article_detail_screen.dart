@@ -7,6 +7,8 @@ import '../models/article.dart';
 import '../models/article_detail.dart';
 import '../repositories/article_repository.dart';
 import '../services/auth_notifier.dart';
+import '../services/theme_notifier.dart';
+import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
 import '../widgets/paywall_dialog.dart';
 
@@ -46,14 +48,14 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
     return Scaffold(
-      backgroundColor: _Colors.background,
-      // Mostramos la pantalla inmediatamente con los datos del listado
-      // El contenido se carga en segundo plano
+      backgroundColor: _Colors.bg(isDark),
       body: _ArticleShell(
         article: widget.article,
         detailFuture: _detailFuture,
         onRetry: () => setState(_loadDetail),
+        isDark: isDark,
       ),
     );
   }
@@ -64,11 +66,13 @@ class _ArticleShell extends StatelessWidget {
   final Article article;
   final Future<ArticleDetail> detailFuture;
   final VoidCallback onRetry;
+  final bool isDark;
 
   const _ArticleShell({
     required this.article,
     required this.detailFuture,
     required this.onRetry,
+    required this.isDark,
   });
 
   @override
@@ -77,14 +81,12 @@ class _ArticleShell extends StatelessWidget {
 
     return CustomScrollView(
       slivers: [
-        // ── Cabecera con imagen — disponible AL INSTANTE ──────────────────
         SliverAppBar(
           expandedHeight: 260,
           pinned: true,
-          backgroundColor: _Colors.surface,
+          backgroundColor: _Colors.surf(isDark),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new,
-                color: Colors.white, size: 18),
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
             onPressed: () => Navigator.of(context).pop(),
           ),
           flexibleSpace: FlexibleSpaceBar(
@@ -97,20 +99,17 @@ class _ArticleShell extends StatelessWidget {
                     fit: BoxFit.cover,
                     memCacheWidth: 800,
                     memCacheHeight: 520,
-                    // La imagen ya está en caché del listado → instantánea
                     fadeInDuration: const Duration(milliseconds: 150),
-                    placeholder: (_, __) =>
-                        Container(color: _Colors.surface),
-                    errorWidget: (_, __, ___) =>
-                        Container(color: _Colors.surface),
+                    placeholder: (_, __) => Container(color: _Colors.surf(isDark)),
+                    errorWidget: (_, __, ___) => Container(color: _Colors.surf(isDark)),
                   ),
-                const DecoratedBox(
+                DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: [0.4, 1.0],
-                      colors: [Colors.transparent, _Colors.background],
+                      stops: const [0.4, 1.0],
+                      colors: [Colors.transparent, _Colors.bg(isDark)],
                     ),
                   ),
                 ),
@@ -158,8 +157,8 @@ class _ArticleShell extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   article.title,
-                  style: const TextStyle(
-                    color: _Colors.textPrimary,
+                  style: TextStyle(
+                    color: _Colors.textPrimary(isDark),
                     fontSize: 22,
                     fontWeight: FontWeight.w500,
                     height: 1.3,
@@ -168,23 +167,23 @@ class _ArticleShell extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.person_outline,
-                        color: _Colors.textMuted, size: 14),
+                    Icon(Icons.person_outline,
+                        color: _Colors.textSecondary(isDark), size: 14),
                     const SizedBox(width: 4),
                     Text(article.author,
-                        style: const TextStyle(
-                            color: _Colors.textMuted, fontSize: 12)),
+                        style: TextStyle(
+                            color: _Colors.textSecondary(isDark), fontSize: 12)),
                     const SizedBox(width: 12),
-                    const Icon(Icons.calendar_today_outlined,
-                        color: _Colors.textMuted, size: 12),
+                    Icon(Icons.calendar_today_outlined,
+                        color: _Colors.textSecondary(isDark), size: 12),
                     const SizedBox(width: 4),
                     Text(_formatDate(article.date),
-                        style: const TextStyle(
-                            color: _Colors.textMuted, fontSize: 12)),
+                        style: TextStyle(
+                            color: _Colors.textSecondary(isDark), fontSize: 12)),
                   ],
                 ),
                 const SizedBox(height: 20),
-                const Divider(color: _Colors.border, thickness: 0.5),
+                Divider(color: _Colors.bord(isDark), thickness: 0.5),
                 const SizedBox(height: 8),
               ],
             ),
@@ -239,6 +238,7 @@ class _HtmlContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
     final screenWidth = MediaQuery.of(context).size.width;
     final repository = ArticleRepository();
 
@@ -302,7 +302,7 @@ class _HtmlContent extends StatelessWidget {
         },
         style: {
           'body': Style(
-            color: const Color(0xFFCCCCCC),
+            color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF333333),
             fontSize: FontSize(15),
             lineHeight: const LineHeight(1.75),
             margin: Margins.zero,
@@ -310,62 +310,35 @@ class _HtmlContent extends StatelessWidget {
             backgroundColor: Colors.transparent,
           ),
           'h2': Style(
-            color: _Colors.textPrimary,
+            color: _Colors.textPrimary(isDark),
             fontSize: FontSize(18),
             fontWeight: FontWeight.w500,
             margin: Margins.only(top: 20, bottom: 8),
           ),
           'h3': Style(
-            color: _Colors.textPrimary,
+            color: _Colors.textPrimary(isDark),
             fontSize: FontSize(16),
             fontWeight: FontWeight.w500,
             margin: Margins.only(top: 16, bottom: 6),
           ),
-          'p': Style(
-            margin: Margins.only(bottom: 16),
-          ),
-          'a': Style(
-            color: const Color(0xFFC0392B),
-            textDecoration: TextDecoration.none,
-          ),
-          'strong': Style(
-            color: _Colors.textPrimary,
-            fontWeight: FontWeight.w500,
-          ),
-          'em': Style(
-            color: const Color(0xFFAAAAAA),
-            fontStyle: FontStyle.italic,
-          ),
+          'p': Style(margin: Margins.only(bottom: 16)),
+          'a': Style(color: AppColors.accent, textDecoration: TextDecoration.none),
+          'strong': Style(color: _Colors.textPrimary(isDark), fontWeight: FontWeight.w500),
+          'em': Style(color: isDark ? const Color(0xFFAAAAAA) : const Color(0xFF666666), fontStyle: FontStyle.italic),
           'blockquote': Style(
-            color: const Color(0xFFAAAAAA),
-            border: const Border(
-              left: BorderSide(color: Color(0xFFC0392B), width: 3),
-            ),
+            color: isDark ? const Color(0xFFAAAAAA) : const Color(0xFF666666),
+            border: const Border(left: BorderSide(color: AppColors.accent, width: 3)),
             padding: HtmlPaddings.only(left: 16),
             margin: Margins.symmetric(vertical: 16),
             fontStyle: FontStyle.italic,
           ),
-          'figure': Style(
-            margin: Margins.symmetric(vertical: 16),
-          ),
-          'figcaption': Style(
-            color: _Colors.textMuted,
-            fontSize: FontSize(12),
-            textAlign: TextAlign.center,
-            margin: Margins.only(top: 6),
-          ),
-          'ul': Style(
-            margin: Margins.only(bottom: 16),
-          ),
-          'ol': Style(
-            margin: Margins.only(bottom: 16),
-          ),
-          'li': Style(
-            margin: Margins.only(bottom: 6),
-          ),
-          // Secciones personalizadas del blog
+          'figure': Style(margin: Margins.symmetric(vertical: 16)),
+          'figcaption': Style(color: _Colors.textMuted(isDark), fontSize: FontSize(12), textAlign: TextAlign.center, margin: Margins.only(top: 6)),
+          'ul': Style(margin: Margins.only(bottom: 16)),
+          'ol': Style(margin: Margins.only(bottom: 16)),
+          'li': Style(margin: Margins.only(bottom: 6)),
           'section': Style(
-            backgroundColor: const Color(0xFF1A1A1A),
+            backgroundColor: _Colors.surf(isDark),
             padding: HtmlPaddings.all(12),
             margin: Margins.symmetric(vertical: 12),
           ),
@@ -389,7 +362,7 @@ class _HtmlContent extends StatelessWidget {
                     memCacheWidth: ((screenWidth - 40) * 2).toInt(),
                     placeholder: (_, __) => Container(
                       height: 200,
-                      color: const Color(0xFF1A1A1A),
+                      color: _Colors.surf(isDark),
                     ),
                     errorWidget: (_, __, ___) => const SizedBox.shrink(),
                   ),
@@ -411,6 +384,7 @@ class _PaywallBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Column(
@@ -431,7 +405,7 @@ class _PaywallBlock extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   height: 14,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2A2A2A),
+                    color: _Colors.surf(isDark),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   width: i == 4 ? 160 : double.infinity,
@@ -454,22 +428,22 @@ class _PaywallBlock extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          const Text(
+          Text(
             'Contenido exclusivo para suscriptores',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: _Colors.textPrimary,
+              color: _Colors.textPrimary(isDark),
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Accede a análisis en profundidad y cobertura '
             'completa de la política internacional.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: _Colors.textSecondary,
+              color: _Colors.textSecondary(isDark),
               fontSize: 13,
               height: 1.5,
             ),
@@ -525,14 +499,14 @@ class _PaywallBlock extends StatelessWidget {
   }
 }
 
-// ─── Colores ──────────────────────────────────────────────────────────────────
+// ─── Colores dinámicos (delegados a AppColors según tema) ────────────────────
 class _Colors {
-  static const background = Color(0xFF0D0D0D);
-  static const surface = Color(0xFF1A1A1A);
-  static const border = Color(0xFF242424);
-  static const textPrimary = Color(0xFFFFFFFF);
-  static const textSecondary = Color(0xFF888888);
-  static const textMuted = Color(0xFF555555);
+  static Color bg(bool d)   => AppColors.bg(d);
+  static Color surf(bool d) => AppColors.surf(d);
+  static Color bord(bool d) => AppColors.bord(d);
+  static Color textPrimary(bool d)   => AppColors.textPri(d);
+  static Color textSecondary(bool d) => AppColors.textSec(d);
+  static Color textMuted(bool d)     => AppColors.textMut(d);
 }
 
 // ─── Skeleton del contenido mientras carga ────────────────────────────────────
@@ -541,45 +515,32 @@ class _ContentSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
+    final skeletonColor = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE0D9CF);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Simula líneas de texto
           ...List.generate(12, (i) {
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               height: 13,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              width: i % 4 == 3
-                  ? MediaQuery.of(context).size.width * 0.6
-                  : double.infinity,
+              decoration: BoxDecoration(color: skeletonColor, borderRadius: BorderRadius.circular(4)),
+              width: i % 4 == 3 ? MediaQuery.of(context).size.width * 0.6 : double.infinity,
             );
           }),
           const SizedBox(height: 20),
-          // Simula una imagen
           Container(
             height: 200,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: BoxDecoration(color: skeletonColor, borderRadius: BorderRadius.circular(8)),
           ),
           const SizedBox(height: 20),
           ...List.generate(8, (i) => Container(
             margin: const EdgeInsets.only(bottom: 10),
             height: 13,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            width: i % 3 == 2
-                ? MediaQuery.of(context).size.width * 0.5
-                : double.infinity,
+            decoration: BoxDecoration(color: skeletonColor, borderRadius: BorderRadius.circular(4)),
+            width: i % 3 == 2 ? MediaQuery.of(context).size.width * 0.5 : double.infinity,
           )),
         ],
       ),
@@ -594,17 +555,18 @@ class _ContentError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          const Text('Error al cargar el contenido',
-              style: TextStyle(color: Color(0xFF888888))),
+          Text('Error al cargar el contenido',
+              style: TextStyle(color: _Colors.textSecondary(isDark))),
           const SizedBox(height: 12),
           TextButton(
             onPressed: onRetry,
             child: const Text('Reintentar',
-                style: TextStyle(color: Color(0xFFC0392B))),
+                style: TextStyle(color: AppColors.accent)),
           ),
         ],
       ),
