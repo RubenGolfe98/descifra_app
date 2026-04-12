@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/article.dart';
 import '../models/article_detail.dart';
@@ -89,6 +90,17 @@ class _ArticleShell extends StatelessWidget {
             icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
             onPressed: () => Navigator.of(context).pop(),
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
+              onPressed: () {
+                final url = article.slug.isNotEmpty
+                    ? 'https://www.descifrandolaguerra.es/${article.slug}/'
+                    : 'https://www.descifrandolaguerra.es/?p=${article.id}';
+                Share.share('${article.title}\n\n$url');
+              },
+            ),
+          ],
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(
               fit: StackFit.expand,

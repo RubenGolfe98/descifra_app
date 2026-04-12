@@ -3,11 +3,12 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_notifier.dart';
+import 'services/connectivity_service.dart';
 import 'services/theme_notifier.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_colors.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
@@ -27,6 +28,7 @@ class DlgApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthNotifier()..initialize()),
         ChangeNotifierProvider(create: (_) => ThemeNotifier()..initialize()),
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
       ],
       child: const _AppRoot(),
     );

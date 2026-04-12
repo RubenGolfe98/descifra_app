@@ -7,6 +7,7 @@ class Article {
   final String imageUrl;
   final bool isPremium;
   final ArticleCategory category;
+  final String slug;
 
   const Article({
     required this.id,
@@ -17,6 +18,7 @@ class Article {
     required this.imageUrl,
     required this.isPremium,
     this.category = ArticleCategory.noticia,
+    this.slug = '',
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
@@ -36,6 +38,7 @@ class Article {
       imageUrl: json['jetpack_featured_media_url'] ?? '',
       isPremium: classList.contains('rcp-is-restricted'),
       category: category,
+      slug: json['slug'] ?? '',
     );
   }
 

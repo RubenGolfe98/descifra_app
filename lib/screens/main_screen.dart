@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../widgets/offline_banner.dart';
 import 'home_screen.dart';
 import 'regions_screen.dart';
 import 'analysis_screen.dart';
@@ -37,10 +38,16 @@ class _MainScreenState extends State<MainScreen> {
       child: Scaffold(
         backgroundColor: AppColors.bg(isDark),
         body: IndexedStack(index: _currentIndex, children: screens),
-        bottomNavigationBar: _BottomNav(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
-          isDark: isDark,
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const OfflineBanner(),
+            _BottomNav(
+              currentIndex: _currentIndex,
+              onTap: (index) => setState(() => _currentIndex = index),
+              isDark: isDark,
+            ),
+          ],
         ),
       ),
     );

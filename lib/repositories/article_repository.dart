@@ -10,7 +10,7 @@ class ArticleRepository {
   static const String _baseUrl =
       'https://www.descifrandolaguerra.es/wp-json/wp/v2';
   static const String _listFields =
-      'id,date,title,jetpack_featured_media_url,yoast_head_json.description,yoast_head_json.author,class_list';
+      'id,date,title,slug,jetpack_featured_media_url,yoast_head_json.description,yoast_head_json.author,class_list';
   static const String _detailFields =
       'id,date,title,content,jetpack_featured_media_url,yoast_head_json.author,class_list';
 
