@@ -23,11 +23,11 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 
 ### Perfil, ajustes y acceso
 <p align="center">
+  <img src="screenshots/exclusive_content.png" width="180" alt="Contenido exclusivo"/>
   <img src="screenshots/login_app.png" width="180" alt="Pantalla de login"/>
   <img src="screenshots/login_web.png" width="180" alt="Login web seguro"/>
   <img src="screenshots/logged_profile.png" width="180" alt="Perfil con membresía"/>
   <img src="screenshots/settings.png" width="180" alt="Ajustes"/>
-  <img src="screenshots/exclusive_content.png" width="180" alt="Contenido exclusivo"/>
 </p>
 
 ---
