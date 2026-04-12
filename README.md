@@ -1,6 +1,6 @@
 # Descifrando la Guerra — App Móvil
 
-App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguerra.es), medio de análisis y noticias de política internacional. Desarrollada en Flutter para Android.
+App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguerra.es), medio de análisis y noticias de política internacional. Desarrollada en Flutter para Android y IOS.
 
 ---
 
