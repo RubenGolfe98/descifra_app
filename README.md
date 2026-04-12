@@ -114,7 +114,39 @@ dart run flutter_native_splash:create
 flutter run
 ```
 
-### Build de producción
+### Tests
+
+```bash
+# Ejecutar todos los tests
+flutter test
+
+# Ejecutar con reporte de cobertura
+flutter test --coverage
+
+# Ejecutar un archivo específico
+flutter test test/models/article_test.dart
+```
+
+Los tests cubren modelos, repositorios, servicios y colores:
+
+```
+test/
+├── models/
+│   ├── article_test.dart
+│   ├── auth_state_test.dart
+│   └── region_test.dart
+├── repositories/
+│   └── article_repository_test.dart
+├── services/
+│   ├── auth_notifier_test.dart
+│   └── theme_notifier_test.dart
+└── theme/
+    └── app_colors_test.dart
+```
+
+---
+
+
 
 ```bash
 # APK
