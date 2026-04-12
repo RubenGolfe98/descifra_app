@@ -1,10 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) setState(() => _version = info.version);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +97,80 @@ class SettingsScreen extends StatelessWidget {
             pri: pri,
             sec: sec,
           ),
+          const SizedBox(height: 24),
+
+          // ── Acerca de ────────────────────────────────────────────────────
+          _SectionHeader(label: 'Acerca de', textColor: sec),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: surf,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: bord, width: 0.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Descifrando la Guerra',
+                        style: TextStyle(color: pri, fontSize: 14, fontWeight: FontWeight.w600)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.accentDim,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'v${_version.isEmpty ? '1.0.0' : _version}',
+                        style: const TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Desarrollada por RubenGolfe98. Esta aplicación es de código abierto y puedes contribuir o reportar problemas en GitHub.',
+                  style: TextStyle(color: sec, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                Divider(color: bord, thickness: 0.5),
+                const SizedBox(height: 12),
+                Text(
+                  '⭐ ¿Te ha gustado la app?',
+                  style: TextStyle(color: pri, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Si la app te resulta útil, agradecería mucho que le des una estrella al proyecto en GitHub.',
+                  style: TextStyle(color: sec, fontSize: 12, height: 1.5),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final uri = Uri.parse('https://github.com/RubenGolfe98/descifra_app');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    icon: const Icon(Icons.star_outline, size: 16),
+                    label: const Text('Ver en GitHub'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.accent,
+                      side: const BorderSide(color: AppColors.accent, width: 0.5),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
