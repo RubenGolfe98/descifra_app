@@ -72,4 +72,32 @@ void main() {
       });
     });
   });
+
+   group('badge and status colors', () {
+    test('premiumBg is semi-transparent accent', () {
+      expect(AppColors.premiumBg, const Color(0x33C0392B));
+    });
+    test('analysisBg and analysisText are defined', () {
+      expect(AppColors.analysisBg, isNotNull);
+      expect(AppColors.analysisText, isNotNull);
+    });
+    test('newsBg and newsText are defined', () {
+      expect(AppColors.newsBg, isNotNull);
+      expect(AppColors.newsText, isNotNull);
+    });
+    test('subscriberText is green', () {
+      expect(AppColors.subscriberText, const Color(0xFF4CAF50));
+    });
+    test('subscriberBorder is dark green', () {
+      expect(AppColors.subscriberBorder, const Color(0xFF2E5E2E));
+    });
+    test('subscriberBg is semi-transparent green', () {
+      expect(AppColors.subscriberBg, const Color(0x224CAF50));
+    });
+    test('accentDim is semi-transparent accent', () {
+      expect(AppColors.accentDim, const Color(0x33C0392B));
+    });
+  });
 }
+
+ 

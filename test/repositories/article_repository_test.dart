@@ -227,4 +227,61 @@ void main() {
       expect(articles.first.category, ArticleCategory.analisis);
     });
   });
+
+  group('ArticleRepository - searchArticles', () {
+    test('returns articles matching query', () async {
+      final repo = ArticleRepository(
+        client: _mockClient([_articleJson]),
+        cache: MockArticleCache(),
+      );
+      final articles = await repo.searchArticles('iran');
+      expect(articles.length, 1);
+      expect(articles.first.title, 'Test Article');
+    });
+
+    test('returns empty list for empty query', () async {
+      final repo = ArticleRepository(
+        client: _mockClient([_articleJson]),
+        cache: MockArticleCache(),
+      );
+      final articles = await repo.searchArticles('');
+      expect(articles, isEmpty);
+    });
+
+    test('returns empty list for whitespace query', () async {
+      final repo = ArticleRepository(
+        client: _mockClient([_articleJson]),
+        cache: MockArticleCache(),
+      );
+      final articles = await repo.searchArticles('   ');
+      expect(articles, isEmpty);
+    });
+
+    test('returns empty list on network error', () async {
+      final repo = ArticleRepository(
+        client: MockClient((_) async => throw Exception('error')),
+        cache: MockArticleCache(),
+      );
+      final articles = await repo.searchArticles('iran');
+      expect(articles, isEmpty);
+    });
+
+    test('returns empty list on non-200 status', () async {
+      final repo = ArticleRepository(
+        client: _mockClient([], statusCode: 404),
+        cache: MockArticleCache(),
+      );
+      final articles = await repo.searchArticles('iran');
+      expect(articles, isEmpty);
+    });
+
+    test('respects perPage parameter', () async {
+      final repo = ArticleRepository(
+        client: _mockClient([_articleJson]),
+        cache: MockArticleCache(),
+      );
+      final articles = await repo.searchArticles('test', perPage: 5);
+      expect(articles.length, lessThanOrEqualTo(5));
+    });
+  });
 }

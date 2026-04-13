@@ -344,4 +344,25 @@ class ArticleRepository {
       return null;
     }
   }
+
+  Future<List<Article>> searchArticles(String query, {int perPage = 10}) async {
+    if (query.trim().isEmpty) return [];
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'search': query.trim(),
+        'search_columns': 'post_title',
+        'per_page': '$perPage',
+        '_fields': _listFields,
+      });
+
+      final response = await _client.get(uri).timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return [];
+
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((j) => Article.fromJson(j)).toList();
+    } catch (e) {
+      if (kDebugMode) debugPrint('📦 [Repo] Error búsqueda "$query": $e');
+      return [];
+    }
+  }
 }

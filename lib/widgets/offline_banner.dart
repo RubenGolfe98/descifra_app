@@ -56,48 +56,42 @@ class _OfflineBannerState extends State<OfflineBanner> {
     final isOnline = context.watch<ConnectivityService>().isOnline;
     _handleConnectivityChange(isOnline);
 
-    return AnimatedSlide(
-      offset: _visible ? Offset.zero : const Offset(0, 1),
+    return AnimatedSize(
       duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: AnimatedOpacity(
-        opacity: _visible ? 1 : 0,
+      child: _visible ? AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          color: _showRestoredMessage
-              ? const Color(0xFF1A3A1A)
-              : const Color(0xFF2A2A2A),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                _showRestoredMessage
-                    ? Icons.wifi_outlined
-                    : Icons.wifi_off_outlined,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        color: _showRestoredMessage
+            ? const Color(0xFF1A3A1A)
+            : const Color(0xFF2A2A2A),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _showRestoredMessage
+                  ? Icons.wifi_outlined
+                  : Icons.wifi_off_outlined,
+              color: _showRestoredMessage
+                  ? const Color(0xFF4CAF50)
+                  : const Color(0xFFAAAAAA),
+              size: 14,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _showRestoredMessage
+                  ? 'Conexión restaurada'
+                  : 'Sin conexión — mostrando contenido guardado',
+              style: TextStyle(
                 color: _showRestoredMessage
                     ? const Color(0xFF4CAF50)
                     : const Color(0xFFAAAAAA),
-                size: 14,
+                fontSize: 12,
               ),
-              const SizedBox(width: 8),
-              Text(
-                _showRestoredMessage
-                    ? 'Conexión restaurada'
-                    : 'Sin conexión — mostrando contenido guardado',
-                style: TextStyle(
-                  color: _showRestoredMessage
-                      ? const Color(0xFF4CAF50)
-                      : const Color(0xFFAAAAAA),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
+      ) : const SizedBox.shrink(),
     );
   }
 }

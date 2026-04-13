@@ -86,6 +86,17 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
     }
   }
 
+  Future<void> _refresh() async {
+    setState(() {
+      _articles.clear();
+      _currentPage = 1;
+      _hasMore = true;
+      _initialized = false;
+      _load();
+    });
+    await _firstPageFuture;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
@@ -97,7 +108,11 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      body: CustomScrollView(
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        color: AppColors.accent,
+        backgroundColor: surf,
+        child: CustomScrollView(
         controller: _scrollController,
         slivers: [
           SliverAppBar(
@@ -121,16 +136,6 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                       placeholderBuilder: (_) => const SizedBox.shrink(),
                     ),
                   ),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0.3, 1.0],
-                        colors: [Colors.transparent, bg],
-                      ),
-                    ),
-                  ),
                   Positioned(
                     bottom: 16, left: 20, right: 20,
                     child: Column(
@@ -142,7 +147,7 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                         ),
                         Text(
                           '${widget.region.count} artículos',
-                          style: TextStyle(color: sec, fontSize: 12),
+                          style: TextStyle(color: pri, fontSize: 12),
                         ),
                       ],
                     ),
@@ -215,6 +220,7 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
+        ),
       ),
     );
   }

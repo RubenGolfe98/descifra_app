@@ -63,13 +63,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
 
           // ── Apariencia ──────────────────────────────────────────────────
-          _SectionHeader(label: 'Apariencia', textColor: sec),
+          _SectionHeader(label: 'Apariencia', textColor: AppColors.accent),
           const SizedBox(height: 12),
           _ThemeSelector(isDark: isDark, surf: surf, bord: bord, pri: pri),
           const SizedBox(height: 24),
 
           // ── Tamaño de letra ─────────────────────────────────────────────
-          _SectionHeader(label: 'Tamaño de letra', textColor: sec),
+          _SectionHeader(label: 'Tamaño de letra', textColor: AppColors.accent),
           const SizedBox(height: 8),
           Text(
             'Vista previa del texto con el tamaño seleccionado.',
@@ -87,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // ── Tipo de letra ────────────────────────────────────────────────
-          _SectionHeader(label: 'Tipo de letra', textColor: sec),
+          _SectionHeader(label: 'Tipo de letra', textColor: AppColors.accent),
           const SizedBox(height: 12),
           _FontFamilySelector(
             current: theme.font,
@@ -100,7 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // ── Acerca de ────────────────────────────────────────────────────
-          _SectionHeader(label: 'Acerca de', textColor: sec),
+          _SectionHeader(label: 'Acerca de', textColor: AppColors.accent),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
@@ -132,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Desarrollada por RubenGolfe98. Esta aplicación es de código abierto y puedes contribuir o reportar problemas en GitHub.',
+                  'Desarrollada por Rubén Golfe Cazalla',
                   style: TextStyle(color: sec, fontSize: 13),
                 ),
                 const SizedBox(height: 16),
@@ -190,7 +190,7 @@ class _SectionHeader extends StatelessWidget {
       style: TextStyle(
         color: textColor,
         fontSize: 11,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800,
         letterSpacing: 1.2,
       ),
     );

@@ -11,6 +11,7 @@ import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
+import '../widgets/image_viewer.dart';
 import '../widgets/paywall_dialog.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
@@ -106,7 +107,9 @@ class _ArticleShell extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 if (article.imageUrl.isNotEmpty)
-                  CachedNetworkImage(
+                  GestureDetector(
+                    onTap: () => showImageViewer(context, article.imageUrl),
+                    child: CachedNetworkImage(
                     imageUrl: article.imageUrl,
                     fit: BoxFit.cover,
                     memCacheWidth: 800,
@@ -114,6 +117,7 @@ class _ArticleShell extends StatelessWidget {
                     fadeInDuration: const Duration(milliseconds: 150),
                     placeholder: (_, __) => Container(color: _Colors.surf(isDark)),
                     errorWidget: (_, __, ___) => Container(color: _Colors.surf(isDark)),
+                  ),
                   ),
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -364,19 +368,21 @@ class _HtmlContent extends StatelessWidget {
               if (src.isEmpty) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: CachedNetworkImage(
-                    imageUrl: src,
-                    width: screenWidth - 40,
-                    fit: BoxFit.cover,
-                    // Limitar resolución en memoria para evitar OOM crash
-                    memCacheWidth: ((screenWidth - 40) * 2).toInt(),
-                    placeholder: (_, __) => Container(
-                      height: 200,
-                      color: _Colors.surf(isDark),
+                child: GestureDetector(
+                  onTap: () => showImageViewer(context, src),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: src,
+                      width: screenWidth - 40,
+                      fit: BoxFit.cover,
+                      memCacheWidth: ((screenWidth - 40) * 2).toInt(),
+                      placeholder: (_, __) => Container(
+                        height: 200,
+                        color: _Colors.surf(isDark),
+                      ),
+                      errorWidget: (_, __, ___) => const SizedBox.shrink(),
                     ),
-                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
                   ),
                 ),
               );

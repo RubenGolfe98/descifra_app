@@ -8,6 +8,7 @@ import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
 import 'article_detail_screen.dart';
+import 'search_screen.dart';
 import '../widgets/paywall_dialog.dart';
 
 // ─── Pantalla principal ───────────────────────────────────────────────────────
@@ -144,28 +145,49 @@ class _AppHeader extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ClipOval(
-            child: Image.asset(
-              isDark ? 'assets/images/logo_dlg_dark.png' : 'assets/images/logo_dlg.png',
-              width: 32,
-              height: 32,
-              fit: BoxFit.cover,
-            ),
+      child: SizedBox(
+        width: double.infinity,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+          // Centro — logo + título
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipOval(
+                child: Image.asset(
+                  isDark ? 'assets/images/logo_dlg_dark.png' : 'assets/images/logo_dlg.png',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'DESCIFRANDO LA GUERRA',
+                style: context.read<ThemeNotifier>().font.style(
+                  color: AppColors.accent,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Text(
-            'DESCIFRANDO LA GUERRA',
-            style: context.read<ThemeNotifier>().font.style(
-              color: AppColors.accent,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
+          // Derecha — lupa
+          Positioned(
+            right: 0,
+            child: IconButton(
+              icon: const Icon(Icons.search, color: AppColors.accent, size: 22),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              ),
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -363,7 +385,7 @@ class _ArticleMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mut = AppColors.textSec(isDark);
+    final mut = AppColors.textPri(isDark);
     return Row(
       children: [
         Flexible(child: Text(author, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: mut, fontSize: 10))),
@@ -389,7 +411,7 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(color: AppColors.textMut(isDark), fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 1),
+        style: TextStyle(color: AppColors.textSec(isDark), fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 1),
       ),
     );
   }

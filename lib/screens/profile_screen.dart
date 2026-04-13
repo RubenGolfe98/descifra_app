@@ -5,6 +5,7 @@ import '../models/auth_state.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import 'books_screen.dart';
 import 'login_webview.dart';
 import 'settings_screen.dart';
 
@@ -93,7 +94,7 @@ class _LoggedInView extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.settings_outlined, color: mut, size: 22),
+                icon: Icon(Icons.settings_outlined, color: sec, size: 22),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 ),
@@ -148,8 +149,51 @@ class _LoggedInView extends StatelessWidget {
               icon: const Icon(Icons.open_in_new, size: 16),
               label: const Text('Gestionar membresía en la web'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: sec,
-                side: BorderSide(color: bord, width: 0.5),
+                foregroundColor: pri,
+                side: BorderSide(color: sec, width: 0.8),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Libros
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BooksScreen()),
+              ),
+              icon: const Icon(Icons.menu_book_outlined, size: 16),
+              label: const Text('Libros'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: pri,
+                side: BorderSide(color: sec, width: 0.8),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Seminarios
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final uri = Uri.parse('https://www.descifrandolaguerra.es/seminarios/');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              icon: const Icon(Icons.school_outlined, size: 16),
+              label: const Text('Seminarios'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: pri,
+                side: BorderSide(color: sec, width: 0.8),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -266,11 +310,11 @@ class _MembershipCard extends StatelessWidget {
             const SizedBox(height: 10),
             Row(
               children: [
-                Icon(Icons.calendar_today_outlined, color: mut, size: 13),
+                Icon(Icons.calendar_today_outlined, color: sec, size: 13),
                 const SizedBox(width: 6),
                 Text(
                   'Renovación: ${membership.expiresAt}',
-                  style: TextStyle(color: sec, fontSize: 12),
+                  style: TextStyle(color: pri, fontSize: 12),
                 ),
               ],
             ),
@@ -305,15 +349,10 @@ class _LoginView extends StatelessWidget {
             children: [
               Text(
                 'Iniciar sesión',
-                style: TextStyle(
-                  color: pri,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(color: pri, fontSize: 24, fontWeight: FontWeight.w500),
               ),
               IconButton(
-                icon: Icon(Icons.settings_outlined,
-                    color: AppColors.textMut(isDark), size: 22),
+                icon: Icon(Icons.settings_outlined, color: sec, size: 22),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 ),
@@ -323,7 +362,7 @@ class _LoginView extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Accede a todo el contenido exclusivo de Descifrando la Guerra.',
-            style: TextStyle(color: sec, fontSize: 14, height: 1.5),
+            style: TextStyle(color: pri, fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: 32),
 
@@ -333,12 +372,10 @@ class _LoginView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0x22C0392B),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                    color: const Color(0x55C0392B), width: 0.5),
+                border: Border.all(color: const Color(0x55C0392B), width: 0.5),
               ),
               child: Text(auth.errorMessage!,
-                  style: const TextStyle(
-                      color: AppColors.accent, fontSize: 13)),
+                  style: const TextStyle(color: AppColors.accent, fontSize: 13)),
             ),
             const SizedBox(height: 16),
           ],
@@ -352,14 +389,13 @@ class _LoginView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.shield_outlined,
-                    color: Color(0xFF4CAF50), size: 20),
+                const Icon(Icons.shield_outlined, color: Color(0xFF4CAF50), size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Tu contraseña nunca es vista por la app — '
                     'introduces tus datos directamente en la web segura.',
-                    style: TextStyle(color: sec, fontSize: 12, height: 1.5),
+                    style: TextStyle(color: pri, fontSize: 12, height: 1.5),
                   ),
                 ),
               ],
@@ -370,40 +406,59 @@ class _LoginView extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed:
-                  auth.isLoading ? null : () => _openLoginWebView(context),
+              onPressed: auth.isLoading ? null : () => _openLoginWebView(context),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 disabledBackgroundColor: AppColors.accent.withOpacity(0.4),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: auth.isLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
-                    )
+                  ? const SizedBox(width: 18, height: 18,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Text('Iniciar sesión',
                       style: TextStyle(fontSize: 15, color: Colors.white)),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
 
+          // Libros
           SizedBox(
             width: double.infinity,
-            child: TextButton(
-              onPressed: auth.isLoading
-                  ? null
-                  : () => context.read<AuthNotifier>().continueAsGuest(),
-              style: TextButton.styleFrom(
-                foregroundColor: sec,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BooksScreen()),
               ),
-              child: const Text('Continuar sin iniciar sesión',
-                  style: TextStyle(fontSize: 14)),
+              icon: const Icon(Icons.menu_book_outlined, size: 16),
+              label: const Text('Libros'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: pri,
+                side: BorderSide(color: sec, width: 0.8),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Seminarios
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final uri = Uri.parse('https://www.descifrandolaguerra.es/seminarios/');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              icon: const Icon(Icons.school_outlined, size: 16),
+              label: const Text('Seminarios'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: pri,
+                side: BorderSide(color: sec, width: 0.8),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
           ),
         ],

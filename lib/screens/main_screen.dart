@@ -74,7 +74,7 @@ class _BottomNav extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         selectedItemColor: AppColors.accent,
-        unselectedItemColor: AppColors.textMut(isDark),
+        unselectedItemColor: AppColors.textSec(isDark),
         selectedFontSize: 9,
         unselectedFontSize: 9,
         type: BottomNavigationBarType.fixed,

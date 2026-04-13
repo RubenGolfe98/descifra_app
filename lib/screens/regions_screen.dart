@@ -5,6 +5,7 @@ import '../models/region.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import 'region_articles_screen.dart';
+import 'region_maps_screen.dart';
 
 class RegionsScreen extends StatelessWidget {
   const RegionsScreen({super.key});
@@ -55,15 +56,73 @@ class _RegionCard extends StatelessWidget {
 
   const _RegionCard({required this.region, required this.isDark});
 
+  void _showOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surf(isDark),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.bord(isDark),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                region.name,
+                style: TextStyle(
+                  color: AppColors.textPri(isDark),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.article_outlined, color: AppColors.accent),
+              title: Text('Artículos', style: TextStyle(color: AppColors.textPri(isDark))),
+              subtitle: Text('${region.count} artículos', style: TextStyle(color: AppColors.textSec(isDark), fontSize: 12)),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => RegionArticlesScreen(region: region)),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.map_outlined, color: AppColors.accent),
+              title: Text('Mapas', style: TextStyle(color: AppColors.textPri(isDark))),
+              subtitle: Text('Infografías y mapas geopolíticos', style: TextStyle(color: AppColors.textSec(isDark), fontSize: 12)),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => RegionMapsScreen(region: region)),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final surf = AppColors.surf(isDark);
-    final gradientEnd = isDark ? const Color(0xDD1A1A1A) : const Color(0xDDEDE8DF);
 
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => RegionArticlesScreen(region: region)),
-      ),
+      onTap: () => _showOptions(context),
       child: Container(
         decoration: BoxDecoration(
           color: surf,
@@ -82,19 +141,6 @@ class _RegionCard extends StatelessWidget {
                     fit: BoxFit.contain,
                     colorFilter: const ColorFilter.mode(Color(0x55C0392B), BlendMode.srcIn),
                     placeholderBuilder: (_) => const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.3, 1.0],
-                    colors: [Colors.transparent, gradientEnd],
                   ),
                 ),
               ),
@@ -121,7 +167,7 @@ class _RegionCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       '${region.count} artículos',
-                      style: TextStyle(color: AppColors.textMut(isDark), fontSize: 10),
+                      style: TextStyle(color: AppColors.textSec(isDark), fontSize: 10),
                     ),
                   ],
                 ),

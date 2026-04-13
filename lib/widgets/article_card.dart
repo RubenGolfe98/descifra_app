@@ -12,10 +12,15 @@ import 'paywall_dialog.dart';
 /// Gestiona internamente el tap, paywall y navegación al detalle.
 class ArticleCard extends StatelessWidget {
   final Article article;
+  final VoidCallback? onTap;
 
-  const ArticleCard({super.key, required this.article});
+  const ArticleCard({super.key, required this.article, this.onTap});
 
   void _handleTap(BuildContext context) {
+    if (onTap != null) {
+      onTap!();
+      return;
+    }
     final auth = context.read<AuthNotifier>();
     final canAccess = !article.isPremium ||
         (auth.state.isLoggedIn && auth.state.isSubscriber);
@@ -70,7 +75,7 @@ class ArticleCard extends StatelessWidget {
                     article.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColors.textPri(isDark), fontSize: 13, fontWeight: FontWeight.w500, height: 1.35),
+                    style: TextStyle(color: AppColors.textPri(isDark), fontSize: 13, fontWeight: FontWeight.w800, height: 1.35),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -84,7 +89,7 @@ class ArticleCard extends StatelessWidget {
                     children: [
                       ArticleCategoryBadge(category: article.category),
                       const SizedBox(width: 6),
-                      Expanded(child: Text(article.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textSec(isDark), fontSize: 10))),
+                      Expanded(child: Text(article.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textPri(isDark), fontSize: 10))),
                       if (article.isPremium) const ArticlePremiumBadge(),
                     ],
                   ),
@@ -141,7 +146,7 @@ class ArticlePremiumBadge extends StatelessWidget {
         children: const [
           Icon(Icons.lock_outline, color: AppColors.premiumText, size: 8),
           SizedBox(width: 3),
-          Text('Premium',
+          Text('Exclusivo',
               style: TextStyle(color: AppColors.premiumText, fontSize: 9)),
         ],
       ),
