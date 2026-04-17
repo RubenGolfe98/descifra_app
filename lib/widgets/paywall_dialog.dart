@@ -80,7 +80,7 @@ class _PaywallSheet extends StatelessWidget {
           // Descripción
           Text(
             isLoggedIn
-                ? 'Este artículo es exclusivo para suscriptores. Activa tu suscripción para acceder a todo el contenido.'
+                ? 'Tu suscripción activa no incluye este contenido. Amplía tu plan para acceder a todos los artículos exclusivos.'
                 : 'Este artículo es exclusivo para suscriptores de Descifrando la Guerra.',
             textAlign: TextAlign.center,
             style: const TextStyle(
@@ -91,7 +91,7 @@ class _PaywallSheet extends StatelessWidget {
           ),
           const SizedBox(height: 28),
 
-          // Botón suscribirse
+          // Botón suscribirse / ampliar suscripción
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -102,8 +102,10 @@ class _PaywallSheet extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Suscribirme',
-                  style: TextStyle(fontSize: 15, color: Colors.white)),
+              child: Text(
+                isLoggedIn ? 'Ampliar suscripción' : 'Suscribirme',
+                style: const TextStyle(fontSize: 15, color: Colors.white),
+              ),
             ),
           ),
 

@@ -15,12 +15,10 @@ class LoggingHttpClient extends http.BaseClient {
       debugPrint('┌─── REQUEST ────────────────────────────────');
       debugPrint('│ ${request.method} ${request.url}');
       if (request is http.Request && request.body.isNotEmpty) {
-        // Oculta la contraseña en los logs
         final sanitized = request.body.replaceAll(
-            RegExp(r'"password"\s*:\s*"[^"]*"'), '"password":"***"');
+            RegExp(r'password=[^&]+'), 'password=***');
         debugPrint('│ Body: $sanitized');
       }
-      debugPrint('│ Headers: ${request.headers}');
       debugPrint('└────────────────────────────────────────────');
     }
 
@@ -29,18 +27,25 @@ class LoggingHttpClient extends http.BaseClient {
     stopwatch.stop();
 
     if (kDebugMode) {
-      // Leemos el body sin consumir el stream original
       final bytes = await response.stream.toBytes();
       final bodyString = String.fromCharCodes(bytes);
+
+      // Limitar el body a 500 chars para respuestas HTML largas
+      final isHtml = bodyString.trimLeft().startsWith('<!DOCTYPE') ||
+          bodyString.trimLeft().startsWith('<html');
+      final displayBody = isHtml
+          ? '[HTML ${bytes.length} bytes — omitido]'
+          : (bodyString.length > 500
+              ? '${bodyString.substring(0, 500)}…'
+              : bodyString);
 
       debugPrint('');
       debugPrint('┌─── RESPONSE ───────────────────────────────');
       debugPrint('│ ${response.statusCode} ${request.url}');
       debugPrint('│ Tiempo: ${stopwatch.elapsedMilliseconds}ms');
-      debugPrint('│ Body: $bodyString');
+      debugPrint('│ Body: $displayBody');
       debugPrint('└────────────────────────────────────────────');
 
-      // Devolvemos una nueva respuesta con el body ya leído
       return http.StreamedResponse(
         Stream.value(bytes),
         response.statusCode,

@@ -8,6 +8,7 @@ import '../models/article.dart';
 import '../models/article_detail.dart';
 import '../repositories/article_repository.dart';
 import '../services/auth_notifier.dart';
+import '../services/favorites_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
@@ -92,6 +93,7 @@ class _ArticleShell extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
           ),
           actions: [
+            _FavoriteButton(article: article),
             IconButton(
               icon: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
               onPressed: () {
@@ -104,28 +106,34 @@ class _ArticleShell extends StatelessWidget {
           ],
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(
-              fit: StackFit.expand,
               children: [
                 if (article.imageUrl.isNotEmpty)
-                  GestureDetector(
-                    onTap: () => showImageViewer(context, article.imageUrl),
-                    child: CachedNetworkImage(
-                    imageUrl: article.imageUrl,
-                    fit: BoxFit.cover,
-                    memCacheWidth: 800,
-                    memCacheHeight: 520,
-                    fadeInDuration: const Duration(milliseconds: 150),
-                    placeholder: (_, __) => Container(color: _Colors.surf(isDark)),
-                    errorWidget: (_, __, ___) => Container(color: _Colors.surf(isDark)),
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () => showImageViewer(context, article.imageUrl),
+                      child: CachedNetworkImage(
+                        imageUrl: article.imageUrl,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                        memCacheWidth: 800,
+                        fadeInDuration: const Duration(milliseconds: 150),
+                        placeholder: (_, __) => Container(color: _Colors.surf(isDark)),
+                        errorWidget: (_, __, ___) => Container(color: _Colors.surf(isDark)),
+                      ),
+                    ),
                   ),
-                  ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.4, 1.0],
-                      colors: [Colors.transparent, _Colors.bg(isDark)],
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.65, 1.0],
+                        colors: [
+                          Colors.transparent,
+                          isDark ? Colors.black : Colors.white,
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -588,6 +596,35 @@ class _ContentError extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Botón de favorito ────────────────────────────────────────────────────────
+class _FavoriteButton extends StatelessWidget {
+  final Article article;
+  const _FavoriteButton({required this.article});
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthNotifier>();
+    final favorites = context.watch<FavoritesService>();
+
+    // Solo mostrar si el usuario está logueado
+    if (!auth.state.isLoggedIn) return const SizedBox.shrink();
+
+    final isSaved = favorites.isSaved(article.id);
+
+    return IconButton(
+      icon: Icon(
+        isSaved ? Icons.bookmark : Icons.bookmark_outline,
+        color: isSaved ? AppColors.accent : Colors.white,
+        size: 22,
+      ),
+      onPressed: () async {
+        final cookies = auth.state.cookies ?? '';
+        await favorites.toggleFavorite(article.id, cookies);
+      },
     );
   }
 }

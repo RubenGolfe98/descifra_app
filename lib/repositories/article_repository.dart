@@ -15,9 +15,10 @@ class ArticleRepository {
       'id,date,title,content,jetpack_featured_media_url,yoast_head_json.author,class_list';
 
   // ─── Claves de caché ──────────────────────────────────────────────────────
-  static const String _cacheKeyLatest   = 'articles_latest';
-  static const String _cacheKeyAnalysis = 'articles_analysis';
-  static String _cacheKeyRegion(int id)  => 'articles_region_$id';
+  static const String _cacheKeyLatest      = 'articles_latest';
+  static const String _cacheKeyAnalysis    = 'articles_analysis';
+  static const String _cacheKeyInterviews  = 'articles_interviews';
+  static String _cacheKeyRegion(int id)    => 'articles_region_$id';
 
   final http.Client _client;
   final ArticleCache _cache;
@@ -131,7 +132,8 @@ class ArticleRepository {
     }
   }
 
-  static const int _analysisCategoryId = 255;
+  static const int _analysisCategoryId   = 255;
+  static const int _interviewsCategoryId = 271;
 
   Future<List<Article>> fetchAnalysisArticles({
     int perPage = 10,
@@ -174,6 +176,51 @@ class ArticleRepository {
       return _parseList(response.body);
     } catch (e) {
       if (kDebugMode) debugPrint('📦 [Repo] Error análisis p$page: $e');
+      return [];
+    }
+  }
+
+  Future<List<Article>> fetchInterviewArticles({
+    int perPage = 10,
+    void Function(List<Article>)? onRefreshed,
+  }) async {
+    const cacheKey = _cacheKeyInterviews;
+    final cached = await _cache.getList(key: cacheKey);
+
+    if (cached != null) {
+      final articles = _parseList(cached);
+      final stale = await _cache.isListStale(key: cacheKey);
+      if (stale) {
+        _fetchCategoryFromNetwork(_interviewsCategoryId, perPage, 1, cacheKey)
+            .then((fresh) {
+          if (fresh != null && onRefreshed != null) onRefreshed(fresh);
+        });
+      }
+      return articles;
+    }
+
+    final fresh = await _fetchCategoryFromNetwork(
+        _interviewsCategoryId, perPage, 1, cacheKey);
+    return fresh ?? [];
+  }
+
+  Future<List<Article>> fetchMoreInterviewArticles({
+    required int page,
+    int perPage = 10,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'categories': _interviewsCategoryId.toString(),
+        'per_page': perPage.toString(),
+        'page': page.toString(),
+        '_fields': _listFields,
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return [];
+      return _parseList(response.body);
+    } catch (e) {
+      if (kDebugMode) debugPrint('📦 [Repo] Error entrevistas p$page: $e');
       return [];
     }
   }
@@ -240,15 +287,19 @@ class ArticleRepository {
     }
   }
   /// Devuelve null si no se encuentra.
-  Future<Article?> fetchArticleBySlug(String slug) async {
+  Future<Article?> fetchArticleBySlug(String slug, {String? cookies}) async {
     try {
       final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
         'slug': slug,
         '_fields': _listFields,
       });
 
-      final response =
-          await _client.get(uri).timeout(const Duration(seconds: 10));
+      final headers = <String, String>{};
+      if (cookies != null && cookies.isNotEmpty) headers['Cookie'] = cookies;
+
+      final response = await _client
+          .get(uri, headers: headers.isEmpty ? null : headers)
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) return null;
 

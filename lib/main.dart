@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_notifier.dart';
+import 'services/favorites_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/theme_notifier.dart';
 import 'screens/main_screen.dart';
@@ -29,6 +30,7 @@ class DlgApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthNotifier()..initialize()),
         ChangeNotifierProvider(create: (_) => ThemeNotifier()..initialize()),
         ChangeNotifierProvider(create: (_) => ConnectivityService()),
+        ChangeNotifierProvider(create: (_) => FavoritesService()),
       ],
       child: const _AppRoot(),
     );
@@ -99,6 +101,21 @@ class _AppGateState extends State<_AppGate> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthNotifier>();
     final ready = !auth.initializing && _minTimeElapsed;
+
+    // Cargar favoritos cuando el usuario está logueado — fuera del build
+    if (ready) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final favorites = context.read<FavoritesService>();
+        if (auth.state.isLoggedIn) {
+          if (!favorites.loaded) {
+            favorites.loadFavorites(auth.state.cookies ?? '');
+          }
+        } else {
+          favorites.clear();
+        }
+      });
+    }
 
     if (!ready) {
       return Scaffold(

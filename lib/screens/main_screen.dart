@@ -6,7 +6,7 @@ import '../theme/app_colors.dart';
 import '../widgets/offline_banner.dart';
 import 'home_screen.dart';
 import 'regions_screen.dart';
-import 'analysis_screen.dart';
+import 'explore_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/paywall_dialog.dart';
 
@@ -29,7 +29,7 @@ class _MainScreenState extends State<MainScreen> {
     const screens = [
       HomeScreen(),
       RegionsScreen(),
-      AnalysisScreen(),
+      ExploreScreen(),
       ProfileScreen(),
     ];
 
@@ -81,7 +81,7 @@ class _BottomNav extends StatelessWidget {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Inicio'),
           BottomNavigationBarItem(icon: Icon(Icons.language_outlined), label: 'Regiones'),
-          BottomNavigationBarItem(icon: Icon(Icons.article_outlined), label: 'Análisis'),
+          BottomNavigationBarItem(icon: Icon(Icons.explore_outlined), label: 'Explorar'),
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
         ],
       ),

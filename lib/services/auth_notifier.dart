@@ -42,11 +42,9 @@ class AuthNotifier extends ChangeNotifier {
     try {
       final newState = await _service.loginWithCookies(cookieString);
       _state = newState;
-      // Guardar nonce REST en caché tras login exitoso
-      if (newState.cookies != null) {
-        _restNonce = await _service.getRestNonce(newState.cookies!);
-        if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST tras login: $_restNonce');
-      }
+      // Usar el nonce ya obtenido durante loginWithCookies (sin nueva petición)
+      _restNonce = _service.lastNonce;
+      if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST tras login: $_restNonce');
     } on AuthException catch (e) {
       _errorMessage = e.message;
     } catch (e, stack) {

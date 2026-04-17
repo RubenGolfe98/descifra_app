@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/auth_state.dart';
@@ -7,6 +8,8 @@ import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import 'books_screen.dart';
 import 'login_webview.dart';
+import 'newsletter_screen.dart';
+import 'saved_articles_screen.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -61,14 +64,7 @@ class _LoggedInView extends StatelessWidget {
                   border: Border.all(color: bord, width: 0.5),
                 ),
                 child: Center(
-                  child: Text(
-                    _initials(state.userDisplayName ?? state.userEmail ?? '?'),
-                    style: TextStyle(
-                      color: AppColors.accent,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: _buildAvatar(state.userDisplayName ?? state.userEmail ?? ''),
                 ),
               ),
               const SizedBox(width: 16),
@@ -159,15 +155,15 @@ class _LoggedInView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Libros
+          // Artículos guardados
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const BooksScreen()),
+                MaterialPageRoute(builder: (_) => const SavedArticlesScreen()),
               ),
-              icon: const Icon(Icons.menu_book_outlined, size: 16),
-              label: const Text('Libros'),
+              icon: const Icon(Icons.bookmark_outline, size: 16),
+              label: const Text('Artículos guardados'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: pri,
                 side: BorderSide(color: sec, width: 0.8),
@@ -179,27 +175,33 @@ class _LoggedInView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Seminarios
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () async {
-                final uri = Uri.parse('https://www.descifrandolaguerra.es/seminarios/');
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
-              icon: const Icon(Icons.school_outlined, size: 16),
-              label: const Text('Seminarios'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: pri,
-                side: BorderSide(color: sec, width: 0.8),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+          // Newsletter (solo si tiene membresía cargada)
+          if (state.membership != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => NewsletterScreen(membership: state.membership!),
+                  ),
+                ),
+                icon: const Icon(Icons.mail_outline, size: 16),
+                label: const Text('Newsletter'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: pri,
+                  side: BorderSide(color: sec, width: 0.8),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
               ),
             ),
-          ),
+          ],
+          const SizedBox(height: 12),
+
+          // Redes sociales
+          _buildSocialRow(bord, sec),
           const SizedBox(height: 12),
 
           // Cerrar sesión
@@ -230,10 +232,79 @@ class _LoggedInView extends StatelessWidget {
     }
   }
 
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Widget _buildSocialRow(Color bord, Color sec) {
+    final socials = [
+      _Social('Instagram', 'assets/icons/instagram.svg',
+          'https://www.instagram.com/descifraguerra/'),
+      _Social('Twitter', 'assets/icons/twitter.svg',
+          'https://twitter.com/descifraguerra'),
+      _Social('Telegram', 'assets/icons/telegram.svg',
+          'https://t.me/descifrandolaguerra'),
+      _Social('TikTok', 'assets/icons/tiktok.svg',
+          'https://www.tiktok.com/@descifraguerra'),
+      _Social('Twitch', 'assets/icons/twitch.svg',
+          'https://www.twitch.tv/descifrandolaguerra'),
+      _Social('YouTube', 'assets/icons/youtube.svg',
+          'https://www.youtube.com/channel/UCvLrMnloIn_RqITF4Ly5ZEA'),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: bord, width: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Síguenos',
+            style: TextStyle(
+              color: sec,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: socials
+                .map((s) => _SocialButton(social: s, onTap: () => _openUrl(s.url)))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String name) {
+    final initials = _initials(name);
+    if (initials.isEmpty || initials == '?') {
+      return Icon(Icons.person_outline, color: AppColors.accent, size: 28);
+    }
+    return Text(
+      initials,
+      style: TextStyle(
+        color: AppColors.accent,
+        fontSize: 20,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
   String _initials(String name) {
+    if (name.trim().isEmpty) return '';
     final parts = name.trim().split(' ');
     if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return name[0].toUpperCase();
   }
 }
 
@@ -420,50 +491,47 @@ class _LoginView extends StatelessWidget {
                       style: TextStyle(fontSize: 15, color: Colors.white)),
             ),
           ),
-          const SizedBox(height: 24),
-
-          // Libros
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const BooksScreen()),
-              ),
-              icon: const Icon(Icons.menu_book_outlined, size: 16),
-              label: const Text('Libros'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: pri,
-                side: BorderSide(color: sec, width: 0.8),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ),
           const SizedBox(height: 12),
 
-          // Seminarios
+          // Botón suscribirse
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () async {
-                final uri = Uri.parse('https://www.descifrandolaguerra.es/seminarios/');
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
-              icon: const Icon(Icons.school_outlined, size: 16),
-              label: const Text('Seminarios'),
+            child: OutlinedButton(
+              onPressed: _openSubscribePage,
               style: OutlinedButton.styleFrom(
-                foregroundColor: pri,
-                side: BorderSide(color: sec, width: 0.8),
+                foregroundColor: sec,
+                side: BorderSide(color: bord, width: 0.8),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(fontSize: 14, color: sec),
+                  children: const [
+                    TextSpan(text: '¿No tienes cuenta? '),
+                    TextSpan(
+                      text: '¡Suscríbete!',
+                      style: TextStyle(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
+  }
+
+  Future<void> _openSubscribePage() async {
+    final uri = Uri.parse('https://www.descifrandolaguerra.es/suscribete/');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Future<void> _openLoginWebView(BuildContext context) async {
@@ -471,5 +539,43 @@ class _LoginView extends StatelessWidget {
     if (cookieString == null || cookieString.isEmpty) return;
     if (!context.mounted) return;
     await context.read<AuthNotifier>().loginWithCookies(cookieString);
+  }
+}
+
+// ─── Social helpers ───────────────────────────────────────────────────────────
+
+class _Social {
+  final String label;
+  final String iconAsset;
+  final String url;
+  const _Social(this.label, this.iconAsset, this.url);
+}
+
+class _SocialButton extends StatelessWidget {
+  final _Social social;
+  final VoidCallback onTap;
+  const _SocialButton({required this.social, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: social.label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: SvgPicture.asset(
+            social.iconAsset,
+            width: 22,
+            height: 22,
+            colorFilter: const ColorFilter.mode(
+              AppColors.accent,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

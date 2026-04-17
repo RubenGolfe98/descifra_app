@@ -27,7 +27,10 @@ class Article {
     ArticleCategory category = ArticleCategory.noticia;
     if (classList.contains('category-analisis')) {
       category = ArticleCategory.analisis;
+    } else if (classList.contains('category-entrevistas')) {
+      category = ArticleCategory.entrevista;
     }
+    
 
     return Article(
       id: json['id'] as int,
@@ -46,4 +49,4 @@ class Article {
       html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
 }
 
-enum ArticleCategory { noticia, analisis }
+enum ArticleCategory { noticia, analisis, entrevista }

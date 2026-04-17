@@ -61,3 +61,36 @@ ios/Podfile.lock
 # ─── Cobertura de tests ───────────────────────────────────────────────────────
 coverage/
 lcov.info
+
+# ─── Firebase — NUNCA subir credenciales reales ───────────────────────────────
+# Copia google-services.json.example → google-services.json y rellena tus datos
+android/app/google-services.json
+# Copia GoogleService-Info.plist.example → GoogleService-Info.plist y rellena tus datos
+ios/Runner/GoogleService-Info.plist
+# Fichero generado por FlutterFire CLI
+lib/firebase_options.dart
+
+# ─── Claves y secretos generales ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# Keystores de firma Android
+*.jks
+*.keystore
+key.properties
+android/key.properties
+
+# Certificados y perfiles iOS
+*.p12
+*.p8
+*.mobileprovision
+*.cer
+
+# Archivos con tokens o API keys
+**/secrets.dart
+**/secrets.json
+**/config.secret.*
+
+# ─── Crashlytics ──────────────────────────────────────────────────────────────
+/android/app/src/main/assets/dSYM/

@@ -53,21 +53,30 @@ class _LoginWebViewState extends State<LoginWebView> {
             ),
             initialSettings: InAppWebViewSettings(
               userAgent:
-                  'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 '
-                  '(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+                  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36',
               javaScriptEnabled: true,
               domStorageEnabled: true,
               thirdPartyCookiesEnabled: true,
-              clearCache: false,
+              clearCache: true,
+              clearSessionCache: true,
             ),
             onWebViewCreated: (controller) => _controller = controller,
             onLoadStart: (_, url) {
+              debugPrint('🌐 [WebView] onLoadStart: $url');
               setState(() => _isLoading = true);
               _checkIfLoggedIn(url?.toString() ?? '');
             },
             onLoadStop: (_, url) {
+              debugPrint('🌐 [WebView] onLoadStop: $url');
               setState(() => _isLoading = false);
               _checkIfLoggedIn(url?.toString() ?? '');
+            },
+            onReceivedError: (_, request, error) {
+              debugPrint('🌐 [WebView] ERROR: ${error.description} — ${request.url}');
+            },
+            onConsoleMessage: (_, message) {
+              debugPrint('🌐 [WebView] console: ${message.message}');
             },
           ),
           if (_isLoading)

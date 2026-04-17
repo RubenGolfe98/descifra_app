@@ -110,17 +110,35 @@ class ArticleCategoryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isAnalysis = category == ArticleCategory.analisis;
+    final Color bg;
+    final Color fg;
+    final String label;
+
+    switch (category) {
+      case ArticleCategory.analisis:
+        bg = AppColors.analysisBg;
+        fg = AppColors.analysisText;
+        label = 'Análisis';
+      case ArticleCategory.entrevista:
+        bg = AppColors.interviewBg;
+        fg = AppColors.interviewText;
+        label = 'Entrevista';
+      case ArticleCategory.noticia:
+        bg = AppColors.newsBg;
+        fg = AppColors.newsText;
+        label = 'Noticia';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
-        color: isAnalysis ? AppColors.analysisBg : AppColors.newsBg,
+        color: bg,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        isAnalysis ? 'Análisis' : 'Noticia',
+        label,
         style: TextStyle(
-          color: isAnalysis ? AppColors.analysisText : AppColors.newsText,
+          color: fg,
           fontSize: 9,
           fontWeight: FontWeight.w500,
         ),
