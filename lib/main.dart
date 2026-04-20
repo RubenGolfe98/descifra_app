@@ -9,8 +9,6 @@ import 'services/auth_notifier.dart';
 import 'services/favorites_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/theme_notifier.dart';
-import 'repositories/coverage_repository.dart';
-import 'repositories/seminar_repository.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_colors.dart';
 
@@ -42,8 +40,6 @@ void main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
 
   // Precarga en background al arrancar — no bloquea el inicio de la app
-  CoverageRepository.prefetch();
-  SeminarRepository.prefetch();
 
   runApp(const DlgApp());
 }

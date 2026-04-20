@@ -1,6 +1,6 @@
 # Descifrando la Guerra — App Móvil
 
-App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguerra.es), medio de análisis y noticias de política internacional. Desarrollada en Flutter para Android.
+App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguerra.es), medio de análisis y noticias de política internacional. Desarrollada en Flutter para Android e iOS.
 
 ---
 
@@ -14,7 +14,7 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
   <img src="screenshots/detail_article_white.png" width="180" alt="Detalle artículo — claro"/>
 </p>
 
-### Regiones
+### Regiones y mapas
 <p align="center">
   <img src="screenshots/regions.png" width="180" alt="Regiones"/>
   <img src="screenshots/detail_region.png" width="180" alt="Detalle región"/>
@@ -22,10 +22,25 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
   <img src="screenshots/region_maps.png" width="180" alt="Mapas por región"/>
 </p>
 
-### Análisis
+### Explorar
 <p align="center">
+  <img src="screenshots/explore_screen.png" width="180" alt="Explorar"/>
   <img src="screenshots/analisis_list.png" width="180" alt="Listado análisis"/>
-  <img src="screenshots/analisis.png" width="180" alt="Análisis"/>
+  <img src="screenshots/interviews.png" width="180" alt="Entrevistas"/>
+  <img src="screenshots/detail_interview.png" width="180" alt="Detalle entrevista"/>
+</p>
+
+### Coberturas
+<p align="center">
+  <img src="screenshots/coverages.png" width="180" alt="Coberturas"/>
+  <img src="screenshots/detail_coverage.png" width="180" alt="Detalle cobertura"/>
+</p>
+
+### Seminarios
+<p align="center">
+  <img src="screenshots/seminars.png" width="180" alt="Seminarios"/>
+  <img src="screenshots/seminar_sessions.png" width="180" alt="Sesiones de seminario"/>
+  <img src="screenshots/detail_seminar_session.png" width="180" alt="Detalle sesión"/>
 </p>
 
 ### Libros
@@ -34,35 +49,36 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
   <img src="screenshots/detail_book.png" width="180" alt="Detalle de libro"/>
 </p>
 
-### Perfil, ajustes y acceso
+### Perfil y cuenta
 <p align="center">
   <img src="screenshots/login_app.png" width="180" alt="Pantalla de login"/>
-  <img src="screenshots/login_web.png" width="180" alt="Login web seguro"/>
   <img src="screenshots/logged_profile.png" width="180" alt="Perfil con membresía"/>
+  <img src="screenshots/newsletter.png" width="180" alt="Newsletter"/>
+  <img src="screenshots/saved_articles.png" width="180" alt="Artículos guardados"/>
   <img src="screenshots/settings.png" width="180" alt="Ajustes"/>
-  <img src="screenshots/exclusive_content.png" width="180" alt="Contenido exclusivo"/>
 </p>
 
 ---
 
 ## Características
 
-- **Listado de noticias y análisis** con paginación infinita
-- **Detalle de artículos** con contenido HTML renderizado y visor de imágenes con zoom
+- **Noticias, Análisis y Entrevistas** con paginación infinita y caché inteligente
+- **Coberturas** — seguimiento de conflictos y eventos con contenido HTML enriquecido
+- **Seminarios** — acceso a sesiones con vídeo Vimeo y materiales descargables
+- **Newsletter** — último boletín semanal disponible en la app para suscriptores
+- **Artículos Guardados** — sincronización de favoritos con el servidor
 - **Secciones por región geográfica** (Oriente Medio, Europa, América, Asia...)
-- **Mapas geopolíticos** por región, en colaboración con FairPolitik
-- **Buscador de artículos** con sugerencias en tiempo real
-- **Sección de libros** con ficha técnica, autores, editorial y enlaces de compra en Amazon
-- **Enlace a Seminarios** de Descifrando la Guerra
-- **Autenticación segura** — las credenciales se introducen directamente en la web oficial a través de un WebView, nunca pasan por la app
+- **Mapas geopolíticos** por región en colaboración con FairPolitik
+- **Buscador** con sugerencias en tiempo real y badge de contenido exclusivo
+- **Libros** con ficha técnica y enlaces de compra en Amazon y Kindle
+- **Autenticación segura** — las credenciales se introducen en la web oficial a través de un WebView seguro, nunca pasan por la app
 - **Contenido exclusivo** para suscriptores con detección automática de membresía
-- **Caché local inteligente** — los artículos se cargan instantáneamente en segundos accesos y se actualizan en segundo plano
+- **Firebase Analytics** integrado de forma opcional — sin credenciales la app funciona sin Analytics
 - **Tema claro y oscuro** con paleta inspirada en papel periódico
 - **5 fuentes tipográficas** optimizadas para lectura (Raleway, Lora, Merriweather, Source Sans, Crimson Pro)
 - **Ajuste de tamaño de texto** en 5 niveles
 - **Compartir artículos** directamente desde el detalle
 - **Indicador de conectividad** con animación al recuperar la conexión
-- **Navegación interna** — los enlaces a otros artículos de la web abren directamente en la app
 
 ---
 
@@ -81,6 +97,7 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 | Fuentes | google_fonts |
 | Conectividad | connectivity_plus |
 | Compartir | share_plus |
+| Analytics | firebase_analytics (opcional) |
 
 ---
 
@@ -88,45 +105,84 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 
 ```
 lib/
-├── main.dart                    # Punto de entrada, providers globales
-├── models/                      # Modelos de datos
+├── main.dart                    # Punto de entrada, providers, precarga
+├── firebase_options.dart.example # Plantilla para configurar Firebase
+├── models/
 │   ├── article.dart
 │   ├── article_detail.dart
-│   ├── auth_state.dart
 │   ├── auth_exception.dart
+│   ├── auth_state.dart
 │   ├── book.dart
+│   ├── coverage.dart
 │   ├── map_image.dart
-│   └── region.dart
-├── repositories/                # Acceso a datos (API + caché)
+│   ├── region.dart
+│   └── seminar.dart
+├── repositories/
 │   ├── article_repository.dart
-│   └── maps_repository.dart
-├── screens/                     # Pantallas
+│   ├── coverage_repository.dart
+│   ├── maps_repository.dart
+│   └── seminar_repository.dart
+├── screens/
 │   ├── home_screen.dart
 │   ├── analysis_screen.dart
+│   ├── interviews_screen.dart
+│   ├── coverages_screen.dart
+│   ├── coverage_detail_screen.dart
+│   ├── seminars_screen.dart
+│   ├── seminar_detail_screen.dart
+│   ├── seminar_session_screen.dart
+│   ├── newsletter_screen.dart
+│   ├── saved_articles_screen.dart
 │   ├── regions_screen.dart
 │   ├── region_articles_screen.dart
 │   ├── region_maps_screen.dart
 │   ├── article_detail_screen.dart
 │   ├── books_screen.dart
 │   ├── search_screen.dart
+│   ├── explore_screen.dart
 │   ├── profile_screen.dart
 │   ├── settings_screen.dart
 │   ├── login_webview.dart
 │   └── main_screen.dart
-├── services/                    # Lógica de negocio
-│   ├── auth_service.dart
-│   ├── auth_notifier.dart
+├── services/
+│   ├── analytics_service.dart
 │   ├── article_cache.dart
+│   ├── auth_notifier.dart
+│   ├── auth_service.dart
 │   ├── connectivity_service.dart
+│   ├── favorites_service.dart
 │   ├── logging_http_client.dart
 │   └── theme_notifier.dart
 ├── theme/
-│   └── app_colors.dart          # Paleta de colores (claro/oscuro)
-└── widgets/                     # Widgets reutilizables
+│   └── app_colors.dart
+└── widgets/
+    ├── access_dialog.dart
     ├── article_card.dart
     ├── image_viewer.dart
-    ├── offline_banner.dart
-    └── paywall_dialog.dart
+    └── offline_banner.dart
+```
+
+---
+
+## Firebase Analytics (opcional)
+
+La app soporta Firebase Analytics de forma completamente opcional. Sin los archivos de configuración compila y funciona con normalidad.
+
+Para activarlo:
+
+```bash
+# 1. Instalar FlutterFire CLI
+dart pub global activate flutterfire_cli
+
+# 2. Configurar con tu proyecto Firebase
+flutterfire configure --project=TU_PROJECT_ID
+```
+
+Esto genera `lib/firebase_options.dart` — **no subir a git** (ya está en `.gitignore`).
+
+Para contribuidores sin Firebase, copiar la plantilla:
+```bash
+cp lib/firebase_options.dart.example lib/firebase_options.dart
 ```
 
 ---
@@ -138,6 +194,7 @@ lib/
 - Las cookies se persisten con **EncryptedSharedPreferences** (cifrado a nivel hardware en Android)
 - Todas las peticiones usan **HTTPS**
 - El nonce REST se renueva automáticamente al detectar expiración (HTTP 401)
+- Los archivos de Firebase, keystores de firma y certificados iOS están en `.gitignore`
 
 ---
 
@@ -172,28 +229,35 @@ flutter run
 # Ejecutar todos los tests
 flutter test
 
-# Ejecutar con reporte de cobertura
+# Con reporte de cobertura
 flutter test --coverage
 
-# Ejecutar un archivo específico
+# Archivo específico
 flutter test test/models/article_test.dart
 ```
-
-Los tests cubren modelos, repositorios, servicios y colores:
 
 ```
 test/
 ├── models/
 │   ├── article_test.dart
+│   ├── article_detail_test.dart
+│   ├── auth_exception_test.dart
 │   ├── auth_state_test.dart
 │   ├── book_test.dart
+│   ├── coverage_test.dart
 │   ├── map_image_test.dart
-│   └── region_test.dart
+│   ├── region_test.dart
+│   └── seminar_test.dart
 ├── repositories/
 │   ├── article_repository_test.dart
-│   └── maps_repository_test.dart
+│   ├── coverage_repository_test.dart
+│   ├── maps_repository_test.dart
+│   └── seminar_repository_test.dart
 ├── services/
+│   ├── analytics_service_test.dart
 │   ├── auth_notifier_test.dart
+│   ├── favorites_service_test.dart
+│   ├── logging_http_client_test.dart
 │   └── theme_notifier_test.dart
 └── theme/
     └── app_colors_test.dart
@@ -217,16 +281,21 @@ La app consume la **WordPress REST API v2** de descifrandolaguerra.es:
 
 | Endpoint | Uso |
 |----------|-----|
-| `GET /wp/v2/posts` | Listado de artículos |
+| `GET /wp/v2/posts` | Listado de artículos, análisis y entrevistas |
 | `GET /wp/v2/posts/{id}` | Detalle de artículo |
 | `GET /wp/v2/posts?region={id}` | Artículos por región |
-| `GET /wp/v2/posts?categories=255` | Artículos de análisis |
-| `GET /wp/v2/posts?search={q}&search_columns=post_title` | Búsqueda de artículos |
-| `GET /wp/v2/posts?slug={slug}` | Buscar por slug |
+| `GET /wp/v2/posts?categories=255` | Análisis |
+| `GET /wp/v2/posts?categories=271` | Entrevistas |
+| `GET /wp/v2/posts?search={q}` | Búsqueda |
+| `GET /wp/v2/cobertura` | Listado de coberturas |
+| `GET /wp/v2/cobertura/{id}` | Detalle de cobertura |
+| `GET /wp/v2/seminario` | Listado de seminarios |
+| `GET /wp/v2/sesion-seminario` | Sesiones de seminario |
 | `GET /wp/v2/libro` | Listado de libros |
 | `GET /wp/v2/pages/2620` | Página de mapas (HTML parsing) |
-| `GET /wp-admin/admin-ajax.php?action=rest-nonce` | Obtener nonce REST |
-| `GET /mi-cuenta/` | Datos de membresía (HTML parsing) |
+| `GET /wp-admin/admin-ajax.php?action=rest-nonce` | Nonce REST |
+| `POST /wp-admin/admin-ajax.php` | Favoritos (Simple Favorites plugin) |
+| `GET /mi-cuenta/` | Membresía y newsletter (HTML parsing) |
 
 ---
 
