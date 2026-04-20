@@ -8,6 +8,10 @@ class LoggingHttpClient extends http.BaseClient {
 
   LoggingHttpClient() : _inner = http.Client();
 
+  /// Constructor para tests — permite inyectar un cliente fake
+  @visibleForTesting
+  LoggingHttpClient.withInner(http.Client inner) : _inner = inner;
+
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (kDebugMode) {
@@ -27,24 +31,28 @@ class LoggingHttpClient extends http.BaseClient {
     stopwatch.stop();
 
     if (kDebugMode) {
+      // Leer bytes para poder loggear Y reconstruir el stream
       final bytes = await response.stream.toBytes();
-      final bodyString = String.fromCharCodes(bytes);
+      final elapsed = stopwatch.elapsedMilliseconds;
 
-      // Limitar el body a 500 chars para respuestas HTML largas
-      final isHtml = bodyString.trimLeft().startsWith('<!DOCTYPE') ||
-          bodyString.trimLeft().startsWith('<html');
-      final displayBody = isHtml
-          ? '[HTML ${bytes.length} bytes — omitido]'
-          : (bodyString.length > 500
-              ? '${bodyString.substring(0, 500)}…'
-              : bodyString);
+      // Log en microtask para no bloquear el procesamiento de la respuesta
+      Future.microtask(() {
+        final bodyString = String.fromCharCodes(bytes);
+        final isHtml = bodyString.trimLeft().startsWith('<!DOCTYPE') ||
+            bodyString.trimLeft().startsWith('<html');
+        final displayBody = isHtml
+            ? '[HTML ${bytes.length} bytes — omitido]'
+            : (bodyString.length > 300
+                ? '${bodyString.substring(0, 300)}…'
+                : bodyString);
 
-      debugPrint('');
-      debugPrint('┌─── RESPONSE ───────────────────────────────');
-      debugPrint('│ ${response.statusCode} ${request.url}');
-      debugPrint('│ Tiempo: ${stopwatch.elapsedMilliseconds}ms');
-      debugPrint('│ Body: $displayBody');
-      debugPrint('└────────────────────────────────────────────');
+        debugPrint('');
+        debugPrint('┌─── RESPONSE ───────────────────────────────');
+        debugPrint('│ ${response.statusCode} ${request.url}');
+        debugPrint('│ Tiempo: ${elapsed}ms');
+        debugPrint('│ Body: $displayBody');
+        debugPrint('└────────────────────────────────────────────');
+      });
 
       return http.StreamedResponse(
         Stream.value(bytes),

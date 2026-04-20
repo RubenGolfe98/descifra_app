@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/seminar.dart';
 import '../repositories/seminar_repository.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
@@ -30,21 +32,47 @@ class _SeminarSessionScreenState extends State<SeminarSessionScreen> {
   bool _loading = true;
   bool _videoVisible = false;
 
+  bool _hasCookies = false;
+
   @override
   void initState() {
     super.initState();
     _loadDetail();
+    AnalyticsService.logSeminarSessionView(
+      seminarTitle: widget.seminarTitle,
+      sessionTitle: widget.sessionTitle,
+    );
   }
 
-  Future<void> _loadDetail() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Si las cookies llegaron después de que cargamos sin contenido, recargar
+    final auth = context.watch<AuthNotifier>();
+    final hasCookies = auth.state.cookies != null && auth.state.cookies!.isNotEmpty;
+    if (hasCookies && !_hasCookies && !_loading && _detail == null) {
+      _hasCookies = hasCookies;
+      _loadDetail();
+    }
+    _hasCookies = hasCookies;
+  }
+
+  Future<void> _loadDetail({int attempt = 1}) async {
+    if (!mounted) return;
+    setState(() => _loading = true);
     final cookies = context.read<AuthNotifier>().state.cookies ?? '';
     final detail = await _repository.fetchSessionDetail(widget.sessionUrl, cookies);
-    if (mounted) {
-      setState(() {
-        _detail = detail;
-        _loading = false;
-      });
+    if (!mounted) return;
+    if (detail == null && attempt < 3) {
+      final wait = Duration(seconds: attempt * 3);
+      if (kDebugMode) debugPrint('📚 [Session] Reintentando en ${wait.inSeconds}s (intento $attempt)');
+      await Future.delayed(wait);
+      return _loadDetail(attempt: attempt + 1);
     }
+    setState(() {
+      _detail = detail;
+      _loading = false;
+    });
   }
 
   @override
@@ -81,7 +109,27 @@ class _SeminarSessionScreenState extends State<SeminarSessionScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))
           : _detail == null
-              ? Center(child: Text('No se pudo cargar la sesión', style: TextStyle(color: sec)))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.wifi_off_outlined, color: AppColors.accent, size: 40),
+                        const SizedBox(height: 16),
+                        Text('No se pudo cargar la sesión',
+                          style: TextStyle(color: sec, fontSize: 15),
+                          textAlign: TextAlign.center),
+                        const SizedBox(height: 20),
+                        FilledButton(
+                          onPressed: _loadDetail,
+                          style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               : SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

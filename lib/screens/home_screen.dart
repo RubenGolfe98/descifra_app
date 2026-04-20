@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
@@ -9,7 +10,7 @@ import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
 import 'article_detail_screen.dart';
 import 'search_screen.dart';
-import '../widgets/paywall_dialog.dart';
+import '../widgets/access_dialog.dart';
 
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 class HomeScreen extends StatefulWidget {
@@ -66,8 +67,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final more = await _repository.fetchMoreArticles(page: _currentPage + 1);
     if (mounted) {
       setState(() {
-        if (more.isEmpty) {
-          _hasMore = false;
+        if (more == null) {
+          // Error de red — no marcar fin, permitir reintentar
+          if (kDebugMode) debugPrint('📦 [Home] Error cargando página ${_currentPage + 1} — manteniendo hasMore');
+        } else if (more.isEmpty) {
+          _hasMore = false; // fin real del listado
         } else {
           _articles.addAll(more);
           _currentPage++;
@@ -270,7 +274,7 @@ class _FeaturedArticle extends StatelessWidget {
     final auth = context.read<AuthNotifier>();
     final canAccess = !article.isPremium || (auth.state.isLoggedIn && auth.state.isSubscriber);
     if (!canAccess) {
-      showPaywallDialog(context, onLoginTap: () => TabNavigator.of(context)?.jumpToProfile());
+      showAccessDialog(context, onLoginTap: () => TabNavigator.of(context)?.jumpToProfile(), source: 'article');
       return;
     }
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => ArticleDetailScreen(article: article)));
@@ -315,6 +319,10 @@ class _FeaturedArticle extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           ArticleCategoryBadge(category: article.category),
+                          if (article.isPremium) ...[
+                            const SizedBox(width: 6),
+                            const ArticlePremiumBadge(),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 6),

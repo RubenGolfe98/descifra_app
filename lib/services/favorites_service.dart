@@ -35,8 +35,15 @@ class FavoritesService extends ChangeNotifier {
       ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'success') _parseFavorites(data);
+        if (kDebugMode) debugPrint('⭐ [Favorites] raw: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
+        final raw = jsonDecode(response.body);
+        // El servidor puede devolver Map con {status, favorites} o List directa
+        if (raw is Map<String, dynamic>) {
+          if (raw['status'] == 'success') _parseFavorites(raw);
+        } else if (raw is List) {
+          // Respuesta directa como lista de favoritos
+          _parseFavoritesFromList(raw);
+        }
       }
     } catch (e) {
       if (kDebugMode) debugPrint('⭐ [Favorites] loadFavorites error: $e');
@@ -98,40 +105,75 @@ class FavoritesService extends ChangeNotifier {
     final favorites = data['favorites'] as List?;
     if (favorites == null || favorites.isEmpty) return;
 
-    final posts = favorites[0]['posts'] as Map<String, dynamic>?;
-    if (posts == null) return;
+    final first = favorites[0] as Map<String, dynamic>?;
+    if (first == null) return;
 
-    for (final entry in posts.values) {
-      final postId = entry['post_id'] as int?;
-      if (postId == null) continue;
-      _savedIds.add(postId);
+    // 'posts' puede ser List (array de objetos) o Map (objeto indexado)
+    final postsRaw = first['posts'];
+    if (postsRaw == null) return;
 
-      // Extraer URL de imagen del thumbnail medium
-      final thumbHtml = entry['thumbnails']?['medium'] as String? ?? '';
-      final imgMatch = RegExp(r'src="([^"]+)"').firstMatch(thumbHtml);
-      final imageUrl = imgMatch?.group(1) ?? '';
-
-      final title = (entry['title'] as String? ?? '')
-          .replaceAll('&#8230;', '…')
-          .replaceAll('&#8217;', '\u2019')
-          .replaceAll(RegExp(r'&#\d+;'), '');
-
-      final permalink = entry['permalink'] as String? ?? '';
-      final slug = Uri.parse(permalink).pathSegments
-          .where((s) => s.isNotEmpty)
-          .lastOrNull ?? '';
-
-      _savedArticles.add(Article(
-        id: postId,
-        date: DateTime.now(),
-        title: title,
-        description: '',
-        author: '',
-        imageUrl: imageUrl,
-        isPremium: false,
-        slug: slug,
-      ));
+    if (postsRaw is List) {
+      for (final entry in postsRaw) {
+        if (entry is Map<String, dynamic>) _parsePost(entry);
+      }
+    } else if (postsRaw is Map<String, dynamic>) {
+      for (final entry in postsRaw.values) {
+        if (entry is Map<String, dynamic>) _parsePost(entry);
+      }
     }
+  }
+
+  void _parseFavoritesFromList(List raw) {
+    _savedIds.clear();
+    _savedArticles.clear();
+    if (raw.isEmpty) return;
+
+    final first = raw[0];
+    if (first is! Map) return;
+
+    final postsRaw = first['posts'];
+    if (postsRaw == null) return;
+
+    if (postsRaw is List) {
+      for (final entry in postsRaw) {
+        if (entry is Map<String, dynamic>) _parsePost(entry);
+      }
+    } else if (postsRaw is Map<String, dynamic>) {
+      for (final entry in postsRaw.values) {
+        if (entry is Map<String, dynamic>) _parsePost(entry);
+      }
+    }
+  }
+
+  void _parsePost(Map<String, dynamic> entry) {
+    final postId = entry['post_id'] as int?;
+    if (postId == null) return;
+    _savedIds.add(postId);
+
+    final thumbHtml = entry['thumbnails']?['medium'] as String? ?? '';
+    final imgMatch = RegExp(r'src="([^"]+)"').firstMatch(thumbHtml);
+    final imageUrl = imgMatch?.group(1) ?? '';
+
+    final title = (entry['title'] as String? ?? '')
+        .replaceAll('&#8230;', '…')
+        .replaceAll('&#8217;', '\u2019')
+        .replaceAll(RegExp(r'&#\d+;'), '');
+
+    final permalink = entry['permalink'] as String? ?? '';
+    final slug = Uri.parse(permalink).pathSegments
+        .where((s) => s.isNotEmpty)
+        .lastOrNull ?? '';
+
+    _savedArticles.add(Article(
+      id: postId,
+      date: DateTime.now(),
+      title: title,
+      description: '',
+      author: '',
+      imageUrl: imageUrl,
+      isPremium: false,
+      slug: slug,
+    ));
   }
 
   void clear() {

@@ -7,7 +7,8 @@ import '../repositories/article_repository.dart';
 import '../services/auth_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
-import '../widgets/paywall_dialog.dart';
+import '../widgets/access_dialog.dart';
+import '../services/analytics_service.dart';
 
 class InterviewsScreen extends StatefulWidget {
   const InterviewsScreen({super.key});
@@ -32,6 +33,7 @@ class _InterviewsScreenState extends State<InterviewsScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _load();
+    AnalyticsService.logSectionView('interviews');
   }
 
   @override
@@ -71,7 +73,9 @@ class _InterviewsScreenState extends State<InterviewsScreen> {
     );
     if (mounted) {
       setState(() {
-        if (more.isEmpty) {
+        if (more == null) {
+          // error de red — no marcar fin
+        } else if (more.isEmpty) {
           _hasMore = false;
         } else {
           _articles.addAll(more);
@@ -203,5 +207,3 @@ class _InterviewsScreenState extends State<InterviewsScreen> {
     );
   }
 }
-
-

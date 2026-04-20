@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_notifier.dart';
 
-/// Muestra el diálogo de paywall según el estado de autenticación
-Future<void> showPaywallDialog(BuildContext context,
-    {required VoidCallback onLoginTap}) {
+/// Muestra el diálogo de acceso exclusivo según el estado de autenticación
+Future<void> showAccessDialog(BuildContext context,
+    {required VoidCallback onLoginTap, String source = 'unknown'}) {
   final auth = context.read<AuthNotifier>();
+  final isLoggedIn = auth.state.isLoggedIn;
+  AnalyticsService.logAccessDialogShown(
+    isLoggedIn: isLoggedIn,
+    source: source,
+  );
   return showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (_) => _PaywallSheet(
-      isLoggedIn: auth.state.isLoggedIn,
+      isLoggedIn: isLoggedIn,
       onLoginTap: onLoginTap,
     ),
   );
@@ -23,13 +28,6 @@ class _PaywallSheet extends StatelessWidget {
   final VoidCallback onLoginTap;
 
   const _PaywallSheet({required this.isLoggedIn, required this.onLoginTap});
-
-  Future<void> _openSubscribePage() async {
-    final uri = Uri.parse('https://www.descifrandolaguerra.es/suscribete/');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,8 +78,8 @@ class _PaywallSheet extends StatelessWidget {
           // Descripción
           Text(
             isLoggedIn
-                ? 'Tu suscripción activa no incluye este contenido. Amplía tu plan para acceder a todos los artículos exclusivos.'
-                : 'Este artículo es exclusivo para suscriptores de Descifrando la Guerra.',
+                ? 'Tu plan actual no incluye acceso a este contenido. Puedes gestionar tu suscripción desde la página web oficial.'
+                : 'Este artículo es exclusivo para suscriptores de Descifrando la Guerra. Inicia sesión si ya tienes cuenta.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Color(0xFF888888),
@@ -91,52 +89,31 @@ class _PaywallSheet extends StatelessWidget {
           ),
           const SizedBox(height: 28),
 
-          // Botón suscribirse / ampliar suscripción
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _openSubscribePage,
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFC0392B),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text(
-                isLoggedIn ? 'Ampliar suscripción' : 'Suscribirme',
-                style: const TextStyle(fontSize: 15, color: Colors.white),
-              ),
-            ),
-          ),
-
           // Botón iniciar sesión (solo si no está logueado)
           if (!isLoggedIn) ...[
-            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              child: FilledButton(
                 onPressed: () {
                   Navigator.pop(context);
                   onLoginTap();
                 },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(
-                      color: Color(0xFF333333), width: 0.5),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFC0392B),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text('Iniciar sesión',
-                    style: TextStyle(fontSize: 15)),
+                    style: TextStyle(fontSize: 15, color: Colors.white)),
               ),
             ),
+            const SizedBox(height: 10),
           ],
 
-          const SizedBox(height: 10),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Ahora no',
+            child: const Text('Cerrar',
                 style: TextStyle(color: Color(0xFF555555), fontSize: 14)),
           ),
         ],

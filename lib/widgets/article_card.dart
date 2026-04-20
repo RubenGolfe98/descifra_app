@@ -6,7 +6,7 @@ import '../screens/article_detail_screen.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
-import 'paywall_dialog.dart';
+import 'access_dialog.dart';
 
 /// Tarjeta de artículo reutilizable en todas las pantallas.
 /// Gestiona internamente el tap, paywall y navegación al detalle.
@@ -26,7 +26,7 @@ class ArticleCard extends StatelessWidget {
         (auth.state.isLoggedIn && auth.state.isSubscriber);
 
     if (!canAccess) {
-      showPaywallDialog(
+      showAccessDialog(
         context,
         onLoginTap: () => TabNavigator.of(context)?.jumpToProfile(),
       );

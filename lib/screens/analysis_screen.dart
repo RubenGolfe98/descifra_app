@@ -7,7 +7,8 @@ import '../repositories/article_repository.dart';
 import '../services/auth_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
-import '../widgets/paywall_dialog.dart';
+import '../widgets/access_dialog.dart';
+import '../services/analytics_service.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -32,6 +33,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _load();
+    AnalyticsService.logSectionView('analysis');
   }
 
   @override
@@ -71,7 +73,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
     if (mounted) {
       setState(() {
-        if (more.isEmpty) {
+        if (more == null) {
+          // error de red — no marcar fin
+        } else if (more.isEmpty) {
           _hasMore = false;
         } else {
           _articles.addAll(more);

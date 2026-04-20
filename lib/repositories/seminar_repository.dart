@@ -5,10 +5,15 @@ import '../models/seminar.dart';
 
 class SeminarRepository {
   static const _baseUrl = 'https://www.descifrandolaguerra.es/wp-json/wp/v2';
+  static const _ttl = Duration(hours: 4);
 
   final http.Client _client;
 
-  // Caché en memoria
+  // Caché listado con TTL
+  static List<Seminar>? _seminarsCache;
+  static DateTime? _seminarsCachedAt;
+
+  // Caché sesiones y detalles (sin TTL)
   static final Map<String, List<SeminarSession>> _sessionsCache = {};
   static final Map<String, SeminarSessionDetail> _detailCache = {};
 
@@ -16,25 +21,46 @@ class SeminarRepository {
 
   /// Limpia la caché (usar tras logout)
   static void clearCache() {
+    _seminarsCache = null;
+    _seminarsCachedAt = null;
     _sessionsCache.clear();
     _detailCache.clear();
   }
 
+  bool get _seminarsCacheValid =>
+      _seminarsCache != null &&
+      _seminarsCachedAt != null &&
+      DateTime.now().difference(_seminarsCachedAt!) < _ttl;
+
   Future<List<Seminar>> fetchSeminars() async {
+    if (_seminarsCacheValid) {
+      if (kDebugMode) debugPrint('📚 [Seminars] Desde caché');
+      return _seminarsCache!;
+    }
     try {
       final uri = Uri.parse(
         '$_baseUrl/seminario'
         '?_fields=id,title,link,class_list,yoast_head_json.og_image,yoast_head_json.og_description'
         '&per_page=20&orderby=date&order=desc',
       );
-      final response = await _client.get(uri).timeout(const Duration(seconds: 15));
-      if (response.statusCode != 200) return [];
+      final response = await _client.get(uri).timeout(const Duration(seconds: 30));
+      if (response.statusCode != 200) return _seminarsCache ?? [];
       final List<dynamic> data = jsonDecode(response.body);
-      return data.map((j) => Seminar.fromJson(j)).toList();
+      _seminarsCache = data.map((j) => Seminar.fromJson(j)).toList();
+      _seminarsCachedAt = DateTime.now();
+      return _seminarsCache!;
     } catch (e) {
       if (kDebugMode) debugPrint('📚 [Seminars] Error: $e');
-      return [];
+      return _seminarsCache ?? [];
     }
+  }
+
+  /// Precarga en background — llamar desde ExploreScreen
+  static void prefetch() {
+    final repo = SeminarRepository();
+    if (repo._seminarsCacheValid) return;
+    repo.fetchSeminars().ignore();
+    if (kDebugMode) debugPrint('📚 [Seminars] Precarga iniciada');
   }
 
   /// Parsea el HTML de la página de un seminario para extraer las sesiones

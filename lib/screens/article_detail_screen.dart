@@ -13,7 +13,8 @@ import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
 import '../widgets/image_viewer.dart';
-import '../widgets/paywall_dialog.dart';
+import '../widgets/access_dialog.dart';
+import '../services/analytics_service.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
   final Article article;
@@ -27,26 +28,57 @@ class ArticleDetailScreen extends StatefulWidget {
 class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   final _repository = ArticleRepository();
   late Future<ArticleDetail> _detailFuture;
+  String? _lastNonce;
+  bool _refreshing = false;
+  int _loadVersion = 0; // evita race conditions entre peticiones
 
   @override
   void initState() {
     super.initState();
     _loadDetail();
+    AnalyticsService.logArticleView(
+      slug: widget.article.slug,
+      title: widget.article.title,
+      category: widget.article.category.name,
+      author: widget.article.author,
+    );
   }
 
-  void _loadDetail() {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = context.watch<AuthNotifier>();
+    if (auth.restNonce != null &&
+        auth.restNonce != _lastNonce &&
+        _lastNonce == null) {
+      _lastNonce = auth.restNonce;
+      _loadDetail(forceRefresh: true);
+    }
+  }
+
+  void _loadDetail({bool forceRefresh = false}) {
     final auth = context.read<AuthNotifier>();
+    _lastNonce = auth.restNonce;
+    final version = ++_loadVersion;
+    setState(() => _refreshing = true);
     _detailFuture = _repository.fetchArticleDetail(
       widget.article.id,
       cookies: auth.state.cookies,
       restNonce: auth.restNonce,
+      forceRefresh: forceRefresh,
       onNonceExpired: () => context.read<AuthNotifier>().renewRestNonce(),
       onRefreshed: (fresh) {
-        if (mounted) setState(() {
+        if (mounted && version == _loadVersion) setState(() {
           _detailFuture = Future.value(fresh);
+          _refreshing = false;
         });
       },
     );
+    _detailFuture.then((_) {
+      if (mounted && version == _loadVersion) setState(() => _refreshing = false);
+    }).catchError((_) {
+      if (mounted && version == _loadVersion) setState(() => _refreshing = false);
+    });
   }
 
   @override
@@ -57,8 +89,9 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
       body: _ArticleShell(
         article: widget.article,
         detailFuture: _detailFuture,
-        onRetry: () => setState(_loadDetail),
+        onRetry: () => setState(() => _loadDetail(forceRefresh: true)),
         isDark: isDark,
+        refreshing: _refreshing,
       ),
     );
   }
@@ -70,12 +103,14 @@ class _ArticleShell extends StatelessWidget {
   final Future<ArticleDetail> detailFuture;
   final VoidCallback onRetry;
   final bool isDark;
+  final bool refreshing;
 
   const _ArticleShell({
     required this.article,
     required this.detailFuture,
     required this.onRetry,
     required this.isDark,
+    this.refreshing = false,
   });
 
   @override
@@ -231,6 +266,12 @@ class _ArticleShell extends StatelessWidget {
               final isLocked = article.isPremium &&
                   !(auth.state.isLoggedIn && auth.state.isSubscriber);
               final showPaywall = isLocked && !hasContent;
+
+              // Si no hay contenido y hay refresco en curso → skeleton
+              // (cubre tanto artículos libres como restringidos pendientes de nonce)
+              if (!hasContent && refreshing) {
+                return const _ContentSkeleton();
+              }
 
               if (showPaywall) {
                 return _PaywallBlock(isLoggedIn: auth.state.isLoggedIn);
@@ -402,7 +443,7 @@ class _HtmlContent extends StatelessWidget {
   }
 }
 
-// ─── Bloque paywall inline ────────────────────────────────────────────────────
+// ─── Contenido exclusivo inline ─────────────────────────────────────────────
 class _PaywallBlock extends StatelessWidget {
   final bool isLoggedIn;
 
@@ -476,52 +517,35 @@ class _PaywallBlock extends StatelessWidget {
           ),
           const SizedBox(height: 28),
 
-          // Botón suscribirse
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => _openSubscribe(),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFC0392B),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Suscribirme',
-                  style: TextStyle(fontSize: 15, color: Colors.white)),
-            ),
-          ),
-
           // Botón login si no está logueado
           if (!isLoggedIn) ...[
-            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              child: FilledButton(
                 onPressed: () {
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(
-                      color: Color(0xFF333333), width: 0.5),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFC0392B),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text('Iniciar sesión',
-                    style: TextStyle(fontSize: 15)),
+                    style: TextStyle(fontSize: 15, color: Colors.white)),
               ),
             ),
+            const SizedBox(height: 10),
           ],
+
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cerrar',
+                style: TextStyle(color: Color(0xFF555555), fontSize: 14)),
+          ),
         ],
       ),
     );
-  }
-
-  Future<void> _openSubscribe() async {
-    final uri = Uri.parse('https://www.descifrandolaguerra.es/suscribete/');
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
 

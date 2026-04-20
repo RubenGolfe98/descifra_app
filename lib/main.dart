@@ -2,21 +2,49 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'services/analytics_service.dart';
 import 'services/auth_notifier.dart';
 import 'services/favorites_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/theme_notifier.dart';
+import 'repositories/coverage_repository.dart';
+import 'repositories/seminar_repository.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_colors.dart';
 
+// Este import solo existe si has ejecutado `flutterfire configure`
+// Si no existe, Firebase simplemente no se inicializa y la app funciona igual
+import 'firebase_options.dart' as fb_options
+    // ignore: uri_does_not_exist
+    if (dart.library.io) 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar Firebase de forma opcional — si no hay configuración, la app
+  // sigue funcionando sin Analytics (útil para contribuidores sin credenciales)
+  try {
+    await Firebase.initializeApp(
+      options: fb_options.DefaultFirebaseOptions.currentPlatform,
+    );
+    AnalyticsService.init(FirebaseAnalytics.instance);
+  } catch (e) {
+    debugPrint('📊 [Analytics] Firebase no configurado — desactivado: $e');
+  }
+
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
   PaintingBinding.instance.imageCache.maximumSize = 100;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
+
+  // Precarga en background al arrancar — no bloquea el inicio de la app
+  CoverageRepository.prefetch();
+  SeminarRepository.prefetch();
+
   runApp(const DlgApp());
 }
 

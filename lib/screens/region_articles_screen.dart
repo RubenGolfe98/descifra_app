@@ -8,7 +8,8 @@ import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
-import '../widgets/paywall_dialog.dart';
+import '../widgets/access_dialog.dart';
+import '../services/analytics_service.dart';
 
 class RegionArticlesScreen extends StatefulWidget {
   final Region region;
@@ -34,6 +35,7 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _load();
+    AnalyticsService.logRegionArticlesView(widget.region.slug);
   }
 
   @override
@@ -75,7 +77,9 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
     );
     if (mounted) {
       setState(() {
-        if (more.isEmpty) {
+        if (more == null) {
+          // error de red — no marcar fin
+        } else if (more.isEmpty) {
           _hasMore = false;
         } else {
           _articles.addAll(more);

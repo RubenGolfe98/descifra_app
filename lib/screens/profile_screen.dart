@@ -491,47 +491,10 @@ class _LoginView extends StatelessWidget {
                       style: TextStyle(fontSize: 15, color: Colors.white)),
             ),
           ),
-          const SizedBox(height: 12),
-
-          // Botón suscribirse
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: _openSubscribePage,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: sec,
-                side: BorderSide(color: bord, width: 0.8),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: RichText(
-                text: TextSpan(
-                  style: TextStyle(fontSize: 14, color: sec),
-                  children: const [
-                    TextSpan(text: '¿No tienes cuenta? '),
-                    TextSpan(
-                      text: '¡Suscríbete!',
-                      style: TextStyle(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
           const SizedBox(height: 24),
         ],
       ),
     );
-  }
-
-  Future<void> _openSubscribePage() async {
-    final uri = Uri.parse('https://www.descifrandolaguerra.es/suscribete/');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 
   Future<void> _openLoginWebView(BuildContext context) async {

@@ -128,10 +128,11 @@ void main() {
   });
 
   group('ArticleCategory', () {
-    test('has noticia and analisis values', () {
-      expect(ArticleCategory.values.length, 2);
+    test('has noticia, analisis and entrevista values', () {
+      expect(ArticleCategory.values.length, 3);
       expect(ArticleCategory.values, contains(ArticleCategory.noticia));
       expect(ArticleCategory.values, contains(ArticleCategory.analisis));
+      expect(ArticleCategory.values, contains(ArticleCategory.entrevista));
     });
   });
 }

@@ -134,34 +134,12 @@ class _Paywall extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Recibe cada semana un análisis geopolítico completo con los '
-            'acontecimientos más relevantes del mundo.',
+            'Tu plan actual no incluye acceso a la newsletter. '
+            'Puedes gestionar tu suscripción desde la página web oficial.',
             style: TextStyle(color: sec, fontSize: 15, height: 1.5),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _openSubscribePage,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Ampliar suscripción',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text('Volver', style: TextStyle(color: sec)),
@@ -169,12 +147,5 @@ class _Paywall extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _openSubscribePage() async {
-    final uri = Uri.parse('https://www.descifrandolaguerra.es/suscribete/');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 }

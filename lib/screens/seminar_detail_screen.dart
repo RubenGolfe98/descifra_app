@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/seminar.dart';
 import '../repositories/seminar_repository.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
@@ -22,8 +24,27 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
   @override
   void initState() {
     super.initState();
+    AnalyticsService.logSeminarView(title: widget.seminar.title);
+    _load();
+  }
+
+  void _load() {
     final cookies = context.read<AuthNotifier>().state.cookies ?? '';
-    _future = _repository.fetchSessions(widget.seminar.link, cookies);
+    _future = _fetchWithRetry(cookies);
+  }
+
+  Future<List<SeminarSession>> _fetchWithRetry(String cookies, {int attempt = 1}) async {
+    final sessions = await _repository.fetchSessions(widget.seminar.link, cookies);
+    if (sessions.isEmpty && attempt < 3) {
+      final wait = Duration(seconds: attempt * 3);
+      if (kDebugMode) debugPrint('📚 [Seminar] Sin sesiones, reintentando en ${wait.inSeconds}s');
+      await Future.delayed(wait);
+      return _fetchWithRetry(cookies, attempt: attempt + 1);
+    }
+    if (sessions.isNotEmpty) {
+      _repository.prefetchSessionDetails(sessions, cookies);
+    }
+    return sessions;
   }
 
   @override
@@ -93,8 +114,23 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
               else if (!snapshot.hasData || snapshot.data!.isEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Text('No hay sesiones disponibles', style: TextStyle(color: sec)),
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.wifi_off_outlined, color: AppColors.accent, size: 40),
+                        const SizedBox(height: 16),
+                        Text('No se pudieron cargar las sesiones',
+                          style: TextStyle(color: sec, fontSize: 15),
+                          textAlign: TextAlign.center),
+                        const SizedBox(height: 20),
+                        FilledButton(
+                          onPressed: () => setState(_load),
+                          style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               else

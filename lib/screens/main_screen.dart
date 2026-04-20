@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/offline_banner.dart';
@@ -8,7 +7,7 @@ import 'home_screen.dart';
 import 'regions_screen.dart';
 import 'explore_screen.dart';
 import 'profile_screen.dart';
-import '../widgets/paywall_dialog.dart';
+import '../widgets/access_dialog.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -21,6 +20,10 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
   void _jumpToProfile() => setState(() => _currentIndex = 3);
+
+  void _onTabTap(int index) {
+    setState(() => _currentIndex = index);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +47,7 @@ class _MainScreenState extends State<MainScreen> {
             const OfflineBanner(),
             _BottomNav(
               currentIndex: _currentIndex,
-              onTap: (index) => setState(() => _currentIndex = index),
+              onTap: _onTabTap,
               isDark: isDark,
             ),
           ],

@@ -3,16 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../models/article.dart';
+import '../services/analytics_service.dart';
 import '../models/coverage.dart';
-import '../repositories/article_repository.dart';
 import '../repositories/coverage_repository.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
-import '../widgets/article_card.dart';
 import '../widgets/image_viewer.dart';
 import 'article_detail_screen.dart';
+import '../repositories/article_repository.dart';
 
 class CoverageDetailScreen extends StatefulWidget {
   final Coverage coverage;
@@ -29,30 +28,22 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
   CoverageDetail? _detail;
   bool _loadingDetail = true;
 
-  final _relatedArticles = <Article>[];
-  int _relatedPage = 1;
-  bool _loadingMore = false;
-  bool _hasMore = true;
   final _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
-    _loadAll();
+    _loadDetail();
+    AnalyticsService.logCoverageView(
+      slug: widget.coverage.slug,
+      title: widget.coverage.title,
+    );
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadAll() async {
-    // Cargar detalle y artículos de forma independiente
-    // El contenido aparece en cuanto llega, sin esperar a los artículos
-    _loadDetail();
-    _loadRelated();
   }
 
   Future<void> _loadDetail() async {
@@ -62,78 +53,6 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
       _detail = detail;
       _loadingDetail = false;
     });
-  }
-
-  Future<void> _loadRelated() async {
-    final raw = await _repo.fetchRelatedArticles(widget.coverage.slug);
-    if (!mounted) return;
-    setState(() {
-      _relatedArticles.addAll(raw.map(_articleFromMap));
-      if (raw.length < 10) _hasMore = false;
-    });
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 300 &&
-        !_loadingMore &&
-        _hasMore) {
-      _loadMoreRelated();
-    }
-  }
-
-  Future<void> _loadMoreRelated() async {
-    if (_loadingMore) return;
-    setState(() => _loadingMore = true);
-    final raw = await _repo.fetchRelatedArticles(
-      widget.coverage.slug,
-      page: _relatedPage + 1,
-    );
-    if (!mounted) return;
-    setState(() {
-      if (raw.isEmpty) {
-        _hasMore = false;
-      } else {
-        _relatedArticles.addAll(raw.map(_articleFromMap));
-        _relatedPage++;
-      }
-      _loadingMore = false;
-    });
-  }
-
-  /// Preprocesa el HTML para asegurar que los iframes sean detectables
-  /// flutter_html a veces ignora iframes con atributos complejos
-  String _preprocessHtml(String html) {
-    // Extraer src de cada iframe y reemplazar el tag completo por uno limpio
-    // Dos pasadas: una para comillas dobles, otra para simples
-    String result = html.replaceAllMapped(
-      RegExp(r'<iframe[^>]*src="([^"]+)"[^>]*>.*?</iframe>', dotAll: true),
-      (m) => '<iframe src="${m.group(1)}"></iframe>',
-    );
-    result = result.replaceAllMapped(
-      RegExp(r"<iframe[^>]*src='([^']+)'[^>]*>.*?</iframe>", dotAll: true),
-      (m) => '<iframe src="${m.group(1)}"></iframe>',
-    );
-    return result;
-  }
-
-  Article _articleFromMap(Map<String, dynamic> j) {
-    final classList = List<String>.from(j['class_list'] ?? []);
-    ArticleCategory category = ArticleCategory.noticia;
-    if (classList.contains('category-analisis')) category = ArticleCategory.analisis;
-    else if (classList.contains('category-entrevistas')) category = ArticleCategory.entrevista;
-
-    return Article(
-      id: j['id'] as int,
-      date: DateTime.tryParse(j['date'] ?? '') ?? DateTime.now(),
-      title: _strip(j['title']?['rendered'] ?? ''),
-      description: j['yoast_head_json']?['description'] ?? '',
-      author: j['yoast_head_json']?['author'] ?? '',
-      imageUrl: j['jetpack_featured_media_url'] ?? '',
-      isPremium: classList.contains('rcp-is-restricted'),
-      category: category,
-      slug: j['slug'] ?? '',
-    );
   }
 
   static String _strip(String html) =>
@@ -236,12 +155,11 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Html(
-                  data: _preprocessHtml(_detail!.contentHtml),
+                  data: _detail!.contentHtml,
                   onLinkTap: (url, _, __) async {
                     if (url == null || url.isEmpty) return;
                     final uri = Uri.tryParse(url);
                     if (uri == null) return;
-
                     final isInternal = uri.host.contains('descifrandolaguerra.es');
                     if (isInternal) {
                       final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
@@ -324,13 +242,11 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                     ),
                   },
                   extensions: [
-                    // Imágenes con tamaño limitado y memoria controlada
                     TagExtension(
                       tagsToExtend: {'img'},
                       builder: (extensionContext) {
                         final src = extensionContext.attributes['src'] ?? '';
                         if (src.isEmpty) return const SizedBox.shrink();
-                        // Usar versión de 600px si está disponible en srcset
                         final srcset = extensionContext.attributes['srcset'] ?? '';
                         String imgUrl = src;
                         if (srcset.isNotEmpty) {
@@ -356,7 +272,6 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                         );
                       },
                     ),
-                    // Mapas iframes (Google My Maps) — botón que abre externamente
                     TagExtension(
                       tagsToExtend: {'iframe'},
                       builder: (extensionContext) {
@@ -406,55 +321,10 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
               ),
             ),
 
-          // ── Artículos relacionados ────────────────────────────────────
-          if (_relatedArticles.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Divider(color: bord, thickness: 0.5),
-                    const SizedBox(height: 12),
-                    Text('Artículos de la cobertura',
-                      style: TextStyle(
-                        color: AppColors.accent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1,
-                      )),
-                  ],
-                ),
-              ),
-            ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index == _relatedArticles.length) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: _loadingMore
-                          ? const Center(child: SizedBox(
-                              width: 20, height: 20,
-                              child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)))
-                          : _hasMore
-                              ? const SizedBox.shrink()
-                              : Center(child: Text('No hay más artículos',
-                                  style: TextStyle(color: AppColors.textMut(isDark), fontSize: 12))),
-                    );
-                  }
-                  return ArticleCard(article: _relatedArticles[index]);
-                },
-                childCount: _relatedArticles.length + 1,
-              ),
-            ),
-          ],
-
+          // ── Padding final ─────────────────────────────────────────────
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
   }
-
-
 }
