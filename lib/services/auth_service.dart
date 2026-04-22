@@ -20,6 +20,7 @@ class AuthService {
   static const String _keyMembershipStatus = 'dlg_membership_status';
   static const String _keyMembershipExpires = 'dlg_membership_expires';
   static const String _keyNewsletter = 'dlg_newsletter_html';
+  static const String _keyMembershipRefreshedAt = 'dlg_membership_refreshed_at';
 
   static final _storage = FlutterSecureStorage(
     aOptions: const AndroidOptions(encryptedSharedPreferences: true),
@@ -88,6 +89,109 @@ class AuthService {
     return const AuthState.unknown();
   }
 
+  /// Devuelve true si hay que validar la membresía al arrancar.
+  /// Lógica:
+  /// - Si nunca se ha refrescado → true
+  /// - Si la suscripción no está activa → true (puede haber renovado)
+  /// - Si la fecha de expiración es anterior a hoy → true (puede haber renovado)
+  /// - En cualquier otro caso → false (suscripción activa con fecha futura)
+  Future<bool> isMembershipStale() async {
+    final ts = await _storage.read(key: _keyMembershipRefreshedAt);
+    if (ts == null) return true;
+
+    final membershipStatus = await _storage.read(key: _keyMembershipStatus);
+    final membershipExpires = await _storage.read(key: _keyMembershipExpires);
+    final isSubscriberStored = await _storage.read(key: _keyIsSubscriber);
+    final now = DateTime.now();
+
+    // Si la suscripción no está activa, comprobar siempre
+    final isActive = membershipStatus != null &&
+        (membershipStatus.toLowerCase().contains('activo') ||
+         membershipStatus.toLowerCase().contains('active'));
+    if (!isActive) return true;
+
+    // Si la fecha de expiración es anterior a hoy, comprobar siempre
+    if (membershipExpires != null && membershipExpires.isNotEmpty) {
+      final expiry = _parseSpanishDate(membershipExpires);
+      if (expiry != null && expiry.isBefore(DateTime(now.year, now.month, now.day))) {
+        return true;
+      }
+    }
+
+    // Inconsistencia: membresía activa con fecha futura pero isSubscriber=false
+    // Puede pasar si el refresco anterior falló parcialmente
+    if (isActive && isSubscriberStored != 'true') return true;
+
+    return false;
+  }
+
+  /// Parsea fechas en formato español: "21 de abril de 2026"
+  static DateTime? _parseSpanishDate(String date) {
+    const months = {
+      'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4,
+      'mayo': 5, 'junio': 6, 'julio': 7, 'agosto': 8,
+      'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
+    };
+    try {
+      final parts = date.toLowerCase().replaceAll(' de ', ' ').trim().split(' ');
+      if (parts.length < 3) return null;
+      final day = int.parse(parts[0]);
+      final month = months[parts[1]];
+      final year = int.parse(parts[2]);
+      if (month == null) return null;
+      return DateTime(year, month, day);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Refresca membresía e isSubscriber desde el servidor.
+  /// Devuelve el AuthState actualizado o null si falla.
+  Future<AuthState?> refreshMembership(String cookies) async {
+    try {
+      if (kDebugMode) debugPrint('🔐 [Auth] Refrescando membresía...');
+      final nonce = await _fetchRestNonce(cookies);
+      final headers = <String, String>{'Cookie': cookies};
+      if (nonce != null) headers['X-WP-Nonce'] = nonce;
+
+      final results = await Future.wait([
+        _fetchUserData(cookies, headers),
+        _fetchMembership(cookies),
+      ]);
+
+      final userData = results[0] as Map<String, dynamic>;
+      final membership = results[1] as MembershipInfo?;
+      final isSubscriber = userData['isSubscriber'] as bool;
+
+      // Persistir estado actualizado
+      await _storage.write(key: _keyIsSubscriber, value: isSubscriber.toString());
+      if (membership != null) {
+        await _storage.write(key: _keyMembershipName, value: membership.name);
+        await _storage.write(key: _keyMembershipStatus, value: membership.status);
+        await _storage.write(key: _keyMembershipExpires, value: membership.expiresAt ?? '');
+        await _storage.write(key: _keyNewsletter, value: membership.newsletterHtml ?? '');
+      }
+      await _storage.write(
+        key: _keyMembershipRefreshedAt,
+        value: DateTime.now().millisecondsSinceEpoch.toString(),
+      );
+
+      if (kDebugMode) debugPrint('🔐 [Auth] Membresía refrescada — isSubscriber: $isSubscriber, status: ${membership?.status}');
+
+      return AuthState(
+        status: SessionStatus.loggedIn,
+        cookies: cookies,
+        userEmail: await _storage.read(key: _keyEmail),
+        userDisplayName: await _storage.read(key: _keyDisplayName),
+        isSubscriber: isSubscriber,
+        membership: membership,
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('🔐 [Auth] Error refrescando membresía: $e');
+      return null;
+    }
+  }
+
   // ─── Login con cookies del WebView ─────────────────────────────────────────
 
   Future<AuthState> loginWithCookies(String cookieString) async {
@@ -138,7 +242,7 @@ class AuthService {
       final response = await _client.get(
         Uri.parse('$_siteUrl/wp-admin/admin-ajax.php?action=rest-nonce'),
         headers: {'Cookie': cookies},
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 35));
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         return response.body.trim();
@@ -159,11 +263,11 @@ class AuthService {
         _client.get(
           Uri.parse('$_apiUrl/users/me?_fields=id,name,email'),
           headers: headers,
-        ).timeout(const Duration(seconds: 15)),
+        ).timeout(const Duration(seconds: 35)),
         _client.get(
           Uri.parse('$_apiUrl/posts?per_page=1&_fields=id,content&rcp_is_restricted=1'),
           headers: headers,
-        ).timeout(const Duration(seconds: 15)),
+        ).timeout(const Duration(seconds: 35)),
       ]);
 
       final userResponse = results[0];
@@ -207,7 +311,7 @@ class AuthService {
       final response = await _client.get(
         Uri.parse('$_siteUrl/mi-cuenta/'),
         headers: {'Cookie': cookies},
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(const Duration(seconds: 35));
 
       if (response.statusCode != 200) return null;
 
@@ -277,6 +381,10 @@ class AuthService {
     await _storage.write(key: _keyEmail, value: state.userEmail ?? '');
     await _storage.write(key: _keyDisplayName, value: state.userDisplayName ?? '');
     await _storage.write(key: _keyIsSubscriber, value: state.isSubscriber.toString());
+    await _storage.write(
+      key: _keyMembershipRefreshedAt,
+      value: DateTime.now().millisecondsSinceEpoch.toString(),
+    );
     if (state.membership != null) {
       await _storage.write(key: _keyMembershipName, value: state.membership!.name);
       await _storage.write(key: _keyMembershipStatus, value: state.membership!.status);

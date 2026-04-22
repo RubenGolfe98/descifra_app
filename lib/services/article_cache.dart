@@ -23,7 +23,7 @@ class ArticleCache {
     try {
       return await _storage.read(key: key ?? _keyList);
     } catch (e) {
-      debugPrint('📦 [Cache] Error leyendo listado: $e');
+      if (kDebugMode) debugPrint('📦 [Cache] Error leyendo listado: $e');
       return null;
     }
   }
@@ -36,7 +36,7 @@ class ArticleCache {
           key: '${k}_ts',
           value: DateTime.now().millisecondsSinceEpoch.toString());
     } catch (e) {
-      debugPrint('📦 [Cache] Error guardando listado: $e');
+      if (kDebugMode) debugPrint('📦 [Cache] Error guardando listado: $e');
     }
   }
 
@@ -58,7 +58,7 @@ class ArticleCache {
     try {
       return await _storage.read(key: '$_keyDetailPrefix$id');
     } catch (e) {
-      debugPrint('📦 [Cache] Error leyendo detalle $id: $e');
+      if (kDebugMode) debugPrint('📦 [Cache] Error leyendo detalle $id: $e');
       return null;
     }
   }
@@ -70,7 +70,7 @@ class ArticleCache {
           key: '$_keyDetailTsPrefix$id',
           value: DateTime.now().millisecondsSinceEpoch.toString());
     } catch (e) {
-      debugPrint('📦 [Cache] Error guardando detalle $id: $e');
+      if (kDebugMode) debugPrint('📦 [Cache] Error guardando detalle $id: $e');
     }
   }
 
@@ -82,6 +82,34 @@ class ArticleCache {
       return DateTime.now().difference(saved).inMinutes > _ttlMinutes;
     } catch (_) {
       return true;
+    }
+  }
+
+  /// Elimina de la caché los detalles de artículos exclusivos (content vacío
+  /// o con rcp-is-restricted) para que se vuelvan a pedir al servidor.
+  /// Llamar cuando la suscripción expira.
+  Future<void> clearExclusiveContent() async {
+    try {
+      final all = await _storage.readAll();
+      int cleared = 0;
+      for (final entry in all.entries) {
+        if (!entry.key.startsWith(_keyDetailPrefix)) continue;
+        if (entry.key.contains('_ts')) continue;
+        try {
+          final json = entry.value;
+          if (json.contains('rcp-is-restricted') ||
+              json.contains('"rendered":""') ||
+              json.contains('"rendered": ""')) {
+            final id = entry.key.replaceFirst(_keyDetailPrefix, '');
+            await _storage.delete(key: entry.key);
+            await _storage.delete(key: '$_keyDetailTsPrefix$id');
+            cleared++;
+          }
+        } catch (_) {}
+      }
+      if (kDebugMode) debugPrint('📦 [Cache] Limpiados $cleared artículos exclusivos');
+    } catch (e) {
+      if (kDebugMode) debugPrint('📦 [Cache] Error limpiando exclusivos: $e');
     }
   }
 }

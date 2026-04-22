@@ -90,6 +90,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
         article: widget.article,
         detailFuture: _detailFuture,
         onRetry: () => setState(() => _loadDetail(forceRefresh: true)),
+        onForceRefresh: () => setState(() => _loadDetail(forceRefresh: true)),
         isDark: isDark,
         refreshing: _refreshing,
       ),
@@ -102,6 +103,7 @@ class _ArticleShell extends StatelessWidget {
   final Article article;
   final Future<ArticleDetail> detailFuture;
   final VoidCallback onRetry;
+  final VoidCallback onForceRefresh;
   final bool isDark;
   final bool refreshing;
 
@@ -109,6 +111,7 @@ class _ArticleShell extends StatelessWidget {
     required this.article,
     required this.detailFuture,
     required this.onRetry,
+    required this.onForceRefresh,
     required this.isDark,
     this.refreshing = false,
   });
@@ -268,8 +271,14 @@ class _ArticleShell extends StatelessWidget {
               final showPaywall = isLocked && !hasContent;
 
               // Si no hay contenido y hay refresco en curso → skeleton
-              // (cubre tanto artículos libres como restringidos pendientes de nonce)
               if (!hasContent && refreshing) {
+                return const _ContentSkeleton();
+              }
+
+              // Si es suscriptor pero el contenido está vacío (caché obsoleta)
+              // → forzar refresco en lugar de mostrar paywall
+              if (!hasContent && !refreshing && auth.state.isSubscriber && article.isPremium) {
+                WidgetsBinding.instance.addPostFrameCallback((_) => onForceRefresh());
                 return const _ContentSkeleton();
               }
 

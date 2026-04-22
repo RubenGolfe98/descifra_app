@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.4.0] — 2026-04-22
+
+### Añadido
+- **Validación de membresía al arrancar** — si la suscripción no está activa, la fecha de expiración es anterior a hoy, o hay inconsistencia entre el estado de membresía e `isSubscriber`, la app valida contra el servidor antes de mostrar la pantalla principal
+- **Limpieza automática de caché exclusiva** — al detectar que la suscripción ha expirado, se eliminan de la caché los artículos con `rcp-is-restricted` o `content` vacío
+- **Refresco forzado al renovar suscripción** — si el usuario es suscriptor pero el artículo tiene content vacío en caché, se fuerza una nueva petición al servidor en lugar de mostrar el paywall
+
+### Mejorado
+- **Todos los timeouts de `auth_service`** subidos a 35s — la verificación de suscripción (`rcp_is_restricted`) tardaba hasta 17s y fallaba con el timeout anterior de 15s
+- **`isMembershipStale`** — lógica inteligente: valida si la suscripción no está activa, si la fecha de expiración es anterior a hoy, o si hay inconsistencia entre `membershipStatus` e `isSubscriber`
+
+### Corregido
+- `isSubscriber` quedaba en `false` tras renovar la suscripción porque la petición de verificación superaba el timeout de 15s
+- El `access_dialog` aparecía en artículos exclusivos tras renovar la suscripción aunque la membresía estuviera activa
+- El perfil mostraba el estado de membresía desactualizado entre arranques
+
+---
+
 ## [1.3.0] — 2026-04-20
 
 ### Añadido

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../models/auth_state.dart';
 import '../models/auth_exception.dart';
+import 'analytics_service.dart';
+import 'article_cache.dart';
 import 'auth_service.dart';
 
 class AuthNotifier extends ChangeNotifier {
@@ -10,7 +12,7 @@ class AuthNotifier extends ChangeNotifier {
   bool _initializing = true;
   bool _isLoading = false;
   String? _errorMessage;
-  String? _restNonce; // caché del nonce REST
+  String? _restNonce;
 
   AuthNotifier({AuthService? service})
       : _service = service ?? AuthService();
@@ -23,18 +25,39 @@ class AuthNotifier extends ChangeNotifier {
 
   Future<void> initialize() async {
     _state = await _service.loadSavedSession();
+
+    if (_state.isLoggedIn && _state.cookies != null) {
+      final wasSubscriber = _state.isSubscriber;
+      final stale = await _service.isMembershipStale();
+
+      if (stale) {
+        // Primera entrada del día — validar membresía ANTES de mostrar la app
+        if (kDebugMode) debugPrint('🔐 [Auth] Primera entrada del día — validando membresía');
+        final updated = await _service.refreshMembership(_state.cookies!);
+        if (updated != null) {
+          _state = updated;
+          if (wasSubscriber && !updated.isSubscriber) {
+            if (kDebugMode) debugPrint('🔐 [Auth] Suscripción expirada — limpiando caché');
+            await ArticleCache().clearExclusiveContent();
+          }
+        }
+      }
+    }
+
     _initializing = false;
     notifyListeners();
-    // Pre-cargar el nonce REST si hay sesión activa
+
+    // Nonce REST en background — no bloquea el arranque
     if (_state.isLoggedIn && _state.cookies != null) {
-      _restNonce = await _service.getRestNonce(_state.cookies!);
-      if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST pre-cargado: $_restNonce');
-      notifyListeners();
+      _service.getRestNonce(_state.cookies!).then((nonce) {
+        _restNonce = nonce;
+        if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST pre-cargado: $_restNonce');
+        notifyListeners();
+      });
     }
   }
 
-  /// Recibe las cookies extraídas del WebView — las credenciales
-  /// nunca pasan por aquí, solo la sesión ya autenticada
+  /// Recibe las cookies extraídas del WebView
   Future<void> loginWithCookies(String cookieString) async {
     _isLoading = true;
     _errorMessage = null;
@@ -42,9 +65,9 @@ class AuthNotifier extends ChangeNotifier {
     try {
       final newState = await _service.loginWithCookies(cookieString);
       _state = newState;
-      // Usar el nonce ya obtenido durante loginWithCookies (sin nueva petición)
       _restNonce = _service.lastNonce;
       if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST tras login: $_restNonce');
+      AnalyticsService.logLoginSuccess();
     } on AuthException catch (e) {
       _errorMessage = e.message;
     } catch (e, stack) {
@@ -62,6 +85,7 @@ class AuthNotifier extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    AnalyticsService.logLogout();
     await _service.logout();
     _state = const AuthState.unknown();
     _errorMessage = null;
@@ -69,7 +93,6 @@ class AuthNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Renueva el nonce REST — llamar si una petición devuelve 401
   Future<String?> renewRestNonce() async {
     if (_state.cookies == null) return null;
     _restNonce = await _service.getRestNonce(_state.cookies!);
