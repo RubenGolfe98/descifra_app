@@ -8,7 +8,6 @@ import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/access_dialog.dart';
-import '../services/analytics_service.dart';
 import 'seminar_detail_screen.dart';
 
 class SeminarsScreen extends StatefulWidget {
@@ -27,7 +26,6 @@ class _SeminarsScreenState extends State<SeminarsScreen> {
   void initState() {
     super.initState();
     _future = _repository.fetchSeminars();
-    AnalyticsService.logSectionView('seminars');
     // Prefetch se lanza desde build() una vez disponible el contexto
   }
 

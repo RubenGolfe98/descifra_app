@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../services/analytics_service.dart';
 import '../models/coverage.dart';
 import '../repositories/coverage_repository.dart';
 import '../services/auth_notifier.dart';
@@ -34,10 +33,6 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
   void initState() {
     super.initState();
     _loadDetail();
-    AnalyticsService.logCoverageView(
-      slug: widget.coverage.slug,
-      title: widget.coverage.title,
-    );
   }
 
   @override

@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/seminar.dart';
 import '../repositories/seminar_repository.dart';
-import '../services/analytics_service.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
@@ -38,10 +37,6 @@ class _SeminarSessionScreenState extends State<SeminarSessionScreen> {
   void initState() {
     super.initState();
     _loadDetail();
-    AnalyticsService.logSeminarSessionView(
-      seminarTitle: widget.seminarTitle,
-      sessionTitle: widget.sessionTitle,
-    );
   }
 
   @override

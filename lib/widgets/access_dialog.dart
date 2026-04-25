@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/analytics_service.dart';
 import '../services/auth_notifier.dart';
 
 /// Muestra el diálogo de acceso exclusivo según el estado de autenticación
@@ -8,10 +7,6 @@ Future<void> showAccessDialog(BuildContext context,
     {required VoidCallback onLoginTap, String source = 'unknown'}) {
   final auth = context.read<AuthNotifier>();
   final isLoggedIn = auth.state.isLoggedIn;
-  AnalyticsService.logAccessDialogShown(
-    isLoggedIn: isLoggedIn,
-    source: source,
-  );
   return showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,

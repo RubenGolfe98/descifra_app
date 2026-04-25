@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import '../services/theme_notifier.dart';
-import '../theme/app_colors.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../repositories/article_repository.dart';
-import '../services/auth_notifier.dart';
+import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
 import '../widgets/access_dialog.dart';
-import '../services/analytics_service.dart';
 
 class InterviewsScreen extends StatefulWidget {
   const InterviewsScreen({super.key});
@@ -33,7 +31,6 @@ class _InterviewsScreenState extends State<InterviewsScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _load();
-    AnalyticsService.logSectionView('interviews');
   }
 
   @override

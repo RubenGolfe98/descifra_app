@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/seminar.dart';
 import '../repositories/seminar_repository.dart';
-import '../services/analytics_service.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
@@ -24,7 +23,6 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
   @override
   void initState() {
     super.initState();
-    AnalyticsService.logSeminarView(title: widget.seminar.title);
     _load();
   }
 

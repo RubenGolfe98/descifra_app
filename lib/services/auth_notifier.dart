@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/auth_state.dart';
 import '../models/auth_exception.dart';
-import 'analytics_service.dart';
 import 'article_cache.dart';
 import 'auth_service.dart';
 
@@ -67,8 +66,7 @@ class AuthNotifier extends ChangeNotifier {
       _state = newState;
       _restNonce = _service.lastNonce;
       if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST tras login: $_restNonce');
-      AnalyticsService.logLoginSuccess();
-    } on AuthException catch (e) {
+      } on AuthException catch (e) {
       _errorMessage = e.message;
     } catch (e, stack) {
       if (kDebugMode) debugPrint('Login error: $e\n$stack');
@@ -85,7 +83,6 @@ class AuthNotifier extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    AnalyticsService.logLogout();
     await _service.logout();
     _state = const AuthState.unknown();
     _errorMessage = null;

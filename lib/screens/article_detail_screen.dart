@@ -13,8 +13,6 @@ import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
 import '../widgets/image_viewer.dart';
-import '../widgets/access_dialog.dart';
-import '../services/analytics_service.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
   final Article article;
@@ -36,12 +34,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   void initState() {
     super.initState();
     _loadDetail();
-    AnalyticsService.logArticleView(
-      slug: widget.article.slug,
-      title: widget.article.title,
-      category: widget.article.category.name,
-      author: widget.article.author,
-    );
   }
 
   @override

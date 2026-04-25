@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/coverage.dart';
 import '../repositories/coverage_repository.dart';
-import '../services/analytics_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import 'coverage_detail_screen.dart';
@@ -31,7 +30,6 @@ class _CoveragesScreenState extends State<CoveragesScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _firstPageFuture = _repository.fetchCoverages(perPage: 5);
-    AnalyticsService.logSectionView('coverages');
   }
 
   @override

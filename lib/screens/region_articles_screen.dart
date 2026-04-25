@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../models/region.dart';
 import '../repositories/article_repository.dart';
-import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
-import '../widgets/access_dialog.dart';
-import '../services/analytics_service.dart';
 
 class RegionArticlesScreen extends StatefulWidget {
   final Region region;
@@ -35,7 +33,6 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _load();
-    AnalyticsService.logRegionArticlesView(widget.region.slug);
   }
 
   @override
