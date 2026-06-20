@@ -116,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (snapshot.hasError && _articles.isEmpty) {
                     return _ErrorView(onRetry: _refresh, isDark: isDark);
                   }
-                  if (!_initialized && snapshot.data != null) {
+                  if (!_initialized && snapshot.hasData) {
                     _initialized = true;
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (mounted && _articles.isEmpty) {
@@ -124,8 +124,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     });
                   }
+                  final displayArticles =
+                      _articles.isEmpty && snapshot.hasData
+                          ? snapshot.data!
+                          : _articles;
                   return _ArticleFeed(
-                    articles: _articles,
+                    articles: displayArticles,
                     onRefresh: _refresh,
                     scrollController: _scrollController,
                     isLoadingMore: _isLoadingMore,

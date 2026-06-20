@@ -28,12 +28,18 @@ class MockArticleCache extends ArticleCache {
   @override
   Future<String?> getDetail(int id) async => _detailData;
   @override
-  Future<void> saveDetail(int id, String json) async {
+  Future<void> saveDetail(int id, String json, {bool isPremium = false}) async {
     _detailData = json;
   }
 
   @override
   Future<bool> isDetailStale(int id) async => _isStale;
+
+  @override
+  Future<String?> getSearch(String query) async => null;
+
+  @override
+  Future<void> saveSearch(String query, String json) async {}
 }
 
 final _articleJson = {

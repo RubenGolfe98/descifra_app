@@ -91,37 +91,11 @@ class _AppGate extends StatefulWidget {
 }
 
 class _AppGateState extends State<_AppGate> {
-  bool _minTimeElapsed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) setState(() => _minTimeElapsed = true);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthNotifier>();
-    final ready = !auth.initializing && _minTimeElapsed;
 
-    // Cargar favoritos cuando el usuario está logueado — fuera del build
-    if (ready) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final favorites = context.read<FavoritesService>();
-        if (auth.state.isLoggedIn) {
-          if (!favorites.loaded) {
-            favorites.loadFavorites(auth.state.cookies ?? '');
-          }
-        } else {
-          favorites.clear();
-        }
-      });
-    }
-
-    if (!ready) {
+    if (auth.initializing) {
       return Scaffold(
         backgroundColor: AppColors.bg(widget.isDark),
         body: Center(
@@ -160,6 +134,19 @@ class _AppGateState extends State<_AppGate> {
         ),
       );
     }
+
+    // Cargar favoritos cuando el usuario está logueado
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final favorites = context.read<FavoritesService>();
+      if (auth.state.isLoggedIn) {
+        if (!favorites.loaded) {
+          favorites.loadFavorites(auth.state.cookies ?? '');
+        }
+      } else {
+        favorites.clear();
+      }
+    });
 
     return const MainScreen();
   }

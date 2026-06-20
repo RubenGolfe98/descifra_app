@@ -196,7 +196,7 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                   );
                 }
                 if (!_initialized &&
-                    snapshot.data != null &&
+                    snapshot.hasData &&
                     _articles.isEmpty) {
                   _initialized = true;
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -205,7 +205,11 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                     }
                   });
                 }
-                if (_articles.isEmpty) {
+                final displayArticles =
+                    _articles.isEmpty && snapshot.hasData
+                        ? snapshot.data!
+                        : _articles;
+                if (displayArticles.isEmpty) {
                   return SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
@@ -216,8 +220,8 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                 }
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => ArticleCard(article: _articles[index]),
-                    childCount: _articles.length,
+                    (context, index) => ArticleCard(article: displayArticles[index]),
+                    childCount: displayArticles.length,
                   ),
                 );
               },

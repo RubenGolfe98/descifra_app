@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.4.1] — 2026-06-20
+
+### Mejorado (rendimiento)
+- **Caché reescrita**: `FlutterSecureStorage` reemplazado por caché en disco (`path_provider`) + memoria caliente (hot cache). Las lecturas de caché pasan de operaciones de Keychain (~50-200ms cada una) a accesos a memoria RAM o lecturas de archivos planos, eliminando el cuello de botella principal al abrir artículos
+- **Carga diferida de artículos premium**: se espera al nonce REST antes de hacer la primera petición, eliminando la carga duplicada que antes disparaba 2-3 requests por cada artículo restringido
+- **HTTP Client directo**: se usa `http.Client()` en lugar de `LoggingHttpClient` por defecto, eliminando la sobrecarga de bufferización de respuestas en modo debug
+- **Timeouts reducidos**: de 35s a 15s (listas) y 20s (detalles); los reintentos por 503 bajan de 3 a 2 intentos con menor espaciado
+- **TTLs ampliados**: listas 2h (antes 30min), detalles 24h (antes 30min), menos refrescos en background innecesarios
+- **Caché de búsqueda**: resultados de búsqueda se cachean 15 minutos
+- **Splash mínimo**: eliminado el delay fijo de 1.5s — la splash solo se muestra mientras auth inicializa (~100-200ms)
+- **Flash eliminado en feeds**: las pantallas de inicio, análisis, entrevistas y regiones ya no muestran un frame extra de spinner antes de renderizar los artículos
+
+### Corregido
+- Race condition que causaba cargas duplicadas (2-3 requests) al abrir artículos premium con sesión activa
+- `saveDetail` ahora guarda también el flag `isPremium` para permitir limpieza eficiente de caché exclusiva sin escanear contenidos
+
+### Dependencias
+- Añadido `path_provider` para caché en disco
+- Eliminada dependencia interna de `flutter_secure_storage` para el sistema de caché (sigue usándose exclusivamente para auth)
+
+---
+
 ## [1.4.0] — 2026-04-22
 
 ### Añadido

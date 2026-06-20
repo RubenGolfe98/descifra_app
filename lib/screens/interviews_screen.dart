@@ -145,7 +145,7 @@ class _InterviewsScreenState extends State<InterviewsScreen> {
                   }
 
                   if (!_initialized &&
-                      snapshot.data != null &&
+                      snapshot.hasData &&
                       _articles.isEmpty) {
                     _initialized = true;
                     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -155,15 +155,20 @@ class _InterviewsScreenState extends State<InterviewsScreen> {
                     });
                   }
 
+                  final displayArticles =
+                      _articles.isEmpty && snapshot.hasData
+                          ? snapshot.data!
+                          : _articles;
+
                   return RefreshIndicator(
                     onRefresh: _refresh,
                     color: AppColors.accent,
                     backgroundColor: const Color(0xFF1A1A1A),
                     child: ListView.builder(
                       controller: _scrollController,
-                      itemCount: _articles.length + 1,
+                      itemCount: displayArticles.length + 1,
                       itemBuilder: (context, index) {
-                        if (index == _articles.length) {
+                        if (index == displayArticles.length) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 20),
                             child: _isLoadingMore
@@ -190,7 +195,7 @@ class _InterviewsScreenState extends State<InterviewsScreen> {
                                       ),
                           );
                         }
-                        return ArticleCard(article: _articles[index]);
+                        return ArticleCard(article: displayArticles[index]);
                       },
                     ),
                   );

@@ -26,9 +26,9 @@ class ArticleDetailScreen extends StatefulWidget {
 class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   final _repository = ArticleRepository();
   late Future<ArticleDetail> _detailFuture;
-  String? _lastNonce;
   bool _refreshing = false;
-  int _loadVersion = 0; // evita race conditions entre peticiones
+  int _loadVersion = 0;
+  bool _pendingAuth = false; // true → esperando nonce para artículo premium
 
   @override
   void initState() {
@@ -40,17 +40,25 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final auth = context.watch<AuthNotifier>();
-    if (auth.restNonce != null &&
-        auth.restNonce != _lastNonce &&
-        _lastNonce == null) {
-      _lastNonce = auth.restNonce;
-      _loadDetail(forceRefresh: true);
+    // Si estábamos esperando auth y el nonce ya llegó, lanzamos la carga
+    if (_pendingAuth && auth.restNonce != null) {
+      _pendingAuth = false;
+      _loadDetail();
     }
   }
 
   void _loadDetail({bool forceRefresh = false}) {
     final auth = context.read<AuthNotifier>();
-    _lastNonce = auth.restNonce;
+
+    // Para artículos premium con usuario logueado: esperar al nonce
+    if (widget.article.isPremium &&
+        auth.state.isLoggedIn &&
+        auth.restNonce == null) {
+      _pendingAuth = true;
+      return;
+    }
+
+    _pendingAuth = false;
     final version = ++_loadVersion;
     setState(() => _refreshing = true);
     _detailFuture = _repository.fetchArticleDetail(
@@ -88,7 +96,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
         article: widget.article,
         detailFuture: _detailFuture,
         onRetry: () => setState(() => _loadDetail(forceRefresh: true)),
-        onForceRefresh: () => setState(() => _loadDetail(forceRefresh: true)),
         isDark: isDark,
         refreshing: _refreshing,
       ),
@@ -101,7 +108,6 @@ class _ArticleShell extends StatelessWidget {
   final Article article;
   final Future<ArticleDetail> detailFuture;
   final VoidCallback onRetry;
-  final VoidCallback onForceRefresh;
   final bool isDark;
   final bool refreshing;
 
@@ -109,7 +115,6 @@ class _ArticleShell extends StatelessWidget {
     required this.article,
     required this.detailFuture,
     required this.onRetry,
-    required this.onForceRefresh,
     required this.isDark,
     this.refreshing = false,
   });
@@ -190,7 +195,6 @@ class _ArticleShell extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Badges: categoría + premium
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -275,19 +279,7 @@ class _ArticleShell extends StatelessWidget {
                   !(auth.state.isLoggedIn && auth.state.isSubscriber);
               final showPaywall = isLocked && !hasContent;
 
-              // Si no hay contenido y hay refresco en curso → skeleton
               if (!hasContent && refreshing) {
-                return const _ContentSkeleton();
-              }
-
-              // Si es suscriptor pero el contenido está vacío (caché obsoleta)
-              // → forzar refresco en lugar de mostrar paywall
-              if (!hasContent &&
-                  !refreshing &&
-                  auth.state.isSubscriber &&
-                  article.isPremium) {
-                WidgetsBinding.instance
-                    .addPostFrameCallback((_) => onForceRefresh());
                 return const _ContentSkeleton();
               }
 
@@ -306,18 +298,8 @@ class _ArticleShell extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre'
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
     ];
     return '${date.day} de ${months[date.month - 1]} de ${date.year}';
   }
@@ -344,19 +326,15 @@ class _HtmlContent extends StatelessWidget {
           final uri = Uri.tryParse(url);
           if (uri == null) return;
 
-          // ¿Es una URL interna de Descifrando la Guerra?
           final isInternal = uri.host.contains('descifrandolaguerra.es');
 
           if (isInternal) {
-            // Extraer el slug — último segmento no vacío de la ruta
-            // Ej: /israel-en-libano-limpieza-etnica-ocupacion/ → ese slug
             final segments =
                 uri.pathSegments.where((s) => s.isNotEmpty).toList();
 
             if (segments.isNotEmpty) {
               final slug = segments.last;
 
-              // Mostrar indicador de carga
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -387,7 +365,6 @@ class _HtmlContent extends StatelessWidget {
             }
           }
 
-          // URL externa o artículo no encontrado → abrir navegador
           if (await canLaunchUrl(uri)) {
             await launchUrl(uri, mode: LaunchMode.externalApplication);
           }
@@ -445,7 +422,6 @@ class _HtmlContent extends StatelessWidget {
           ),
         },
         extensions: [
-          // Renderizador custom de imágenes con caché y límite de memoria
           TagExtension(
             tagsToExtend: {'img'},
             builder: (extensionContext) {
@@ -492,7 +468,6 @@ class _PaywallBlock extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Column(
         children: [
-          // Texto desvanecido simulando contenido bloqueado
           ShaderMask(
             shaderCallback: (bounds) => const LinearGradient(
               begin: Alignment.topCenter,
@@ -517,8 +492,6 @@ class _PaywallBlock extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-
-          // Icono candado
           Container(
             width: 56,
             height: 56,
@@ -530,7 +503,6 @@ class _PaywallBlock extends StatelessWidget {
                 color: Color(0xFFC0392B), size: 26),
           ),
           const SizedBox(height: 14),
-
           Text(
             'Contenido exclusivo para suscriptores',
             textAlign: TextAlign.center,
@@ -552,8 +524,6 @@ class _PaywallBlock extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
-
-          // Botón login si no está logueado
           if (!isLoggedIn) ...[
             SizedBox(
               width: double.infinity,
@@ -573,7 +543,6 @@ class _PaywallBlock extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
-
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cerrar',
@@ -585,7 +554,7 @@ class _PaywallBlock extends StatelessWidget {
   }
 }
 
-// ─── Colores dinámicos (delegados a AppColors según tema) ────────────────────
+// ─── Colores dinámicos ────────────────────────────────────────────────────────
 class _Colors {
   static Color bg(bool d) => AppColors.bg(d);
   static Color surf(bool d) => AppColors.surf(d);
@@ -645,7 +614,7 @@ class _ContentSkeleton extends StatelessWidget {
   }
 }
 
-// ─── Error inline (no ocupa toda la pantalla) ─────────────────────────────────
+// ─── Error inline ─────────────────────────────────────────────────────────────
 class _ContentError extends StatelessWidget {
   final VoidCallback onRetry;
   const _ContentError({required this.onRetry});
@@ -681,7 +650,6 @@ class _FavoriteButton extends StatelessWidget {
     final auth = context.watch<AuthNotifier>();
     final favorites = context.watch<FavoritesService>();
 
-    // Solo mostrar si el usuario está logueado
     if (!auth.state.isLoggedIn) return const SizedBox.shrink();
 
     final isSaved = favorites.isSaved(article.id);

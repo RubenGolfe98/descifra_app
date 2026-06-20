@@ -73,7 +73,6 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 - **Libros** con ficha técnica y enlaces de compra en Amazon y Kindle
 - **Autenticación segura** — las credenciales se introducen en la web oficial a través de un WebView seguro, nunca pasan por la app
 - **Contenido exclusivo** para suscriptores con detección automática de membresía
-- **Firebase Analytics** integrado de forma opcional — sin credenciales la app funciona sin Analytics
 - **Tema claro y oscuro** con paleta inspirada en papel periódico
 - **5 fuentes tipográficas** optimizadas para lectura (Raleway, Lora, Merriweather, Source Sans, Crimson Pro)
 - **Ajuste de tamaño de texto** en 5 niveles
@@ -88,8 +87,8 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 |-----------|-----------|
 | Framework | Flutter 3.x / Dart |
 | Estado | Provider + ChangeNotifier |
-| Red | http + LoggingHttpClient |
-| Caché | flutter_secure_storage (EncryptedSharedPreferences) |
+| Red | http |
+| Caché | path_provider (disco) + memoria caliente (hot cache) |
 | Imágenes | cached_network_image |
 | Autenticación | flutter_inappwebview + cookies de sesión |
 | HTML | flutter_html |
@@ -97,7 +96,6 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 | Fuentes | google_fonts |
 | Conectividad | connectivity_plus |
 | Compartir | share_plus |
-| Analytics | firebase_analytics (opcional) |
 
 ---
 
@@ -106,7 +104,6 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 ```
 lib/
 ├── main.dart                    # Punto de entrada, providers, precarga
-├── firebase_options.dart.example # Plantilla para configurar Firebase
 ├── models/
 │   ├── article.dart
 │   ├── article_detail.dart
@@ -161,30 +158,6 @@ lib/
     ├── image_viewer.dart
     └── offline_banner.dart
 ```
-
----
-
-## Firebase Analytics (opcional)
-
-La app soporta Firebase Analytics de forma completamente opcional. Sin los archivos de configuración compila y funciona con normalidad.
-
-Para activarlo:
-
-```bash
-# 1. Instalar FlutterFire CLI
-dart pub global activate flutterfire_cli
-
-# 2. Configurar con tu proyecto Firebase
-flutterfire configure --project=TU_PROJECT_ID
-```
-
-Esto genera `lib/firebase_options.dart` — **no subir a git** (ya está en `.gitignore`).
-
-Para contribuidores sin Firebase, copiar la plantilla:
-```bash
-cp lib/firebase_options.dart.example lib/firebase_options.dart
-```
-
 ---
 
 ## Seguridad
@@ -194,7 +167,6 @@ cp lib/firebase_options.dart.example lib/firebase_options.dart
 - Las cookies se persisten con **EncryptedSharedPreferences** (cifrado a nivel hardware en Android)
 - Todas las peticiones usan **HTTPS**
 - El nonce REST se renueva automáticamente al detectar expiración (HTTP 401)
-- Los archivos de Firebase, keystores de firma y certificados iOS están en `.gitignore`
 
 ---
 

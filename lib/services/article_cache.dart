@@ -1,113 +1,162 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:path_provider/path_provider.dart';
 
-/// Caché local de artículos en disco.
-/// - El listado se guarda con clave 'articles_list'
-/// - Cada detalle se guarda con clave 'article_detail_{id}'
-/// - TTL de 30 minutos — si han pasado más se refresca en background
 class ArticleCache {
-  static const _ttlMinutes = 30;
-  static const _keyList = 'articles_list';
-  static const _keyDetailPrefix = 'article_detail_';
-  static const _keyDetailTsPrefix = 'article_detail_ts_';
+  // TTL ampliados: listas 2h, detalles 24h, búsqueda 15min
+  static const _listTtlMinutes   = 120;
+  static const _detailTtlMinutes = 1440;
+  static const _searchTtlMinutes = 15;
 
-  static final _storage = FlutterSecureStorage();
+  // ─── Caché en memoria (hot) ─────────────────────────────────────────────────
+  static final _mem = <String, _Entry>{};
+  static const _memMax = 100;
 
-  // ─── Listado ───────────────────────────────────────────────────────────────
+  // ─── Caché en disco ─────────────────────────────────────────────────────────
+  static Directory? _diskDir;
 
-  Future<String?> getList({String? key}) async {
+  Future<Directory> _dir() async {
+    _diskDir ??= await getApplicationCacheDirectory();
+    return _diskDir!;
+  }
+
+  String _fileKey(String k) {
+    // Sanitizar para nombre de archivo seguro
+    final safe = k.replaceAll(RegExp(r'[^\w-]'), '_');
+    return 'dlg_$safe.json';
+  }
+
+  // ─── Lectura: mem → disco ──────────────────────────────────────────────────
+  Future<_Entry?> _read(String key) async {
+    final mem = _mem[key];
+    if (mem != null) return mem;
+
     try {
-      return await _storage.read(key: key ?? _keyList);
-    } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Cache] Error leyendo listado: $e');
+      final dir = await _dir();
+      final file = File('${dir.path}/${_fileKey(key)}');
+      if (!file.existsSync()) return null;
+      final raw = await file.readAsString();
+      final entry = _Entry.fromJson(raw);
+      _mem[key] = entry;
+      _trimMem();
+      return entry;
+    } catch (_) {
       return null;
     }
+  }
+
+  // ─── Escritura: mem + disco ────────────────────────────────────────────────
+  Future<void> _write(String key, String data, {bool restricted = false}) async {
+    final entry = _Entry(data, restricted: restricted);
+    _mem[key] = entry;
+    _trimMem();
+
+    try {
+      final dir = await _dir();
+      await File('${dir.path}/${_fileKey(key)}').writeAsString(entry.toJson());
+    } catch (e) {
+      if (kDebugMode) debugPrint('📦 [Cache] write error $key: $e');
+    }
+  }
+
+  void _trimMem() {
+    if (_mem.length <= _memMax) return;
+    final sorted = _mem.entries.toList()
+      ..sort((a, b) => a.value.ts.compareTo(b.value.ts));
+    for (var i = 0; i < _mem.length - _memMax; i++) {
+      _mem.remove(sorted[i].key);
+    }
+  }
+
+  // ─── API pública ────────────────────────────────────────────────────────────
+
+  Future<String?> getList({String? key}) async {
+    final e = await _read(key ?? 'articles_list');
+    return e?.data;
   }
 
   Future<void> saveList(String json, {String? key}) async {
-    try {
-      final k = key ?? _keyList;
-      await _storage.write(key: k, value: json);
-      await _storage.write(
-          key: '${k}_ts',
-          value: DateTime.now().millisecondsSinceEpoch.toString());
-    } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Cache] Error guardando listado: $e');
-    }
+    await _write(key ?? 'articles_list', json);
   }
 
   Future<bool> isListStale({String? key}) async {
-    try {
-      final k = key ?? _keyList;
-      final ts = await _storage.read(key: '${k}_ts');
-      if (ts == null) return true;
-      final saved = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
-      return DateTime.now().difference(saved).inMinutes > _ttlMinutes;
-    } catch (_) {
-      return true;
-    }
+    final e = await _read(key ?? 'articles_list');
+    return e == null || e.isExpired(_listTtlMinutes);
   }
-
-  // ─── Detalle ───────────────────────────────────────────────────────────────
 
   Future<String?> getDetail(int id) async {
-    try {
-      return await _storage.read(key: '$_keyDetailPrefix$id');
-    } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Cache] Error leyendo detalle $id: $e');
-      return null;
-    }
+    final e = await _read('detail_$id');
+    return e?.data;
   }
 
-  Future<void> saveDetail(int id, String json) async {
-    try {
-      await _storage.write(key: '$_keyDetailPrefix$id', value: json);
-      await _storage.write(
-          key: '$_keyDetailTsPrefix$id',
-          value: DateTime.now().millisecondsSinceEpoch.toString());
-    } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Cache] Error guardando detalle $id: $e');
-    }
+  Future<void> saveDetail(int id, String json, {bool isPremium = false}) async {
+    await _write('detail_$id', json, restricted: isPremium);
   }
 
   Future<bool> isDetailStale(int id) async {
-    try {
-      final ts = await _storage.read(key: '$_keyDetailTsPrefix$id');
-      if (ts == null) return true;
-      final saved = DateTime.fromMillisecondsSinceEpoch(int.parse(ts));
-      return DateTime.now().difference(saved).inMinutes > _ttlMinutes;
-    } catch (_) {
-      return true;
-    }
+    final e = await _read('detail_$id');
+    return e == null || e.isExpired(_detailTtlMinutes);
   }
 
-  /// Elimina de la caché los detalles de artículos exclusivos (content vacío
-  /// o con rcp-is-restricted) para que se vuelvan a pedir al servidor.
-  /// Llamar cuando la suscripción expira.
+  Future<String?> getSearch(String query) async {
+    final e = await _read('search_${query.hashCode}');
+    if (e == null) return null;
+    return e.isExpired(_searchTtlMinutes) ? null : e.data;
+  }
+
+  Future<void> saveSearch(String query, String json) async {
+    await _write('search_${query.hashCode}', json);
+  }
+
+  /// Elimina de la caché los detalles de artículos exclusivos
+  /// para que se vuelvan a pedir al servidor tras expirar la suscripción.
   Future<void> clearExclusiveContent() async {
     try {
-      final all = await _storage.readAll();
+      final dir = await _dir();
+      final files = dir.listSync().whereType<File>()
+          .where((f) => f.path.contains('dlg_detail_'));
       int cleared = 0;
-      for (final entry in all.entries) {
-        if (!entry.key.startsWith(_keyDetailPrefix)) continue;
-        if (entry.key.contains('_ts')) continue;
+      for (final f in files) {
         try {
-          final json = entry.value;
-          if (json.contains('rcp-is-restricted') ||
-              json.contains('"rendered":""') ||
-              json.contains('"rendered": ""')) {
-            final id = entry.key.replaceFirst(_keyDetailPrefix, '');
-            await _storage.delete(key: entry.key);
-            await _storage.delete(key: '$_keyDetailTsPrefix$id');
+          final raw = await f.readAsString();
+          final e = _Entry.fromJson(raw);
+          if (e.restricted) {
+            await f.delete();
+            _mem.remove(f.uri.pathSegments.last.replaceAll('.json', ''));
             cleared++;
           }
         } catch (_) {}
       }
       if (kDebugMode) {
-        debugPrint('📦 [Cache] Limpiados $cleared artículos exclusivos');
+        debugPrint('📦 [Cache] cleared $cleared restricted details');
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Cache] Error limpiando exclusivos: $e');
+      if (kDebugMode) debugPrint('📦 [Cache] clearExclusive error: $e');
     }
+  }
+}
+
+// ─── Entrada de caché: datos + timestamp + metadatos ──────────────────────────
+class _Entry {
+  final String data;
+  final int ts;
+  final bool restricted;
+
+  _Entry(this.data, {this.restricted = false})
+      : ts = DateTime.now().millisecondsSinceEpoch;
+
+  _Entry._(this.data, this.ts, this.restricted);
+
+  bool isExpired(int ttlMinutes) =>
+      DateTime.now()
+          .difference(DateTime.fromMillisecondsSinceEpoch(ts))
+          .inMinutes > ttlMinutes;
+
+  String toJson() => jsonEncode({'d': data, 't': ts, 'r': restricted});
+
+  factory _Entry.fromJson(String raw) {
+    final m = jsonDecode(raw);
+    return _Entry._(m['d'], m['t'], m['r'] ?? false);
   }
 }
