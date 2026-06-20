@@ -30,11 +30,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeNotifier>();
     final isDark = theme.isDark;
-    final bg   = AppColors.bg(isDark);
+    final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
 
     return Scaffold(
       backgroundColor: bg,
@@ -61,7 +61,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-
           // ── Apariencia ──────────────────────────────────────────────────
           _SectionHeader(label: 'Apariencia', textColor: AppColors.accent),
           const SizedBox(height: 12),
@@ -116,16 +115,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Descifrando la Guerra',
-                        style: TextStyle(color: pri, fontSize: 14, fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                            color: pri,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.accentDim,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         'v${_version.isEmpty ? '1.0.0' : _version}',
-                        style: const TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                            color: AppColors.accent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -140,7 +146,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 12),
                 Text(
                   '⭐ ¿Te ha gustado la app?',
-                  style: TextStyle(color: pri, fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      color: pri, fontSize: 13, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -152,18 +159,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () async {
-                      final uri = Uri.parse('https://github.com/RubenGolfe98/descifra_app');
+                      final uri = Uri.parse(
+                          'https://github.com/RubenGolfe98/descifra_app');
                       if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        await launchUrl(uri,
+                            mode: LaunchMode.externalApplication);
                       }
                     },
                     icon: const Icon(Icons.star_outline, size: 16),
                     label: const Text('Ver en GitHub'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.accent,
-                      side: const BorderSide(color: AppColors.accent, width: 0.5),
+                      side:
+                          const BorderSide(color: AppColors.accent, width: 0.5),
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ),
@@ -220,7 +231,8 @@ class _ThemeSelector extends StatelessWidget {
           surf: surf,
           bord: bord,
           pri: pri,
-          onTap: () => context.read<ThemeNotifier>().setTheme(AppThemeMode.dark),
+          onTap: () =>
+              context.read<ThemeNotifier>().setTheme(AppThemeMode.dark),
         ),
         const SizedBox(width: 12),
         _ThemeOption(
@@ -230,7 +242,8 @@ class _ThemeSelector extends StatelessWidget {
           surf: surf,
           bord: bord,
           pri: pri,
-          onTap: () => context.read<ThemeNotifier>().setTheme(AppThemeMode.light),
+          onTap: () =>
+              context.read<ThemeNotifier>().setTheme(AppThemeMode.light),
         ),
       ],
     );
@@ -273,16 +286,14 @@ class _ThemeOption extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon,
-                  color: selected ? AppColors.accent : pri, size: 24),
+              Icon(icon, color: selected ? AppColors.accent : pri, size: 24),
               const SizedBox(height: 6),
               Text(
                 label,
                 style: TextStyle(
                   color: selected ? AppColors.accent : pri,
                   fontSize: 13,
-                  fontWeight:
-                      selected ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ],
@@ -336,9 +347,8 @@ class _FontSizeSelector extends StatelessWidget {
                   children: List.generate(_sizes.length, (i) {
                     final isSelected = _sizes[i] == current;
                     return GestureDetector(
-                      onTap: () => context
-                          .read<ThemeNotifier>()
-                          .setFontSize(_sizes[i]),
+                      onTap: () =>
+                          context.read<ThemeNotifier>().setFontSize(_sizes[i]),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
                         width: 52,
@@ -364,9 +374,7 @@ class _FontSizeSelector extends StatelessWidget {
                               width: isSelected ? 20 : 6,
                               height: 3,
                               decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.accent
-                                    : bord,
+                                color: isSelected ? AppColors.accent : bord,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
@@ -464,118 +472,13 @@ class _FontFamilySelector extends StatelessWidget {
                   ),
                 ),
                 if (isSelected)
-                  const Icon(Icons.check_circle, color: AppColors.accent, size: 20),
+                  const Icon(Icons.check_circle,
+                      color: AppColors.accent, size: 20),
               ],
             ),
           ),
         );
       }).toList(),
-    );
-  }
-}
-
-// ─── Selector de frecuencia de refresco ──────────────────────────────────────
-class _RefreshRateSelector extends StatelessWidget {
-  final AppRefreshRate current;
-  final Color surf, bord, pri;
-
-  const _RefreshRateSelector({
-    required this.current,
-    required this.surf,
-    required this.bord,
-    required this.pri,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _RateOption(
-          label: '60 Hz',
-          subtitle: 'Estándar',
-          icon: Icons.speed_outlined,
-          selected: current == AppRefreshRate.standard,
-          surf: surf,
-          bord: bord,
-          pri: pri,
-          onTap: () => context.read<ThemeNotifier>().setRefreshRate(AppRefreshRate.standard),
-        ),
-        const SizedBox(width: 12),
-        _RateOption(
-          label: 'Máximo',
-          subtitle: '90 / 120 Hz',
-          icon: Icons.bolt_outlined,
-          selected: current == AppRefreshRate.high,
-          surf: surf,
-          bord: bord,
-          pri: pri,
-          onTap: () => context.read<ThemeNotifier>().setRefreshRate(AppRefreshRate.high),
-        ),
-      ],
-    );
-  }
-}
-
-class _RateOption extends StatelessWidget {
-  final String label;
-  final String subtitle;
-  final IconData icon;
-  final bool selected;
-  final Color surf, bord, pri;
-  final VoidCallback onTap;
-
-  const _RateOption({
-    required this.label,
-    required this.subtitle,
-    required this.icon,
-    required this.selected,
-    required this.surf,
-    required this.bord,
-    required this.pri,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.accentDim : surf,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected ? AppColors.accent : bord,
-              width: selected ? 1.5 : 0.5,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: selected ? AppColors.accent : pri, size: 24),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected ? AppColors.accent : pri,
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: selected ? AppColors.accent : pri,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

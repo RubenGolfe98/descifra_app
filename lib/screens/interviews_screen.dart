@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../repositories/article_repository.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
-import '../widgets/access_dialog.dart';
 
 class InterviewsScreen extends StatefulWidget {
   const InterviewsScreen({super.key});
@@ -133,7 +131,8 @@ class _InterviewsScreenState extends State<InterviewsScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text('Error al cargar los entrevistas',
-                              style: TextStyle(color: AppColors.textSec(isDark))),
+                              style:
+                                  TextStyle(color: AppColors.textSec(isDark))),
                           const SizedBox(height: 12),
                           TextButton(
                             onPressed: _refresh,

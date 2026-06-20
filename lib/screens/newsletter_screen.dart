@@ -57,8 +57,8 @@ class _NewsletterContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = pri.value.toRadixString(16).padLeft(8, '0');
-    final linkColor = AppColors.accent.value.toRadixString(16).padLeft(8, '0');
+    pri.toARGB32().toRadixString(16).padLeft(8, '0');
+    AppColors.accent.toARGB32().toRadixString(16).padLeft(8, '0');
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

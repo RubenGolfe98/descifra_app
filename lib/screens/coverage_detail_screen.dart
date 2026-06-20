@@ -50,17 +50,14 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
     });
   }
 
-  static String _strip(String html) =>
-      html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
-
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final bg   = AppColors.bg(isDark);
+    final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -74,7 +71,8 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
             pinned: true,
             backgroundColor: surf,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+              icon: const Icon(Icons.arrow_back_ios_new,
+                  color: Colors.white, size: 18),
               onPressed: () => Navigator.of(context).pop(),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -96,7 +94,10 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           stops: const [0.4, 1.0],
-                          colors: [Colors.transparent, isDark ? Colors.black : Colors.white],
+                          colors: [
+                            Colors.transparent,
+                            isDark ? Colors.black : Colors.white
+                          ],
                         ),
                       ),
                     ),
@@ -114,21 +115,30 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
                       color: AppColors.accentDim,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text('Cobertura',
-                      style: TextStyle(color: AppColors.accent, fontSize: 10, fontWeight: FontWeight.w700)),
+                        style: TextStyle(
+                            color: AppColors.accent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700)),
                   ),
                   const SizedBox(height: 8),
                   Text(widget.coverage.title,
-                    style: TextStyle(color: pri, fontSize: 22, fontWeight: FontWeight.w700, height: 1.3)),
+                      style: TextStyle(
+                          color: pri,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          height: 1.3)),
                   if (widget.coverage.description.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(widget.coverage.description,
-                      style: TextStyle(color: sec, fontSize: 14, height: 1.5)),
+                        style:
+                            TextStyle(color: sec, fontSize: 14, height: 1.5)),
                   ],
                   const SizedBox(height: 16),
                   Divider(color: bord, thickness: 0.5),
@@ -142,7 +152,9 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(32),
-                child: Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)),
+                child: Center(
+                    child: CircularProgressIndicator(
+                        color: AppColors.accent, strokeWidth: 2)),
               ),
             )
           else if (_detail != null)
@@ -155,38 +167,49 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                     if (url == null || url.isEmpty) return;
                     final uri = Uri.tryParse(url);
                     if (uri == null) return;
-                    final isInternal = uri.host.contains('descifrandolaguerra.es');
+                    final isInternal =
+                        uri.host.contains('descifrandolaguerra.es');
                     if (isInternal) {
-                      final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+                      final segments =
+                          uri.pathSegments.where((s) => s.isNotEmpty).toList();
                       if (segments.isNotEmpty) {
                         final slug = segments.last;
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Cargando artículo...', style: TextStyle(color: Colors.white)),
+                              content: Text('Cargando artículo...',
+                                  style: TextStyle(color: Colors.white)),
                               duration: Duration(seconds: 2),
                               backgroundColor: Color(0xFF2A2A2A),
                             ),
                           );
                         }
-                        final cookies = context.read<AuthNotifier>().state.cookies ?? '';
-                        final article = await _articleRepo.fetchArticleBySlug(slug, cookies: cookies);
-                        if (context.mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        final cookies =
+                            context.read<AuthNotifier>().state.cookies ?? '';
+                        final article = await _articleRepo
+                            .fetchArticleBySlug(slug, cookies: cookies);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        }
                         if (article != null && context.mounted) {
                           Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => ArticleDetailScreen(article: article),
+                            builder: (_) =>
+                                ArticleDetailScreen(article: article),
                           ));
                           return;
                         }
                       }
                     }
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
                     }
                   },
                   style: {
                     'body': Style(
-                      color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF333333),
+                      color: isDark
+                          ? const Color(0xFFCCCCCC)
+                          : const Color(0xFF333333),
                       fontSize: FontSize(15),
                       lineHeight: const LineHeight(1.75),
                       margin: Margins.zero,
@@ -206,15 +229,22 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                       margin: Margins.only(top: 16, bottom: 6),
                     ),
                     'p': Style(margin: Margins.only(bottom: 16)),
-                    'a': Style(color: AppColors.accent, textDecoration: TextDecoration.none),
+                    'a': Style(
+                        color: AppColors.accent,
+                        textDecoration: TextDecoration.none),
                     'strong': Style(color: pri, fontWeight: FontWeight.w500),
                     'em': Style(
-                      color: isDark ? const Color(0xFFAAAAAA) : const Color(0xFF666666),
+                      color: isDark
+                          ? const Color(0xFFAAAAAA)
+                          : const Color(0xFF666666),
                       fontStyle: FontStyle.italic,
                     ),
                     'blockquote': Style(
-                      color: isDark ? const Color(0xFFAAAAAA) : const Color(0xFF666666),
-                      border: const Border(left: BorderSide(color: AppColors.accent, width: 3)),
+                      color: isDark
+                          ? const Color(0xFFAAAAAA)
+                          : const Color(0xFF666666),
+                      border: const Border(
+                          left: BorderSide(color: AppColors.accent, width: 3)),
                       padding: HtmlPaddings.only(left: 16),
                       margin: Margins.symmetric(vertical: 16),
                       fontStyle: FontStyle.italic,
@@ -242,10 +272,12 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                       builder: (extensionContext) {
                         final src = extensionContext.attributes['src'] ?? '';
                         if (src.isEmpty) return const SizedBox.shrink();
-                        final srcset = extensionContext.attributes['srcset'] ?? '';
+                        final srcset =
+                            extensionContext.attributes['srcset'] ?? '';
                         String imgUrl = src;
                         if (srcset.isNotEmpty) {
-                          final match = RegExp(r'(https?://\S+)\s+600w').firstMatch(srcset);
+                          final match = RegExp(r'(https?://\S+)\s+600w')
+                              .firstMatch(srcset);
                           if (match != null) imgUrl = match.group(1)!;
                         }
                         return Padding(
@@ -259,8 +291,10 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                                 width: screenWidth - 40,
                                 fit: BoxFit.cover,
                                 memCacheWidth: (screenWidth * 2).toInt(),
-                                placeholder: (_, __) => Container(height: 180, color: surf),
-                                errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                                placeholder: (_, __) =>
+                                    Container(height: 180, color: surf),
+                                errorWidget: (_, __, ___) =>
+                                    const SizedBox.shrink(),
                               ),
                             ),
                           ),
@@ -276,7 +310,8 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                           onTap: () async {
                             final uri = Uri.tryParse(src);
                             if (uri != null && await canLaunchUrl(uri)) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              await launchUrl(uri,
+                                  mode: LaunchMode.externalApplication);
                             }
                           },
                           child: Container(
@@ -285,26 +320,34 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                             decoration: BoxDecoration(
                               color: surf,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+                              border: Border.all(
+                                  color:
+                                      AppColors.accent.withValues(alpha: 0.4)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.map_outlined, color: AppColors.accent, size: 28),
+                                const Icon(Icons.map_outlined,
+                                    color: AppColors.accent, size: 28),
                                 const SizedBox(width: 12),
                                 Column(
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: const [
                                     Text('Ver mapa interactivo',
-                                      style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600, fontSize: 14)),
+                                        style: TextStyle(
+                                            color: AppColors.accent,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14)),
                                     SizedBox(height: 2),
                                     Text('Se abrirá en el navegador',
-                                      style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                        style: TextStyle(
+                                            color: Colors.grey, fontSize: 11)),
                                   ],
                                 ),
                                 const SizedBox(width: 8),
-                                const Icon(Icons.open_in_new, color: Colors.grey, size: 14),
+                                const Icon(Icons.open_in_new,
+                                    color: Colors.grey, size: 14),
                               ],
                             ),
                           ),

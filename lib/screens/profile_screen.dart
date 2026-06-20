@@ -6,7 +6,6 @@ import '../models/auth_state.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
-import 'books_screen.dart';
 import 'login_webview.dart';
 import 'newsletter_screen.dart';
 import 'saved_articles_screen.dart';
@@ -17,7 +16,7 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth   = context.watch<AuthNotifier>();
+    final auth = context.watch<AuthNotifier>();
     final isDark = context.watch<ThemeNotifier>().isDark;
 
     return Scaffold(
@@ -41,9 +40,9 @@ class _LoggedInView extends StatelessWidget {
   Widget build(BuildContext context) {
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
-    final mut  = AppColors.textMut(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
+    final mut = AppColors.textMut(isDark);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -64,7 +63,8 @@ class _LoggedInView extends StatelessWidget {
                   border: Border.all(color: bord, width: 0.5),
                 ),
                 child: Center(
-                  child: _buildAvatar(state.userDisplayName ?? state.userEmail ?? ''),
+                  child: _buildAvatar(
+                      state.userDisplayName ?? state.userEmail ?? ''),
                 ),
               ),
               const SizedBox(width: 16),
@@ -125,9 +125,12 @@ class _LoggedInView extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    state.isSubscriber ? 'Suscriptor activo' : 'Sin suscripción',
+                    state.isSubscriber
+                        ? 'Suscriptor activo'
+                        : 'Sin suscripción',
                     style: TextStyle(
-                      color: state.isSubscriber ? AppColors.subscriberText : sec,
+                      color:
+                          state.isSubscriber ? AppColors.subscriberText : sec,
                       fontSize: 14,
                     ),
                   ),
@@ -183,7 +186,8 @@ class _LoggedInView extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => NewsletterScreen(membership: state.membership!),
+                    builder: (_) =>
+                        NewsletterScreen(membership: state.membership!),
                   ),
                 ),
                 icon: const Icon(Icons.mail_outline, size: 16),
@@ -277,7 +281,8 @@ class _LoggedInView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: socials
-                .map((s) => _SocialButton(social: s, onTap: () => _openUrl(s.url)))
+                .map((s) =>
+                    _SocialButton(social: s, onTap: () => _openUrl(s.url)))
                 .toList(),
           ),
         ],
@@ -318,9 +323,9 @@ class _MembershipCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
-    final mut  = AppColors.textMut(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
+    final mut = AppColors.textMut(isDark);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -406,8 +411,8 @@ class _LoginView extends StatelessWidget {
     final auth = context.watch<AuthNotifier>();
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -420,7 +425,8 @@ class _LoginView extends StatelessWidget {
             children: [
               Text(
                 'Iniciar sesión',
-                style: TextStyle(color: pri, fontSize: 24, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                    color: pri, fontSize: 24, fontWeight: FontWeight.w500),
               ),
               IconButton(
                 icon: Icon(Icons.settings_outlined, color: sec, size: 22),
@@ -436,7 +442,6 @@ class _LoginView extends StatelessWidget {
             style: TextStyle(color: pri, fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: 32),
-
           if (auth.errorMessage != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
@@ -446,11 +451,11 @@ class _LoginView extends StatelessWidget {
                 border: Border.all(color: const Color(0x55C0392B), width: 0.5),
               ),
               child: Text(auth.errorMessage!,
-                  style: const TextStyle(color: AppColors.accent, fontSize: 13)),
+                  style:
+                      const TextStyle(color: AppColors.accent, fontSize: 13)),
             ),
             const SizedBox(height: 16),
           ],
-
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -460,7 +465,8 @@ class _LoginView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.shield_outlined, color: Color(0xFF4CAF50), size: 20),
+                const Icon(Icons.shield_outlined,
+                    color: Color(0xFF4CAF50), size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -473,20 +479,25 @@ class _LoginView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
-
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: auth.isLoading ? null : () => _openLoginWebView(context),
+              onPressed:
+                  auth.isLoading ? null : () => _openLoginWebView(context),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.accent,
-                disabledBackgroundColor: AppColors.accent.withOpacity(0.4),
+                disabledBackgroundColor:
+                    AppColors.accent.withValues(alpha: 0.4),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
               child: auth.isLoading
-                  ? const SizedBox(width: 18, height: 18,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
                   : const Text('Iniciar sesión',
                       style: TextStyle(fontSize: 15, color: Colors.white)),
             ),

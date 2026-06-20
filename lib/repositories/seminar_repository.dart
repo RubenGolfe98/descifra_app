@@ -43,7 +43,8 @@ class SeminarRepository {
         '?_fields=id,title,link,class_list,yoast_head_json.og_image,yoast_head_json.og_description'
         '&per_page=20&orderby=date&order=desc',
       );
-      final response = await _client.get(uri).timeout(const Duration(seconds: 30));
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 30));
       if (response.statusCode != 200) return _seminarsCache ?? [];
       final List<dynamic> data = jsonDecode(response.body);
       _seminarsCache = data.map((j) => Seminar.fromJson(j)).toList();
@@ -64,7 +65,8 @@ class SeminarRepository {
   }
 
   /// Parsea el HTML de la página de un seminario para extraer las sesiones
-  Future<List<SeminarSession>> fetchSessions(String seminarUrl, String cookies) async {
+  Future<List<SeminarSession>> fetchSessions(
+      String seminarUrl, String cookies) async {
     try {
       final uri = Uri.parse(seminarUrl);
       final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
@@ -73,7 +75,9 @@ class SeminarRepository {
 
       // Devolver caché si existe
       if (_sessionsCache.containsKey(seminarSlug)) {
-        if (kDebugMode) debugPrint('📚 [Seminars] Sessions from cache: $seminarSlug');
+        if (kDebugMode) {
+          debugPrint('📚 [Seminars] Sessions from cache: $seminarSlug');
+        }
         return _sessionsCache[seminarSlug]!;
       }
 
@@ -83,21 +87,23 @@ class SeminarRepository {
         '&_fields=id,title,link',
       );
 
-      final response = await _client.get(
-        apiUri,
-        headers: cookies.isNotEmpty ? {'Cookie': cookies} : {},
-      ).timeout(const Duration(seconds: 15));
+      final response = await _client
+          .get(
+            apiUri,
+            headers: cookies.isNotEmpty ? {'Cookie': cookies} : {},
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode != 200) return [];
 
       final List<dynamic> data = jsonDecode(response.body);
 
-      final sessions = data
+      data
           .where((j) => (j['link'] as String? ?? '').contains('/$seminarSlug/'))
           .map((j) => SeminarSession(
-            title: _stripHtml(j['title']?['rendered'] ?? ''),
-            url: j['link'] ?? '',
-          ))
+                title: _stripHtml(j['title']?['rendered'] ?? ''),
+                url: j['link'] ?? '',
+              ))
           .toList();
 
       // Guardar en caché todas las sesiones agrupadas por seminario
@@ -109,9 +115,9 @@ class SeminarRepository {
         if (match == null) continue;
         final slug = match.group(1)!;
         bySlug.putIfAbsent(slug, () => []).add(SeminarSession(
-          title: _stripHtml(j['title']?['rendered'] ?? ''),
-          url: link,
-        ));
+              title: _stripHtml(j['title']?['rendered'] ?? ''),
+              url: link,
+            ));
       }
       _sessionsCache.addAll(bySlug);
 
@@ -126,10 +132,13 @@ class SeminarRepository {
       html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
 
   /// Parsea el HTML de una sesión concreta
-  Future<SeminarSessionDetail?> fetchSessionDetail(String sessionUrl, String cookies) async {
+  Future<SeminarSessionDetail?> fetchSessionDetail(
+      String sessionUrl, String cookies) async {
     // Devolver caché si existe
     if (_detailCache.containsKey(sessionUrl)) {
-      if (kDebugMode) debugPrint('📚 [Seminars] Detail from cache: $sessionUrl');
+      if (kDebugMode) {
+        debugPrint('📚 [Seminars] Detail from cache: $sessionUrl');
+      }
       return _detailCache[sessionUrl];
     }
     try {
@@ -137,16 +146,20 @@ class SeminarRepository {
         'Accept-Encoding': 'gzip, deflate',
       };
       if (cookies.isNotEmpty) headers['Cookie'] = cookies;
-      final response = await _client.get(
-        Uri.parse(sessionUrl),
-        headers: headers,
-      ).timeout(const Duration(seconds: 20));
+      final response = await _client
+          .get(
+            Uri.parse(sessionUrl),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 20));
       if (response.statusCode != 200) return null;
       final detail = _parseSessionDetail(response.body, sessionUrl);
       _detailCache[sessionUrl] = detail;
       return detail;
     } catch (e) {
-      if (kDebugMode) debugPrint('📚 [Seminars] Error fetching session detail: $e');
+      if (kDebugMode) {
+        debugPrint('📚 [Seminars] Error fetching session detail: $e');
+      }
       return null;
     }
   }
@@ -169,7 +182,9 @@ class SeminarRepository {
       dotAll: true,
     ).firstMatch(html);
 
-    if (kDebugMode) debugPrint('📚 [Seminars] ul match found: ${ulMatch != null}');
+    if (kDebugMode) {
+      debugPrint('📚 [Seminars] ul match found: ${ulMatch != null}');
+    }
     if (ulMatch == null) return sessions;
 
     final liRegex = RegExp(
@@ -184,7 +199,9 @@ class SeminarRepository {
       ));
     }
 
-    if (kDebugMode) debugPrint('📚 [Seminars] Sessions found: ${sessions.length}');
+    if (kDebugMode) {
+      debugPrint('📚 [Seminars] Sessions found: ${sessions.length}');
+    }
     return sessions;
   }
 

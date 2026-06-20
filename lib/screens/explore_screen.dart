@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import 'analysis_screen.dart';
@@ -15,7 +14,7 @@ class ExploreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final bg  = AppColors.bg(isDark);
+    final bg = AppColors.bg(isDark);
     final pri = AppColors.textPri(isDark);
 
     return Scaffold(
@@ -29,9 +28,9 @@ class ExploreScreen extends StatelessWidget {
               child: Text(
                 'Explorar',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: pri,
-                  fontWeight: FontWeight.w600,
-                ),
+                      color: pri,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
             Expanded(
@@ -55,7 +54,8 @@ class ExploreScreen extends StatelessWidget {
                     label: 'Coberturas',
                     isDark: isDark,
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const CoveragesScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const CoveragesScreen()),
                     ),
                   ),
                   _ExploreCard(
@@ -63,7 +63,8 @@ class ExploreScreen extends StatelessWidget {
                     label: 'Entrevistas',
                     isDark: isDark,
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const InterviewsScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const InterviewsScreen()),
                     ),
                   ),
                   _ExploreCard(
@@ -104,15 +105,14 @@ class _ExploreCard extends StatelessWidget {
     required this.label,
     required this.isDark,
     required this.onTap,
-    this.comingSoon = false,
-  });
+  }) : comingSoon = false;
 
   @override
   Widget build(BuildContext context) {
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
 
     return GestureDetector(
       onTap: onTap,
@@ -146,7 +146,8 @@ class _ExploreCard extends StatelessWidget {
                 top: 10,
                 right: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
                     color: AppColors.accentDim,
                     borderRadius: BorderRadius.circular(6),

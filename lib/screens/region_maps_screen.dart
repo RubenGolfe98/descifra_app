@@ -29,11 +29,11 @@ class _RegionMapsScreenState extends State<RegionMapsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final bg   = AppColors.bg(isDark);
+    final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
 
     return Scaffold(
       backgroundColor: bg,
@@ -46,7 +46,8 @@ class _RegionMapsScreenState extends State<RegionMapsScreen> {
         ),
         title: Text(
           'Mapas · ${widget.region.name}',
-          style: TextStyle(color: pri, fontSize: 15, fontWeight: FontWeight.w600),
+          style:
+              TextStyle(color: pri, fontSize: 15, fontWeight: FontWeight.w600),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(0.5),
@@ -58,16 +59,20 @@ class _RegionMapsScreenState extends State<RegionMapsScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
+              child: CircularProgressIndicator(
+                  color: AppColors.accent, strokeWidth: 2),
             );
           }
 
-          if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          if (snapshot.hasError ||
+              !snapshot.hasData ||
+              snapshot.data!.isEmpty) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.map_outlined, color: AppColors.bord(isDark), size: 48),
+                  Icon(Icons.map_outlined,
+                      color: AppColors.bord(isDark), size: 48),
                   const SizedBox(height: 12),
                   Text(
                     'No hay mapas disponibles\npara esta región',
@@ -86,7 +91,8 @@ class _RegionMapsScreenState extends State<RegionMapsScreen> {
               // Cabecera colaboración
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: surf,
                   border: Border(bottom: BorderSide(color: bord, width: 0.5)),
@@ -110,60 +116,67 @@ class _RegionMapsScreenState extends State<RegionMapsScreen> {
               ),
               Expanded(
                 child: GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: maps.length,
-            itemBuilder: (context, index) {
-              final map = maps[index];
-              return GestureDetector(
-                onTap: () => showImageViewer(context, map.url),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CachedNetworkImage(
-                        imageUrl: map.thumbUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(color: surf),
-                        errorWidget: (_, __, ___) => Container(
-                          color: surf,
-                          child: Icon(Icons.map_outlined, color: AppColors.bord(isDark), size: 32),
+                  padding: const EdgeInsets.all(12),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: maps.length,
+                  itemBuilder: (context, index) {
+                    final map = maps[index];
+                    return GestureDetector(
+                      onTap: () => showImageViewer(context, map.url),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            CachedNetworkImage(
+                              imageUrl: map.thumbUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(color: surf),
+                              errorWidget: (_, __, ___) => Container(
+                                color: surf,
+                                child: Icon(Icons.map_outlined,
+                                    color: AppColors.bord(isDark), size: 32),
+                              ),
+                            ),
+                            if (map.alt.isNotEmpty)
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withValues(alpha: 0.7)
+                                      ],
+                                    ),
+                                  ),
+                                  child: Text(
+                                    map.alt,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      if (map.alt.isNotEmpty)
-                        Positioned(
-                          bottom: 0, left: 0, right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
-                              ),
-                            ),
-                            child: Text(
-                              map.alt,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                height: 1.3,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
+                    );
+                  },
                 ),
               ),
             ],

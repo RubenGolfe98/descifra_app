@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
@@ -101,11 +100,11 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final bg   = AppColors.bg(isDark);
+    final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
-    final mut  = AppColors.textMut(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
+    final mut = AppColors.textMut(isDark);
 
     return Scaffold(
       backgroundColor: bg,
@@ -114,113 +113,134 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
         color: AppColors.accent,
         backgroundColor: surf,
         child: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 180,
-            pinned: true,
-            backgroundColor: surf,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: SvgPicture.network(
-                      widget.region.imageUrl,
-                      fit: BoxFit.contain,
-                      colorFilter: const ColorFilter.mode(Color(0x44C0392B), BlendMode.srcIn),
-                      placeholderBuilder: (_) => const SizedBox.shrink(),
+          controller: _scrollController,
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 180,
+              pinned: true,
+              backgroundColor: surf,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: SvgPicture.network(
+                        widget.region.imageUrl,
+                        fit: BoxFit.contain,
+                        colorFilter: const ColorFilter.mode(
+                            Color(0x44C0392B), BlendMode.srcIn),
+                        placeholderBuilder: (_) => const SizedBox.shrink(),
+                      ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: 16, left: 20, right: 20,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.region.name,
-                          style: TextStyle(color: pri, fontSize: 20, fontWeight: FontWeight.w600),
-                        ),
-                        Text(
-                          '${widget.region.count} artículos',
-                          style: TextStyle(color: pri, fontSize: 12),
-                        ),
-                      ],
+                    Positioned(
+                      bottom: 16,
+                      left: 20,
+                      right: 20,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.region.name,
+                            style: TextStyle(
+                                color: pri,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            '${widget.region.count} artículos',
+                            style: TextStyle(color: pri, fontSize: 12),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          FutureBuilder<List<Article>>(
-            future: _firstPageFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && _articles.isEmpty) {
-                return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Center(child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)),
-                  ),
-                );
-              }
-              if (snapshot.hasError && _articles.isEmpty) {
-                return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        Text('Error al cargar artículos', style: TextStyle(color: sec)),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: () => setState(_load),
-                          child: const Text('Reintentar', style: TextStyle(color: AppColors.accent)),
-                        ),
-                      ],
+            FutureBuilder<List<Article>>(
+              future: _firstPageFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    _articles.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Center(
+                          child: CircularProgressIndicator(
+                              color: AppColors.accent, strokeWidth: 2)),
                     ),
+                  );
+                }
+                if (snapshot.hasError && _articles.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          Text('Error al cargar artículos',
+                              style: TextStyle(color: sec)),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: () => setState(_load),
+                            child: const Text('Reintentar',
+                                style: TextStyle(color: AppColors.accent)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                if (!_initialized &&
+                    snapshot.data != null &&
+                    _articles.isEmpty) {
+                  _initialized = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && _articles.isEmpty) {
+                      setState(() => _articles.addAll(snapshot.data!));
+                    }
+                  });
+                }
+                if (_articles.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text('No hay artículos en esta región',
+                          style: TextStyle(color: sec)),
+                    ),
+                  );
+                }
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => ArticleCard(article: _articles[index]),
+                    childCount: _articles.length,
                   ),
                 );
-              }
-              if (!_initialized && snapshot.data != null && _articles.isEmpty) {
-                _initialized = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted && _articles.isEmpty) setState(() => _articles.addAll(snapshot.data!));
-                });
-              }
-              if (_articles.isEmpty) {
-                return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text('No hay artículos en esta región', style: TextStyle(color: sec)),
-                  ),
-                );
-              }
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => ArticleCard(article: _articles[index]),
-                  childCount: _articles.length,
-                ),
-              );
-            },
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: _isLoadingMore
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)))
-                  : _hasMore
-                      ? const SizedBox.shrink()
-                      : Center(child: Text('No hay más artículos', style: TextStyle(color: mut, fontSize: 12))),
+              },
             ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
-        ],
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: _isLoadingMore
+                    ? const Center(
+                        child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                color: AppColors.accent, strokeWidth: 2)))
+                    : _hasMore
+                        ? const SizedBox.shrink()
+                        : Center(
+                            child: Text('No hay más artículos',
+                                style: TextStyle(color: mut, fontSize: 12))),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          ],
         ),
       ),
     );

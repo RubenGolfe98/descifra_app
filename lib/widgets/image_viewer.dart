@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:vector_math/vector_math_64.dart' show Vector3;
 
 /// Abre el visor de imagen a pantalla completa con zoom y arrastre.
 void showImageViewer(BuildContext context, String imageUrl) {
@@ -73,8 +74,8 @@ class _ImageViewerScreenState extends State<_ImageViewerScreen>
       final x = -pos.dx * 2;
       final y = -pos.dy * 2;
       final zoom = Matrix4.identity()
-        ..translate(x, y)
-        ..scale(3.0);
+        ..translateByVector3(Vector3(x, y, 0))
+        ..scaleByVector3(Vector3(3.0, 3.0, 1.0));
       _animation = Matrix4Tween(
         begin: _transformationController.value,
         end: zoom,
@@ -145,7 +146,6 @@ class _ImageViewerScreenState extends State<_ImageViewerScreen>
               ),
             ),
           ),
-
         ],
       ),
     );

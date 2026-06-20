@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -9,13 +8,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class ArticleCache {
   static const _ttlMinutes = 30;
   static const _keyList = 'articles_list';
-  static const _keyListTs = 'articles_list_ts';
   static const _keyDetailPrefix = 'article_detail_';
   static const _keyDetailTsPrefix = 'article_detail_ts_';
 
-  static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
+  static final _storage = FlutterSecureStorage();
 
   // ─── Listado ───────────────────────────────────────────────────────────────
 
@@ -107,7 +103,9 @@ class ArticleCache {
           }
         } catch (_) {}
       }
-      if (kDebugMode) debugPrint('📦 [Cache] Limpiados $cleared artículos exclusivos');
+      if (kDebugMode) {
+        debugPrint('📦 [Cache] Limpiados $cleared artículos exclusivos');
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('📦 [Cache] Error limpiando exclusivos: $e');
     }

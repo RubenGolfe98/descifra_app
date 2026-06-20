@@ -37,11 +37,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.addListener(_onScroll);
     _firstPageFuture = _repository.fetchLatestArticles(
       onRefreshed: (fresh) {
-        if (mounted) setState(() {
-          _articles
-            ..clear()
-            ..addAll(fresh);
-        });
+        if (mounted) {
+          setState(() {
+            _articles
+              ..clear()
+              ..addAll(fresh);
+          });
+        }
       },
     );
   }
@@ -69,7 +71,10 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         if (more == null) {
           // Error de red — no marcar fin, permitir reintentar
-          if (kDebugMode) debugPrint('📦 [Home] Error cargando página ${_currentPage + 1} — manteniendo hasMore');
+          if (kDebugMode) {
+            debugPrint(
+                '📦 [Home] Error cargando página ${_currentPage + 1} — manteniendo hasMore');
+          }
         } else if (more.isEmpty) {
           _hasMore = false; // fin real del listado
         } else {
@@ -147,50 +152,54 @@ class _AppHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
+        border: Border(
+            bottom: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
       ),
       child: SizedBox(
         width: double.infinity,
         child: Stack(
           alignment: Alignment.center,
           children: [
-          // Centro — logo + título
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClipOval(
-                child: Image.asset(
-                  isDark ? 'assets/images/logo_dlg_dark.png' : 'assets/images/logo_dlg.png',
-                  width: 32,
-                  height: 32,
-                  fit: BoxFit.cover,
+            // Centro — logo + título
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipOval(
+                  child: Image.asset(
+                    isDark
+                        ? 'assets/images/logo_dlg_dark.png'
+                        : 'assets/images/logo_dlg.png',
+                    width: 32,
+                    height: 32,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'DESCIFRANDO LA GUERRA',
-                style: context.read<ThemeNotifier>().font.style(
-                  color: AppColors.accent,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
+                const SizedBox(width: 10),
+                Text(
+                  'DESCIFRANDO LA GUERRA',
+                  style: context.read<ThemeNotifier>().font.style(
+                        color: AppColors.accent,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
                 ),
-              ),
-            ],
-          ),
-          // Derecha — lupa
-          Positioned(
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.search, color: AppColors.accent, size: 22),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              ],
+            ),
+            // Derecha — lupa
+            Positioned(
+              right: 0,
+              child: IconButton(
+                icon:
+                    const Icon(Icons.search, color: AppColors.accent, size: 22),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -240,7 +249,8 @@ class _ArticleFeed extends StatelessWidget {
               child: _FeaturedArticle(article: featuredArticle, isDark: isDark),
             ),
           ),
-          SliverToBoxAdapter(child: _SectionTitle(title: 'Lo último', isDark: isDark)),
+          SliverToBoxAdapter(
+              child: _SectionTitle(title: 'Lo último', isDark: isDark)),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) => ArticleCard(article: restArticles[index]),
@@ -251,10 +261,19 @@ class _ArticleFeed extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: isLoadingMore
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2)))
+                  ? const Center(
+                      child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              color: AppColors.accent, strokeWidth: 2)))
                   : hasMore
                       ? const SizedBox.shrink()
-                      : Center(child: Text('No hay más artículos', style: TextStyle(color: AppColors.textMut(isDark), fontSize: 12))),
+                      : Center(
+                          child: Text('No hay más artículos',
+                              style: TextStyle(
+                                  color: AppColors.textMut(isDark),
+                                  fontSize: 12))),
             ),
           ),
         ],
@@ -272,12 +291,16 @@ class _FeaturedArticle extends StatelessWidget {
 
   void _handleTap(BuildContext context) {
     final auth = context.read<AuthNotifier>();
-    final canAccess = !article.isPremium || (auth.state.isLoggedIn && auth.state.isSubscriber);
+    final canAccess = !article.isPremium ||
+        (auth.state.isLoggedIn && auth.state.isSubscriber);
     if (!canAccess) {
-      showAccessDialog(context, onLoginTap: () => TabNavigator.of(context)?.jumpToProfile(), source: 'article');
+      showAccessDialog(context,
+          onLoginTap: () => TabNavigator.of(context)?.jumpToProfile(),
+          source: 'article');
       return;
     }
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => ArticleDetailScreen(article: article)));
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => ArticleDetailScreen(article: article)));
   }
 
   @override
@@ -298,12 +321,18 @@ class _FeaturedArticle extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     stops: [0.0, 0.45, 1.0],
-                    colors: [Colors.transparent, Color(0x33000000), Color(0xE0000000)],
+                    colors: [
+                      Colors.transparent,
+                      Color(0x33000000),
+                      Color(0xE0000000)
+                    ],
                   ),
                 ),
               ),
               Positioned(
-                bottom: 0, left: 0, right: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: Padding(
                   padding: const EdgeInsets.all(14),
                   child: Column(
@@ -313,9 +342,17 @@ class _FeaturedArticle extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                            decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(4)),
-                            child: const Text('DESTACADO', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w500, letterSpacing: 0.8)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                                color: AppColors.accent,
+                                borderRadius: BorderRadius.circular(4)),
+                            child: const Text('DESTACADO',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.8)),
                           ),
                           const SizedBox(width: 6),
                           ArticleCategoryBadge(category: article.category),
@@ -330,10 +367,17 @@ class _FeaturedArticle extends StatelessWidget {
                         article.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500, height: 1.35),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            height: 1.35),
                       ),
                       const SizedBox(height: 6),
-                      _ArticleMeta(author: article.author, date: article.date, isDark: isDark),
+                      _ArticleMeta(
+                          author: article.author,
+                          date: article.date,
+                          isDark: isDark),
                     ],
                   ),
                 ),
@@ -353,7 +397,8 @@ class _ArticleImage extends StatelessWidget {
   final double? height;
   final bool isDark;
 
-  const _ArticleImage({required this.url, this.width, this.height, required this.isDark});
+  const _ArticleImage({required this.url, this.height, required this.isDark})
+      : width = null;
 
   @override
   Widget build(BuildContext context) {
@@ -364,10 +409,14 @@ class _ArticleImage extends StatelessWidget {
       fit: BoxFit.cover,
       memCacheWidth: width != null ? (width! * 2).toInt() : 400,
       fadeInDuration: const Duration(milliseconds: 200),
-      placeholder: (_, __) => Container(width: width, height: height, color: AppColors.surf(isDark)),
+      placeholder: (_, __) => Container(
+          width: width, height: height, color: AppColors.surf(isDark)),
       errorWidget: (_, __, ___) => Container(
-        width: width, height: height, color: AppColors.surf(isDark),
-        child: Icon(Icons.image_not_supported, color: AppColors.textMut(isDark), size: 20),
+        width: width,
+        height: height,
+        color: AppColors.surf(isDark),
+        child: Icon(Icons.image_not_supported,
+            color: AppColors.textMut(isDark), size: 20),
       ),
     );
   }
@@ -379,7 +428,8 @@ class _ArticleMeta extends StatelessWidget {
   final DateTime date;
   final bool isDark;
 
-  const _ArticleMeta({required this.author, required this.date, required this.isDark});
+  const _ArticleMeta(
+      {required this.author, required this.date, required this.isDark});
 
   String _formatDate(DateTime date) {
     final now = DateTime.now();
@@ -389,17 +439,37 @@ class _ArticleMeta extends StatelessWidget {
     return '${date.day} ${_months[date.month - 1]}';
   }
 
-  static const _months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  static const _months = [
+    'ene',
+    'feb',
+    'mar',
+    'abr',
+    'may',
+    'jun',
+    'jul',
+    'ago',
+    'sep',
+    'oct',
+    'nov',
+    'dic'
+  ];
 
   @override
   Widget build(BuildContext context) {
     final mut = AppColors.textPri(isDark);
     return Row(
       children: [
-        Flexible(child: Text(author, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: mut, fontSize: 10))),
+        Flexible(
+            child: Text(author,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: mut, fontSize: 10))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: Container(width: 2, height: 2, decoration: BoxDecoration(color: mut, shape: BoxShape.circle)),
+          child: Container(
+              width: 2,
+              height: 2,
+              decoration: BoxDecoration(color: mut, shape: BoxShape.circle)),
         ),
         Text(_formatDate(date), style: TextStyle(color: mut, fontSize: 10)),
       ],
@@ -419,7 +489,11 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(color: AppColors.textSec(isDark), fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 1),
+        style: TextStyle(
+            color: AppColors.textSec(isDark),
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 1),
       ),
     );
   }
@@ -431,7 +505,8 @@ class _LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+    return const Center(
+        child: CircularProgressIndicator(color: AppColors.accent));
   }
 }
 
@@ -446,9 +521,13 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Error al cargar las noticias', style: TextStyle(color: AppColors.textSec(isDark))),
+          Text('Error al cargar las noticias',
+              style: TextStyle(color: AppColors.textSec(isDark))),
           const SizedBox(height: 12),
-          TextButton(onPressed: onRetry, child: const Text('Reintentar', style: TextStyle(color: AppColors.accent))),
+          TextButton(
+              onPressed: onRetry,
+              child: const Text('Reintentar',
+                  style: TextStyle(color: AppColors.accent))),
         ],
       ),
     );

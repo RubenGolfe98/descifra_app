@@ -60,16 +60,22 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
       forceRefresh: forceRefresh,
       onNonceExpired: () => context.read<AuthNotifier>().renewRestNonce(),
       onRefreshed: (fresh) {
-        if (mounted && version == _loadVersion) setState(() {
-          _detailFuture = Future.value(fresh);
-          _refreshing = false;
-        });
+        if (mounted && version == _loadVersion) {
+          setState(() {
+            _detailFuture = Future.value(fresh);
+            _refreshing = false;
+          });
+        }
       },
     );
     _detailFuture.then((_) {
-      if (mounted && version == _loadVersion) setState(() => _refreshing = false);
+      if (mounted && version == _loadVersion) {
+        setState(() => _refreshing = false);
+      }
     }).catchError((_) {
-      if (mounted && version == _loadVersion) setState(() => _refreshing = false);
+      if (mounted && version == _loadVersion) {
+        setState(() => _refreshing = false);
+      }
     });
   }
 
@@ -119,18 +125,21 @@ class _ArticleShell extends StatelessWidget {
           pinned: true,
           backgroundColor: _Colors.surf(isDark),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+            icon: const Icon(Icons.arrow_back_ios_new,
+                color: Colors.white, size: 18),
             onPressed: () => Navigator.of(context).pop(),
           ),
           actions: [
             _FavoriteButton(article: article),
             IconButton(
-              icon: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
+              icon: const Icon(Icons.share_outlined,
+                  color: Colors.white, size: 20),
               onPressed: () {
                 final url = article.slug.isNotEmpty
                     ? 'https://www.descifrandolaguerra.es/${article.slug}/'
                     : 'https://www.descifrandolaguerra.es/?p=${article.id}';
-                Share.share('${article.title}\n\n$url');
+                SharePlus.instance
+                    .share(ShareParams(text: '${article.title}\n\n$url'));
               },
             ),
           ],
@@ -147,8 +156,10 @@ class _ArticleShell extends StatelessWidget {
                         alignment: Alignment.center,
                         memCacheWidth: 800,
                         fadeInDuration: const Duration(milliseconds: 150),
-                        placeholder: (_, __) => Container(color: _Colors.surf(isDark)),
-                        errorWidget: (_, __, ___) => Container(color: _Colors.surf(isDark)),
+                        placeholder: (_, __) =>
+                            Container(color: _Colors.surf(isDark)),
+                        errorWidget: (_, __, ___) =>
+                            Container(color: _Colors.surf(isDark)),
                       ),
                     ),
                   ),
@@ -226,14 +237,16 @@ class _ArticleShell extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(article.author,
                         style: TextStyle(
-                            color: _Colors.textSecondary(isDark), fontSize: 12)),
+                            color: _Colors.textSecondary(isDark),
+                            fontSize: 12)),
                     const SizedBox(width: 12),
                     Icon(Icons.calendar_today_outlined,
                         color: _Colors.textSecondary(isDark), size: 12),
                     const SizedBox(width: 4),
                     Text(_formatDate(article.date),
                         style: TextStyle(
-                            color: _Colors.textSecondary(isDark), fontSize: 12)),
+                            color: _Colors.textSecondary(isDark),
+                            fontSize: 12)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -269,8 +282,12 @@ class _ArticleShell extends StatelessWidget {
 
               // Si es suscriptor pero el contenido está vacío (caché obsoleta)
               // → forzar refresco en lugar de mostrar paywall
-              if (!hasContent && !refreshing && auth.state.isSubscriber && article.isPremium) {
-                WidgetsBinding.instance.addPostFrameCallback((_) => onForceRefresh());
+              if (!hasContent &&
+                  !refreshing &&
+                  auth.state.isSubscriber &&
+                  article.isPremium) {
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => onForceRefresh());
                 return const _ContentSkeleton();
               }
 
@@ -289,8 +306,18 @@ class _ArticleShell extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre'
     ];
     return '${date.day} de ${months[date.month - 1]} de ${date.year}';
   }
@@ -323,9 +350,8 @@ class _HtmlContent extends StatelessWidget {
           if (isInternal) {
             // Extraer el slug — último segmento no vacío de la ruta
             // Ej: /israel-en-libano-limpieza-etnica-ocupacion/ → ese slug
-            final segments = uri.pathSegments
-                .where((s) => s.isNotEmpty)
-                .toList();
+            final segments =
+                uri.pathSegments.where((s) => s.isNotEmpty).toList();
 
             if (segments.isNotEmpty) {
               final slug = segments.last;
@@ -388,18 +414,27 @@ class _HtmlContent extends StatelessWidget {
             margin: Margins.only(top: 16, bottom: 6),
           ),
           'p': Style(margin: Margins.only(bottom: 16)),
-          'a': Style(color: AppColors.accent, textDecoration: TextDecoration.none),
-          'strong': Style(color: _Colors.textPrimary(isDark), fontWeight: FontWeight.w500),
-          'em': Style(color: isDark ? const Color(0xFFAAAAAA) : const Color(0xFF666666), fontStyle: FontStyle.italic),
+          'a': Style(
+              color: AppColors.accent, textDecoration: TextDecoration.none),
+          'strong': Style(
+              color: _Colors.textPrimary(isDark), fontWeight: FontWeight.w500),
+          'em': Style(
+              color: isDark ? const Color(0xFFAAAAAA) : const Color(0xFF666666),
+              fontStyle: FontStyle.italic),
           'blockquote': Style(
             color: isDark ? const Color(0xFFAAAAAA) : const Color(0xFF666666),
-            border: const Border(left: BorderSide(color: AppColors.accent, width: 3)),
+            border: const Border(
+                left: BorderSide(color: AppColors.accent, width: 3)),
             padding: HtmlPaddings.only(left: 16),
             margin: Margins.symmetric(vertical: 16),
             fontStyle: FontStyle.italic,
           ),
           'figure': Style(margin: Margins.symmetric(vertical: 16)),
-          'figcaption': Style(color: _Colors.textMuted(isDark), fontSize: FontSize(12), textAlign: TextAlign.center, margin: Margins.only(top: 6)),
+          'figcaption': Style(
+              color: _Colors.textMuted(isDark),
+              fontSize: FontSize(12),
+              textAlign: TextAlign.center,
+              margin: Margins.only(top: 6)),
           'ul': Style(margin: Margins.only(bottom: 16)),
           'ol': Style(margin: Margins.only(bottom: 16)),
           'li': Style(margin: Margins.only(bottom: 6)),
@@ -552,12 +587,12 @@ class _PaywallBlock extends StatelessWidget {
 
 // ─── Colores dinámicos (delegados a AppColors según tema) ────────────────────
 class _Colors {
-  static Color bg(bool d)   => AppColors.bg(d);
+  static Color bg(bool d) => AppColors.bg(d);
   static Color surf(bool d) => AppColors.surf(d);
   static Color bord(bool d) => AppColors.bord(d);
-  static Color textPrimary(bool d)   => AppColors.textPri(d);
+  static Color textPrimary(bool d) => AppColors.textPri(d);
   static Color textSecondary(bool d) => AppColors.textSec(d);
-  static Color textMuted(bool d)     => AppColors.textMut(d);
+  static Color textMuted(bool d) => AppColors.textMut(d);
 }
 
 // ─── Skeleton del contenido mientras carga ────────────────────────────────────
@@ -567,7 +602,8 @@ class _ContentSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final skeletonColor = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE0D9CF);
+    final skeletonColor =
+        isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE0D9CF);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Column(
@@ -577,22 +613,32 @@ class _ContentSkeleton extends StatelessWidget {
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               height: 13,
-              decoration: BoxDecoration(color: skeletonColor, borderRadius: BorderRadius.circular(4)),
-              width: i % 4 == 3 ? MediaQuery.of(context).size.width * 0.6 : double.infinity,
+              decoration: BoxDecoration(
+                  color: skeletonColor, borderRadius: BorderRadius.circular(4)),
+              width: i % 4 == 3
+                  ? MediaQuery.of(context).size.width * 0.6
+                  : double.infinity,
             );
           }),
           const SizedBox(height: 20),
           Container(
             height: 200,
-            decoration: BoxDecoration(color: skeletonColor, borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+                color: skeletonColor, borderRadius: BorderRadius.circular(8)),
           ),
           const SizedBox(height: 20),
-          ...List.generate(8, (i) => Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            height: 13,
-            decoration: BoxDecoration(color: skeletonColor, borderRadius: BorderRadius.circular(4)),
-            width: i % 3 == 2 ? MediaQuery.of(context).size.width * 0.5 : double.infinity,
-          )),
+          ...List.generate(
+              8,
+              (i) => Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    height: 13,
+                    decoration: BoxDecoration(
+                        color: skeletonColor,
+                        borderRadius: BorderRadius.circular(4)),
+                    width: i % 3 == 2
+                        ? MediaQuery.of(context).size.width * 0.5
+                        : double.infinity,
+                  )),
         ],
       ),
     );

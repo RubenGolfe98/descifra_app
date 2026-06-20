@@ -22,9 +22,7 @@ class AuthService {
   static const String _keyNewsletter = 'dlg_newsletter_html';
   static const String _keyMembershipRefreshedAt = 'dlg_membership_refreshed_at';
 
-  static final _storage = FlutterSecureStorage(
-    aOptions: const AndroidOptions(encryptedSharedPreferences: true),
-  );
+  static final _storage = FlutterSecureStorage();
 
   final http.Client _client;
   String? _lastNonce; // Nonce obtenido durante el último login
@@ -65,7 +63,8 @@ class AuthService {
           final headers = <String, String>{'Cookie': cookies};
           if (nonce != null) headers['X-WP-Nonce'] = nonce;
           final resp = await _client
-              .get(Uri.parse('$_apiUrl/users/me?_fields=id,name'), headers: headers)
+              .get(Uri.parse('$_apiUrl/users/me?_fields=id,name'),
+                  headers: headers)
               .timeout(const Duration(seconds: 10));
           if (resp.statusCode == 200) {
             final data = jsonDecode(resp.body);
@@ -107,13 +106,14 @@ class AuthService {
     // Si la suscripción no está activa, comprobar siempre
     final isActive = membershipStatus != null &&
         (membershipStatus.toLowerCase().contains('activo') ||
-         membershipStatus.toLowerCase().contains('active'));
+            membershipStatus.toLowerCase().contains('active'));
     if (!isActive) return true;
 
     // Si la fecha de expiración es anterior a hoy, comprobar siempre
     if (membershipExpires != null && membershipExpires.isNotEmpty) {
       final expiry = _parseSpanishDate(membershipExpires);
-      if (expiry != null && expiry.isBefore(DateTime(now.year, now.month, now.day))) {
+      if (expiry != null &&
+          expiry.isBefore(DateTime(now.year, now.month, now.day))) {
         return true;
       }
     }
@@ -128,12 +128,22 @@ class AuthService {
   /// Parsea fechas en formato español: "21 de abril de 2026"
   static DateTime? _parseSpanishDate(String date) {
     const months = {
-      'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4,
-      'mayo': 5, 'junio': 6, 'julio': 7, 'agosto': 8,
-      'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
+      'enero': 1,
+      'febrero': 2,
+      'marzo': 3,
+      'abril': 4,
+      'mayo': 5,
+      'junio': 6,
+      'julio': 7,
+      'agosto': 8,
+      'septiembre': 9,
+      'octubre': 10,
+      'noviembre': 11,
+      'diciembre': 12,
     };
     try {
-      final parts = date.toLowerCase().replaceAll(' de ', ' ').trim().split(' ');
+      final parts =
+          date.toLowerCase().replaceAll(' de ', ' ').trim().split(' ');
       if (parts.length < 3) return null;
       final day = int.parse(parts[0]);
       final month = months[parts[1]];
@@ -164,19 +174,26 @@ class AuthService {
       final isSubscriber = userData['isSubscriber'] as bool;
 
       // Persistir estado actualizado
-      await _storage.write(key: _keyIsSubscriber, value: isSubscriber.toString());
+      await _storage.write(
+          key: _keyIsSubscriber, value: isSubscriber.toString());
       if (membership != null) {
         await _storage.write(key: _keyMembershipName, value: membership.name);
-        await _storage.write(key: _keyMembershipStatus, value: membership.status);
-        await _storage.write(key: _keyMembershipExpires, value: membership.expiresAt ?? '');
-        await _storage.write(key: _keyNewsletter, value: membership.newsletterHtml ?? '');
+        await _storage.write(
+            key: _keyMembershipStatus, value: membership.status);
+        await _storage.write(
+            key: _keyMembershipExpires, value: membership.expiresAt ?? '');
+        await _storage.write(
+            key: _keyNewsletter, value: membership.newsletterHtml ?? '');
       }
       await _storage.write(
         key: _keyMembershipRefreshedAt,
         value: DateTime.now().millisecondsSinceEpoch.toString(),
       );
 
-      if (kDebugMode) debugPrint('🔐 [Auth] Membresía refrescada — isSubscriber: $isSubscriber, status: ${membership?.status}');
+      if (kDebugMode) {
+        debugPrint(
+            '🔐 [Auth] Membresía refrescada — isSubscriber: $isSubscriber, status: ${membership?.status}');
+      }
 
       return AuthState(
         status: SessionStatus.loggedIn,
@@ -209,9 +226,11 @@ class AuthService {
 
     final restNonce = results[0] as String?;
     final membership = results[1] as MembershipInfo?;
-    _lastNonce = restNonce; // Cachear para que auth_notifier lo use sin nueva petición
+    _lastNonce =
+        restNonce; // Cachear para que auth_notifier lo use sin nueva petición
     debugPrint('🔐 [Auth] REST nonce obtenido: $restNonce');
-    debugPrint('🔐 [Auth] Membresía: ${membership?.name} / ${membership?.status}');
+    debugPrint(
+        '🔐 [Auth] Membresía: ${membership?.name} / ${membership?.status}');
 
     // Obtener datos del usuario con el nonce ya disponible
     final headers = <String, String>{'Cookie': cookieString};
@@ -260,21 +279,31 @@ class AuthService {
     try {
       // /users/me y verificación suscripción en paralelo
       final results = await Future.wait([
-        _client.get(
-          Uri.parse('$_apiUrl/users/me?_fields=id,name,email'),
-          headers: headers,
-        ).timeout(const Duration(seconds: 35)),
-        _client.get(
-          Uri.parse('$_apiUrl/posts?per_page=1&_fields=id,content&rcp_is_restricted=1'),
-          headers: headers,
-        ).timeout(const Duration(seconds: 35)),
+        _client
+            .get(
+              Uri.parse('$_apiUrl/users/me?_fields=id,name,email'),
+              headers: headers,
+            )
+            .timeout(const Duration(seconds: 35)),
+        _client
+            .get(
+              Uri.parse(
+                  '$_apiUrl/posts?per_page=1&_fields=id,content&rcp_is_restricted=1'),
+              headers: headers,
+            )
+            .timeout(const Duration(seconds: 35)),
       ]);
 
       final userResponse = results[0];
       final restrictedResponse = results[1];
 
-      if (kDebugMode) debugPrint('🔐 [Auth] /users/me status: ${userResponse.statusCode}');
-      if (kDebugMode) debugPrint('🔐 [Auth] Test restricted post status: ${restrictedResponse.statusCode}');
+      if (kDebugMode) {
+        debugPrint('🔐 [Auth] /users/me status: ${userResponse.statusCode}');
+      }
+      if (kDebugMode) {
+        debugPrint(
+            '🔐 [Auth] Test restricted post status: ${restrictedResponse.statusCode}');
+      }
 
       if (userResponse.statusCode != 200) {
         return {'email': '', 'displayName': '', 'isSubscriber': false};
@@ -379,17 +408,23 @@ class AuthService {
     await _storage.write(key: _keySessionStatus, value: 'loggedIn');
     await _storage.write(key: _keyCookies, value: state.cookies ?? '');
     await _storage.write(key: _keyEmail, value: state.userEmail ?? '');
-    await _storage.write(key: _keyDisplayName, value: state.userDisplayName ?? '');
-    await _storage.write(key: _keyIsSubscriber, value: state.isSubscriber.toString());
+    await _storage.write(
+        key: _keyDisplayName, value: state.userDisplayName ?? '');
+    await _storage.write(
+        key: _keyIsSubscriber, value: state.isSubscriber.toString());
     await _storage.write(
       key: _keyMembershipRefreshedAt,
       value: DateTime.now().millisecondsSinceEpoch.toString(),
     );
     if (state.membership != null) {
-      await _storage.write(key: _keyMembershipName, value: state.membership!.name);
-      await _storage.write(key: _keyMembershipStatus, value: state.membership!.status);
-      await _storage.write(key: _keyMembershipExpires, value: state.membership!.expiresAt ?? '');
-      await _storage.write(key: _keyNewsletter, value: state.membership!.newsletterHtml ?? '');
+      await _storage.write(
+          key: _keyMembershipName, value: state.membership!.name);
+      await _storage.write(
+          key: _keyMembershipStatus, value: state.membership!.status);
+      await _storage.write(
+          key: _keyMembershipExpires, value: state.membership!.expiresAt ?? '');
+      await _storage.write(
+          key: _keyNewsletter, value: state.membership!.newsletterHtml ?? '');
     }
   }
 }

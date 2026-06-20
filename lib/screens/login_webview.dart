@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import '../services/auth_service.dart';
 
 /// WebView que carga la página de login real.
 /// Cloudflare lo ve como un navegador legítimo.
@@ -22,8 +21,8 @@ class LoginWebView extends StatefulWidget {
 
 class _LoginWebViewState extends State<LoginWebView> {
   static const _loginUrl = 'https://www.descifrandolaguerra.es/accede/';
-  static const _successUrl = 'https://www.descifrandolaguerra.es/mi-cuenta/';
 
+  // ignore: unused_field
   InAppWebViewController? _controller;
   bool _isLoading = true;
   bool _extracted = false; // evitar extraer cookies dos veces
@@ -73,7 +72,8 @@ class _LoginWebViewState extends State<LoginWebView> {
               _checkIfLoggedIn(url?.toString() ?? '');
             },
             onReceivedError: (_, request, error) {
-              debugPrint('🌐 [WebView] ERROR: ${error.description} — ${request.url}');
+              debugPrint(
+                  '🌐 [WebView] ERROR: ${error.description} — ${request.url}');
             },
             onConsoleMessage: (_, message) {
               debugPrint('🌐 [WebView] console: ${message.message}');
@@ -105,9 +105,7 @@ class _LoginWebViewState extends State<LoginWebView> {
     );
 
     // Formatear como string para enviar en headers HTTP
-    final cookieString = cookies
-        .map((c) => '${c.name}=${c.value}')
-        .join('; ');
+    final cookieString = cookies.map((c) => '${c.name}=${c.value}').join('; ');
 
     debugPrint('🍪 [WebView] Cookies extraídas: $cookieString');
 
@@ -123,9 +121,8 @@ class _LoginWebViewState extends State<LoginWebView> {
       final retry = await cookieManager.getCookies(
         url: WebUri('https://www.descifrandolaguerra.es'),
       );
-      final retryCookieString = retry
-          .map((c) => '${c.name}=${c.value}')
-          .join('; ');
+      final retryCookieString =
+          retry.map((c) => '${c.name}=${c.value}').join('; ');
       if (mounted) Navigator.of(context).pop(retryCookieString);
       return;
     }
