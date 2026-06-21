@@ -29,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentPage = 1;
   bool _isLoadingMore = false;
   bool _hasMore = true;
-  bool _initialized = false;
 
   @override
   void initState() {
@@ -91,7 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentPage = 1;
       _hasMore = true;
       _articles.clear();
-      _initialized = false;
       _firstPageFuture = _repository.fetchLatestArticles();
     });
   }
@@ -116,18 +114,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (snapshot.hasError && _articles.isEmpty) {
                     return _ErrorView(onRetry: _refresh, isDark: isDark);
                   }
-                  if (!_initialized && snapshot.hasData) {
-                    _initialized = true;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted && _articles.isEmpty) {
-                        setState(() => _articles.addAll(snapshot.data!));
-                      }
-                    });
+                  if (snapshot.hasData && _articles.isEmpty) {
+                    _articles.addAll(snapshot.data!);
                   }
-                  final displayArticles =
-                      _articles.isEmpty && snapshot.hasData
-                          ? snapshot.data!
-                          : _articles;
+                  final displayArticles = _articles;
                   return _ArticleFeed(
                     articles: displayArticles,
                     onRefresh: _refresh,

@@ -23,7 +23,6 @@ class _CoveragesScreenState extends State<CoveragesScreen> {
   int _currentPage = 1;
   bool _isLoadingMore = false;
   bool _hasMore = true;
-  bool _initialized = false;
 
   @override
   void initState() {
@@ -53,10 +52,13 @@ class _CoveragesScreenState extends State<CoveragesScreen> {
     final more = await _repository.fetchCoverages(page: _currentPage + 1, perPage: 5);
     if (mounted) {
       setState(() {
-        if (more.length < 5) _hasMore = false;
-        if (more.isNotEmpty) {
+        if (more.isEmpty) {
+          _hasMore = false;
+        } else {
           _coverages.addAll(more);
           _currentPage++;
+          // Si el servidor devuelve menos elementos de los pedidos, es la última página
+          if (more.length < 5) _hasMore = false;
         }
         _isLoadingMore = false;
       });
@@ -68,7 +70,6 @@ class _CoveragesScreenState extends State<CoveragesScreen> {
       _currentPage = 1;
       _hasMore = true;
       _coverages.clear();
-      _initialized = false;
       _firstPageFuture = _repository.fetchCoverages(perPage: 5);
     });
   }
@@ -123,13 +124,8 @@ class _CoveragesScreenState extends State<CoveragesScreen> {
             );
           }
 
-          if (!_initialized && snapshot.data != null && _coverages.isEmpty) {
-            _initialized = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted && _coverages.isEmpty) {
-                setState(() => _coverages.addAll(snapshot.data!));
-              }
-            });
+          if (snapshot.data != null && _coverages.isEmpty) {
+            _coverages.addAll(snapshot.data!);
           }
 
           return RefreshIndicator(

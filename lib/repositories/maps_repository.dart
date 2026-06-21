@@ -2,10 +2,16 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/map_image.dart';
+import 'article_repository.dart';
 
 class MapsRepository {
   static const _pageId = '2620';
   static const _baseUrl = 'https://www.descifrandolaguerra.es/wp-json/wp/v2';
+  static const _cacheTtl = Duration(hours: 2);
+
+  // Caché en memoria con TTL
+  static Map<String, List<MapImage>>? _mapsCache;
+  static DateTime? _mapsCachedAt;
 
   // Mapeo de slugs de región a títulos en el HTML de la página de mapas
   static const Map<String, String> _regionTitles = {
@@ -17,17 +23,35 @@ class MapsRepository {
     'asia-central-meridional': 'Asia Central y Meridional',
   };
 
+  final http.Client _client;
+
+  MapsRepository({http.Client? client}) : _client = client ?? SharedHttp.client;
+
+  bool get _cacheValid =>
+      _mapsCache != null &&
+      _mapsCachedAt != null &&
+      DateTime.now().difference(_mapsCachedAt!) < _cacheTtl;
+
+  static void clearCache() {
+    _mapsCache = null;
+    _mapsCachedAt = null;
+  }
+
   Future<Map<String, List<MapImage>>> fetchAllMaps() async {
+    if (_cacheValid) return _mapsCache!;
+
     try {
       final uri = Uri.parse('$_baseUrl/pages/$_pageId?_fields=content');
-      final response = await http.get(uri).timeout(const Duration(seconds: 15));
-      if (response.statusCode != 200) return {};
+      final response = await _client.get(uri).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return _mapsCache ?? {};
       final json = jsonDecode(response.body);
       final html = json['content']?['rendered'] as String? ?? '';
-      return _parseHtml(html);
+      _mapsCache = _parseHtml(html);
+      _mapsCachedAt = DateTime.now();
+      return _mapsCache!;
     } catch (e) {
       if (kDebugMode) debugPrint('🗺️ [Maps] Error: $e');
-      return {};
+      return _mapsCache ?? {};
     }
   }
 

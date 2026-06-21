@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/coverage.dart';
+import 'article_repository.dart';
 
 class CoverageRepository {
   static const _baseUrl = 'https://www.descifrandolaguerra.es/wp-json/wp/v2';
@@ -16,7 +17,7 @@ class CoverageRepository {
   // Caché detalles (sin TTL — los detalles no cambian)
   static final Map<int, CoverageDetail> _detailCache = {};
 
-  CoverageRepository({http.Client? client}) : _client = client ?? http.Client();
+  CoverageRepository({http.Client? client}) : _client = client ?? SharedHttp.client;
 
   static void clearCache() {
     _listCache = null;

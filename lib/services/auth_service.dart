@@ -216,7 +216,7 @@ class AuthService {
       throw const AuthException('No se pudo completar el inicio de sesión.');
     }
 
-    debugPrint('🔐 [Auth] Verificando sesión con cookies del WebView...');
+    if (kDebugMode) debugPrint('🔐 [Auth] Verificando sesión con cookies del WebView...');
 
     // Lanzar en paralelo: nonce + membresía desde /mi-cuenta/
     final results = await Future.wait([
@@ -228,16 +228,17 @@ class AuthService {
     final membership = results[1] as MembershipInfo?;
     _lastNonce =
         restNonce; // Cachear para que auth_notifier lo use sin nueva petición
-    debugPrint('🔐 [Auth] REST nonce obtenido: $restNonce');
-    debugPrint(
-        '🔐 [Auth] Membresía: ${membership?.name} / ${membership?.status}');
+    if (kDebugMode) {
+      debugPrint('🔐 [Auth] REST nonce obtenido: $restNonce');
+      debugPrint('🔐 [Auth] Membresía: ${membership?.name} / ${membership?.status}');
+    }
 
     // Obtener datos del usuario con el nonce ya disponible
     final headers = <String, String>{'Cookie': cookieString};
     if (restNonce != null) headers['X-WP-Nonce'] = restNonce;
 
     final userData = await _fetchUserData(cookieString, headers);
-    debugPrint('🔐 [Auth] Datos usuario: $userData');
+    if (kDebugMode) debugPrint('🔐 [Auth] Datos usuario: $userData');
 
     final state = AuthState(
       status: SessionStatus.loggedIn,

@@ -29,8 +29,12 @@ class AuthNotifier extends ChangeNotifier {
       final wasSubscriber = _state.isSubscriber;
       final stale = await _service.isMembershipStale();
 
+      // Arrancamos la carga del nonce YA, en paralelo con cualquier
+      // validación de membresía, para que esté listo cuando el
+      // usuario toque un artículo premium.
+      final nonceFuture = _service.getRestNonce(_state.cookies!);
+
       if (stale) {
-        // Primera entrada del día — validar membresía ANTES de mostrar la app
         if (kDebugMode) debugPrint('🔐 [Auth] Primera entrada del día — validando membresía');
         final updated = await _service.refreshMembership(_state.cookies!);
         if (updated != null) {
@@ -41,19 +45,14 @@ class AuthNotifier extends ChangeNotifier {
           }
         }
       }
+
+      // Esperamos el nonce (ya debería haber llegado, corría en paralelo)
+      _restNonce = await nonceFuture;
+      if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST pre-cargado: $_restNonce');
     }
 
     _initializing = false;
     notifyListeners();
-
-    // Nonce REST en background — no bloquea el arranque
-    if (_state.isLoggedIn && _state.cookies != null) {
-      _service.getRestNonce(_state.cookies!).then((nonce) {
-        _restNonce = nonce;
-        if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST pre-cargado: $_restNonce');
-        notifyListeners();
-      });
-    }
   }
 
   /// Recibe las cookies extraídas del WebView

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/auth_state.dart';
+import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 
 class NewsletterScreen extends StatelessWidget {
@@ -11,7 +13,7 @@ class NewsletterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.watch<ThemeNotifier>().isDark;
     final bg = AppColors.bg(isDark);
     final pri = AppColors.textPri(isDark);
     final sec = AppColors.textSec(isDark);

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/seminar.dart';
+import 'article_repository.dart';
 
 class SeminarRepository {
   static const _baseUrl = 'https://www.descifrandolaguerra.es/wp-json/wp/v2';
@@ -17,7 +18,7 @@ class SeminarRepository {
   static final Map<String, List<SeminarSession>> _sessionsCache = {};
   static final Map<String, SeminarSessionDetail> _detailCache = {};
 
-  SeminarRepository({http.Client? client}) : _client = client ?? http.Client();
+  SeminarRepository({http.Client? client}) : _client = client ?? SharedHttp.client;
 
   /// Limpia la caché (usar tras logout)
   static void clearCache() {
@@ -98,14 +99,6 @@ class SeminarRepository {
 
       final List<dynamic> data = jsonDecode(response.body);
 
-      data
-          .where((j) => (j['link'] as String? ?? '').contains('/$seminarSlug/'))
-          .map((j) => SeminarSession(
-                title: _stripHtml(j['title']?['rendered'] ?? ''),
-                url: j['link'] ?? '',
-              ))
-          .toList();
-
       // Guardar en caché todas las sesiones agrupadas por seminario
       // (aprovechamos que ya tenemos todas para cachear los demás seminarios también)
       final Map<String, List<SeminarSession>> bySlug = {};
@@ -176,15 +169,11 @@ class SeminarRepository {
   List<SeminarSession> _parseSessions(String html) {
     final sessions = <SeminarSession>[];
 
-    // Buscar el <ul class="menu-sesiones-seminario"> ignorando el CSS
     final ulMatch = RegExp(
       r'<ul\s+class="menu-sesiones-seminario">(.*?)</ul>',
       dotAll: true,
     ).firstMatch(html);
 
-    if (kDebugMode) {
-      debugPrint('📚 [Seminars] ul match found: ${ulMatch != null}');
-    }
     if (ulMatch == null) return sessions;
 
     final liRegex = RegExp(
@@ -199,9 +188,6 @@ class SeminarRepository {
       ));
     }
 
-    if (kDebugMode) {
-      debugPrint('📚 [Seminars] Sessions found: ${sessions.length}');
-    }
     return sessions;
   }
 

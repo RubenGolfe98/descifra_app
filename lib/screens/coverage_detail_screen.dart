@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html/flutter_html.dart' show Html, TagExtension;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/coverage.dart';
@@ -8,6 +8,7 @@ import '../repositories/coverage_repository.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/html_styles.dart';
 import '../widgets/image_viewer.dart';
 import 'article_detail_screen.dart';
 import '../repositories/article_repository.dart';
@@ -205,67 +206,7 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                           mode: LaunchMode.externalApplication);
                     }
                   },
-                  style: {
-                    'body': Style(
-                      color: isDark
-                          ? const Color(0xFFCCCCCC)
-                          : const Color(0xFF333333),
-                      fontSize: FontSize(15),
-                      lineHeight: const LineHeight(1.75),
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                      backgroundColor: Colors.transparent,
-                    ),
-                    'h2': Style(
-                      color: pri,
-                      fontSize: FontSize(18),
-                      fontWeight: FontWeight.w500,
-                      margin: Margins.only(top: 20, bottom: 8),
-                    ),
-                    'h3': Style(
-                      color: pri,
-                      fontSize: FontSize(16),
-                      fontWeight: FontWeight.w500,
-                      margin: Margins.only(top: 16, bottom: 6),
-                    ),
-                    'p': Style(margin: Margins.only(bottom: 16)),
-                    'a': Style(
-                        color: AppColors.accent,
-                        textDecoration: TextDecoration.none),
-                    'strong': Style(color: pri, fontWeight: FontWeight.w500),
-                    'em': Style(
-                      color: isDark
-                          ? const Color(0xFFAAAAAA)
-                          : const Color(0xFF666666),
-                      fontStyle: FontStyle.italic,
-                    ),
-                    'blockquote': Style(
-                      color: isDark
-                          ? const Color(0xFFAAAAAA)
-                          : const Color(0xFF666666),
-                      border: const Border(
-                          left: BorderSide(color: AppColors.accent, width: 3)),
-                      padding: HtmlPaddings.only(left: 16),
-                      margin: Margins.symmetric(vertical: 16),
-                      fontStyle: FontStyle.italic,
-                    ),
-                    'figure': Style(margin: Margins.symmetric(vertical: 12)),
-                    'figcaption': Style(
-                      color: AppColors.textMut(isDark),
-                      fontSize: FontSize(12),
-                      textAlign: TextAlign.center,
-                      margin: Margins.only(top: 6),
-                      fontStyle: FontStyle.italic,
-                    ),
-                    'ul': Style(margin: Margins.only(bottom: 16)),
-                    'ol': Style(margin: Margins.only(bottom: 16)),
-                    'li': Style(margin: Margins.only(bottom: 6)),
-                    'section': Style(
-                      backgroundColor: surf,
-                      padding: HtmlPaddings.all(12),
-                      margin: Margins.symmetric(vertical: 12),
-                    ),
-                  },
+                  style: articleHtmlStyles(isDark),
                   extensions: [
                     TagExtension(
                       tagsToExtend: {'img'},

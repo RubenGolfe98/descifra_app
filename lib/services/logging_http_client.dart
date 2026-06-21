@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../repositories/article_repository.dart';
 
 /// Cliente HTTP que imprime en consola todas las peticiones y respuestas.
 /// Solo activo en modo debug — en release no hace nada extra.
 class LoggingHttpClient extends http.BaseClient {
   final http.Client _inner;
 
-  LoggingHttpClient() : _inner = http.Client();
+  LoggingHttpClient() : _inner = SharedHttp.client;
 
   /// Constructor para tests — permite inyectar un cliente fake
   @visibleForTesting

@@ -5,6 +5,20 @@ import '../models/article.dart';
 import '../models/article_detail.dart';
 import '../services/article_cache.dart';
 
+/// Cliente HTTP compartido para toda la app.
+/// Todos los repositorios reutilizan esta misma instancia,
+/// lo que permite connection pooling (keep-alive, TLS reutilizado).
+class SharedHttp {
+  SharedHttp._();
+  static http.Client? _client;
+  static http.Client get client =>
+      _client ??= http.Client();
+  static void dispose() {
+    _client?.close();
+    _client = null;
+  }
+}
+
 class ArticleRepository {
   static const String _baseUrl =
       'https://www.descifrandolaguerra.es/wp-json/wp/v2';
@@ -26,7 +40,7 @@ class ArticleRepository {
   final ArticleCache _cache;
 
   ArticleRepository({http.Client? client, ArticleCache? cache})
-      : _client = client ?? http.Client(),
+      : _client = client ?? SharedHttp.client,
         _cache = cache ?? ArticleCache();
 
   // ─── Listado con caché ─────────────────────────────────────────────────────
@@ -334,7 +348,8 @@ class ArticleRepository {
 
     if (cached != null && !forceRefresh) {
       if (kDebugMode) debugPrint('📦 [Cache] Detalle $id desde caché');
-      final detail = ArticleDetail.fromJson(jsonDecode(cached));
+      final map = jsonDecode(cached) as Map<String, dynamic>;
+      final detail = ArticleDetail.fromJson(map);
 
       // Refrescar si está obsoleto O si el contenido está vacío (puede ser por falta de nonce)
       final stale = await _cache.isDetailStale(id);
@@ -413,7 +428,8 @@ class ArticleRepository {
 
       if (response.statusCode != 200) return null;
 
-      final detail = ArticleDetail.fromJson(jsonDecode(response.body));
+      final map = jsonDecode(response.body) as Map<String, dynamic>;
+      final detail = ArticleDetail.fromJson(map);
       await _cache.saveDetail(id, response.body, isPremium: detail.isPremium);
       return detail;
     } catch (e) {

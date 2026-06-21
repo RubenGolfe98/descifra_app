@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/article.dart';
+import '../repositories/article_repository.dart';
 
 class FavoritesService extends ChangeNotifier {
   static const _ajaxUrl = 'https://www.descifrandolaguerra.es/wp-admin/admin-ajax.php';
@@ -14,7 +15,7 @@ class FavoritesService extends ChangeNotifier {
   final List<Article> _savedArticles = [];
   bool _loaded = false;
 
-  FavoritesService({http.Client? client}) : _client = client ?? http.Client();
+  FavoritesService({http.Client? client}) : _client = client ?? SharedHttp.client;
 
   Set<int> get savedIds => Set.unmodifiable(_savedIds);
   List<Article> get savedArticles => List.unmodifiable(_savedArticles);

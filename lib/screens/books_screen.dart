@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html/flutter_html.dart' show Html;
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/book.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/html_styles.dart';
 
 class BooksScreen extends StatefulWidget {
   const BooksScreen({super.key});
@@ -378,19 +379,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 }
               },
-              style: {
-                'body': Style(
-                  color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF333333),
-                  fontSize: FontSize(14),
-                  lineHeight: const LineHeight(1.7),
-                  margin: Margins.zero,
-                  padding: HtmlPaddings.zero,
-                  backgroundColor: Colors.transparent,
-                ),
-                'p': Style(margin: Margins.only(bottom: 14)),
-                'a': Style(color: AppColors.accent, textDecoration: TextDecoration.none),
-                'strong': Style(color: pri, fontWeight: FontWeight.w600),
-              },
+              style: bookHtmlStyles(isDark),
             ),
           ],
         ),

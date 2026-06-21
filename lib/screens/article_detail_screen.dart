@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html/flutter_html.dart' show Html, TagExtension;
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,6 +13,7 @@ import '../services/auth_notifier.dart';
 import '../services/favorites_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/html_styles.dart';
 import '../widgets/article_card.dart';
 import '../widgets/image_viewer.dart';
 
@@ -28,62 +31,91 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   late Future<ArticleDetail> _detailFuture;
   bool _refreshing = false;
   int _loadVersion = 0;
-  bool _pendingAuth = false; // true → esperando nonce para artículo premium
 
   @override
   void initState() {
     super.initState();
-    _loadDetail();
+    // Asignamos inmediatamente para evitar LateInitializationError;
+    // el primer await difiere la ejecución real al microtask queue.
+    _detailFuture = _startLoad();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final auth = context.watch<AuthNotifier>();
-    // Si estábamos esperando auth y el nonce ya llegó, lanzamos la carga
-    if (_pendingAuth && auth.restNonce != null) {
-      _pendingAuth = false;
-      _loadDetail();
-    }
-  }
-
-  void _loadDetail({bool forceRefresh = false}) {
-    final auth = context.read<AuthNotifier>();
-
-    // Para artículos premium con usuario logueado: esperar al nonce
-    if (widget.article.isPremium &&
-        auth.state.isLoggedIn &&
-        auth.restNonce == null) {
-      _pendingAuth = true;
-      return;
-    }
-
-    _pendingAuth = false;
+  /// Siempre asigna [_detailFuture] — nunca deja la variable sin inicializar.
+  Future<ArticleDetail> _startLoad({bool forceRefresh = false}) async {
     final version = ++_loadVersion;
-    setState(() => _refreshing = true);
-    _detailFuture = _repository.fetchArticleDetail(
-      widget.article.id,
-      cookies: auth.state.cookies,
-      restNonce: auth.restNonce,
-      forceRefresh: forceRefresh,
-      onNonceExpired: () => context.read<AuthNotifier>().renewRestNonce(),
-      onRefreshed: (fresh) {
-        if (mounted && version == _loadVersion) {
-          setState(() {
-            _detailFuture = Future.value(fresh);
-            _refreshing = false;
-          });
+    // Diferimos el setState al microtask queue porque initState
+    // está en medio del ciclo de montaje y no permite setState directo.
+    Future.microtask(() {
+      if (mounted && version == _loadVersion) {
+        setState(() => _refreshing = true);
+      }
+    });
+
+    try {
+      final auth = context.read<AuthNotifier>();
+
+      // Si el artículo es premium y el nonce no ha llegado, esperarlo.
+      // El nonce se carga en paralelo durante AuthNotifier.initialize(),
+      // así que normalmente ya está disponible aquí.
+      if (widget.article.isPremium &&
+          auth.state.isLoggedIn &&
+          auth.restNonce == null) {
+        if (kDebugMode) {
+          debugPrint('⏳ [Detail] Esperando nonce para artículo premium...');
         }
-      },
-    );
-    _detailFuture.then((_) {
+        await _waitForNonce();
+        if (!mounted) throw 'Widget disposed before nonce arrived';
+      }
+
+      final detail = await _repository.fetchArticleDetail(
+        widget.article.id,
+        cookies: auth.state.cookies,
+        restNonce: auth.restNonce,
+        forceRefresh: forceRefresh,
+        onNonceExpired: () => context.read<AuthNotifier>().renewRestNonce(),
+        onRefreshed: (fresh) {
+          if (mounted && version == _loadVersion) {
+            setState(() {
+              _detailFuture = Future.value(fresh);
+              _refreshing = false;
+            });
+          }
+        },
+      );
+      return detail;
+    } finally {
       if (mounted && version == _loadVersion) {
         setState(() => _refreshing = false);
       }
-    }).catchError((_) {
-      if (mounted && version == _loadVersion) {
-        setState(() => _refreshing = false);
+    }
+  }
+
+  Future<void> _waitForNonce() async {
+    final auth = context.read<AuthNotifier>();
+    if (auth.restNonce != null) return;
+
+    final completer = Completer<void>();
+    void listener() {
+      if (!completer.isCompleted &&
+          context.read<AuthNotifier>().restNonce != null) {
+        completer.complete();
       }
+    }
+    auth.addListener(listener);
+    try {
+      await completer.future.timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      if (kDebugMode) {
+        debugPrint('⏳ [Detail] Timeout esperando nonce — continuando');
+      }
+    } finally {
+      auth.removeListener(listener);
+    }
+  }
+
+  void _retry() {
+    setState(() {
+      _detailFuture = _startLoad(forceRefresh: true);
     });
   }
 
@@ -95,9 +127,10 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
       body: _ArticleShell(
         article: widget.article,
         detailFuture: _detailFuture,
-        onRetry: () => setState(() => _loadDetail(forceRefresh: true)),
+        onRetry: _retry,
         isDark: isDark,
         refreshing: _refreshing,
+        repository: _repository,
       ),
     );
   }
@@ -110,6 +143,7 @@ class _ArticleShell extends StatelessWidget {
   final VoidCallback onRetry;
   final bool isDark;
   final bool refreshing;
+  final ArticleRepository repository;
 
   const _ArticleShell({
     required this.article,
@@ -117,12 +151,11 @@ class _ArticleShell extends StatelessWidget {
     required this.onRetry,
     required this.isDark,
     this.refreshing = false,
+    required this.repository,
   });
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthNotifier>();
-
     return CustomScrollView(
       slivers: [
         SliverAppBar(
@@ -261,34 +294,14 @@ class _ArticleShell extends StatelessWidget {
           ),
         ),
 
-        // ── Contenido — carga async sin bloquear la UI ────────────────────
-        SliverToBoxAdapter(
-          child: FutureBuilder<ArticleDetail>(
-            future: detailFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const _ContentSkeleton();
-              }
-              if (snapshot.hasError) {
-                return _ContentError(onRetry: onRetry);
-              }
-
-              final detail = snapshot.data!;
-              final hasContent = detail.content.trim().isNotEmpty;
-              final isLocked = article.isPremium &&
-                  !(auth.state.isLoggedIn && auth.state.isSubscriber);
-              final showPaywall = isLocked && !hasContent;
-
-              if (!hasContent && refreshing) {
-                return const _ContentSkeleton();
-              }
-
-              if (showPaywall) {
-                return _PaywallBlock(isLoggedIn: auth.state.isLoggedIn);
-              }
-              return _HtmlContent(html: detail.content);
-            },
-          ),
+        // ── Contenido — widget separado que solo se reconstruye
+        //    cuando cambia AuthNotifier (no al cambiar ThemeNotifier) ──────
+        _ArticleContent(
+          article: article,
+          detailFuture: detailFuture,
+          onRetry: onRetry,
+          refreshing: refreshing,
+          repository: repository,
         ),
 
         const SliverToBoxAdapter(child: SizedBox(height: 40)),
@@ -305,17 +318,70 @@ class _ArticleShell extends StatelessWidget {
   }
 }
 
+// ─── Contenido del artículo (FutureBuilder + paywall) ─────────────────────────
+// Widget extraído explícitamente para que solo él se reconstruya cuando
+// cambie AuthNotifier, sin arrastrar el SliverAppBar ni el título.
+class _ArticleContent extends StatelessWidget {
+  final Article article;
+  final Future<ArticleDetail> detailFuture;
+  final VoidCallback onRetry;
+  final bool refreshing;
+  final ArticleRepository repository;
+
+  const _ArticleContent({
+    required this.article,
+    required this.detailFuture,
+    required this.onRetry,
+    required this.refreshing,
+    required this.repository,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthNotifier>();
+
+    return SliverToBoxAdapter(
+      child: FutureBuilder<ArticleDetail>(
+        future: detailFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const _ContentSkeleton();
+          }
+          if (snapshot.hasError) {
+            return _ContentError(onRetry: onRetry);
+          }
+
+          final detail = snapshot.data!;
+          final hasContent = detail.content.trim().isNotEmpty;
+          final isLocked = article.isPremium &&
+              !(auth.state.isLoggedIn && auth.state.isSubscriber);
+          final showPaywall = isLocked && !hasContent;
+
+          if (!hasContent && refreshing) {
+            return const _ContentSkeleton();
+          }
+
+          if (showPaywall) {
+            return _PaywallBlock(isLoggedIn: auth.state.isLoggedIn);
+          }
+          return _HtmlContent(html: detail.content, repository: repository);
+        },
+      ),
+    );
+  }
+}
+
 // ─── Contenido HTML ───────────────────────────────────────────────────────────
 class _HtmlContent extends StatelessWidget {
   final String html;
+  final ArticleRepository repository;
 
-  const _HtmlContent({required this.html});
+  const _HtmlContent({required this.html, required this.repository});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
     final screenWidth = MediaQuery.of(context).size.width;
-    final repository = ArticleRepository();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -369,58 +435,7 @@ class _HtmlContent extends StatelessWidget {
             await launchUrl(uri, mode: LaunchMode.externalApplication);
           }
         },
-        style: {
-          'body': Style(
-            color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF333333),
-            fontSize: FontSize(15),
-            lineHeight: const LineHeight(1.75),
-            margin: Margins.zero,
-            padding: HtmlPaddings.zero,
-            backgroundColor: Colors.transparent,
-          ),
-          'h2': Style(
-            color: _Colors.textPrimary(isDark),
-            fontSize: FontSize(18),
-            fontWeight: FontWeight.w500,
-            margin: Margins.only(top: 20, bottom: 8),
-          ),
-          'h3': Style(
-            color: _Colors.textPrimary(isDark),
-            fontSize: FontSize(16),
-            fontWeight: FontWeight.w500,
-            margin: Margins.only(top: 16, bottom: 6),
-          ),
-          'p': Style(margin: Margins.only(bottom: 16)),
-          'a': Style(
-              color: AppColors.accent, textDecoration: TextDecoration.none),
-          'strong': Style(
-              color: _Colors.textPrimary(isDark), fontWeight: FontWeight.w500),
-          'em': Style(
-              color: isDark ? const Color(0xFFAAAAAA) : const Color(0xFF666666),
-              fontStyle: FontStyle.italic),
-          'blockquote': Style(
-            color: isDark ? const Color(0xFFAAAAAA) : const Color(0xFF666666),
-            border: const Border(
-                left: BorderSide(color: AppColors.accent, width: 3)),
-            padding: HtmlPaddings.only(left: 16),
-            margin: Margins.symmetric(vertical: 16),
-            fontStyle: FontStyle.italic,
-          ),
-          'figure': Style(margin: Margins.symmetric(vertical: 16)),
-          'figcaption': Style(
-              color: _Colors.textMuted(isDark),
-              fontSize: FontSize(12),
-              textAlign: TextAlign.center,
-              margin: Margins.only(top: 6)),
-          'ul': Style(margin: Margins.only(bottom: 16)),
-          'ol': Style(margin: Margins.only(bottom: 16)),
-          'li': Style(margin: Margins.only(bottom: 6)),
-          'section': Style(
-            backgroundColor: _Colors.surf(isDark),
-            padding: HtmlPaddings.all(12),
-            margin: Margins.symmetric(vertical: 12),
-          ),
-        },
+        style: articleHtmlStyles(isDark),
         extensions: [
           TagExtension(
             tagsToExtend: {'img'},
@@ -561,7 +576,6 @@ class _Colors {
   static Color bord(bool d) => AppColors.bord(d);
   static Color textPrimary(bool d) => AppColors.textPri(d);
   static Color textSecondary(bool d) => AppColors.textSec(d);
-  static Color textMuted(bool d) => AppColors.textMut(d);
 }
 
 // ─── Skeleton del contenido mientras carga ────────────────────────────────────

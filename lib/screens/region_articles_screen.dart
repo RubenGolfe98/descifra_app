@@ -25,7 +25,6 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
   int _currentPage = 1;
   bool _isLoadingMore = false;
   bool _hasMore = true;
-  bool _initialized = false;
 
   @override
   void initState() {
@@ -91,7 +90,6 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
       _articles.clear();
       _currentPage = 1;
       _hasMore = true;
-      _initialized = false;
       _load();
     });
     await _firstPageFuture;
@@ -195,20 +193,10 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                     ),
                   );
                 }
-                if (!_initialized &&
-                    snapshot.hasData &&
-                    _articles.isEmpty) {
-                  _initialized = true;
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted && _articles.isEmpty) {
-                      setState(() => _articles.addAll(snapshot.data!));
-                    }
-                  });
+                if (snapshot.hasData && _articles.isEmpty) {
+                  _articles.addAll(snapshot.data!);
                 }
-                final displayArticles =
-                    _articles.isEmpty && snapshot.hasData
-                        ? snapshot.data!
-                        : _articles;
+                final displayArticles = _articles;
                 if (displayArticles.isEmpty) {
                   return SliverToBoxAdapter(
                     child: Padding(

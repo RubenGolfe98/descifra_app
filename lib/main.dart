@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'repositories/article_repository.dart';
 import 'services/auth_notifier.dart';
 import 'services/favorites_service.dart';
 import 'services/connectivity_service.dart';
@@ -16,10 +17,11 @@ void main() async {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
-  PaintingBinding.instance.imageCache.maximumSize = 100;
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
 
-  // Precarga en background al arrancar — no bloquea el inicio de la app
+  // Aumentamos el límite de la caché de imágenes para reducir
+  // evicciones prematuras al hacer scroll o abrir detalle.
+  PaintingBinding.instance.imageCache.maximumSize = 500;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 100 * 1024 * 1024;
 
   runApp(const DlgApp());
 }
@@ -41,8 +43,19 @@ class DlgApp extends StatelessWidget {
   }
 }
 
-class _AppRoot extends StatelessWidget {
+class _AppRoot extends StatefulWidget {
   const _AppRoot();
+
+  @override
+  State<_AppRoot> createState() => _AppRootState();
+}
+
+class _AppRootState extends State<_AppRoot> {
+  @override
+  void dispose() {
+    SharedHttp.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +104,49 @@ class _AppGate extends StatefulWidget {
 }
 
 class _AppGateState extends State<_AppGate> {
+  bool _favoritesHandled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Escuchar cambios en AuthNotifier para cargar favoritos tras inicializar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<AuthNotifier>().addListener(_onAuthChanged);
+      // Comprobar si ya está inicializado
+      _onAuthChanged();
+    });
+  }
+
+  @override
+  void dispose() {
+    // No podemos acceder a context tras dispose, pero el notifier
+    // vivirá mientras el provider exista; ignoramos errores silenciosamente.
+    try {
+      context.read<AuthNotifier>().removeListener(_onAuthChanged);
+    } catch (_) {}
+    super.dispose();
+  }
+
+  void _onAuthChanged() {
+    if (_favoritesHandled) return;
+    final auth = context.read<AuthNotifier>();
+    if (auth.initializing) return;
+    _favoritesHandled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final favorites = context.read<FavoritesService>();
+      if (auth.state.isLoggedIn) {
+        if (!favorites.loaded) {
+          favorites.loadFavorites(auth.state.cookies ?? '');
+        }
+      } else {
+        favorites.clear();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthNotifier>();
@@ -134,19 +190,6 @@ class _AppGateState extends State<_AppGate> {
         ),
       );
     }
-
-    // Cargar favoritos cuando el usuario está logueado
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final favorites = context.read<FavoritesService>();
-      if (auth.state.isLoggedIn) {
-        if (!favorites.loaded) {
-          favorites.loadFavorites(auth.state.cookies ?? '');
-        }
-      } else {
-        favorites.clear();
-      }
-    });
 
     return const MainScreen();
   }
