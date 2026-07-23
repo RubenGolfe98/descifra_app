@@ -29,18 +29,33 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentPage = 1;
   bool _isLoadingMore = false;
   bool _hasMore = true;
+  bool _initialized = false;
+
+  // Estado del banner de refresco
+  _RefreshStatus _refreshStatus = _RefreshStatus.idle;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _firstPageFuture = _repository.fetchLatestArticles(
+      onBackgroundRefreshStarted: () {
+        if (mounted) setState(() => _refreshStatus = _RefreshStatus.refreshing);
+      },
       onRefreshed: (fresh) {
         if (mounted) {
+          final hasNewContent = fresh.isNotEmpty &&
+              (_articles.isEmpty || fresh.first.id != _articles.first.id);
           setState(() {
             _articles
               ..clear()
               ..addAll(fresh);
+            _refreshStatus = hasNewContent
+                ? _RefreshStatus.updated
+                : _RefreshStatus.upToDate;
+          });
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) setState(() => _refreshStatus = _RefreshStatus.idle);
           });
         }
       },
@@ -90,6 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentPage = 1;
       _hasMore = true;
       _articles.clear();
+      _initialized = false;
       _firstPageFuture = _repository.fetchLatestArticles();
     });
   }
@@ -103,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             _AppHeader(isDark: isDark),
+            _RefreshBanner(status: _refreshStatus, isDark: isDark),
             Expanded(
               child: FutureBuilder<List<Article>>(
                 future: _firstPageFuture,
@@ -114,12 +131,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (snapshot.hasError && _articles.isEmpty) {
                     return _ErrorView(onRetry: _refresh, isDark: isDark);
                   }
-                  if (snapshot.hasData && _articles.isEmpty) {
-                    _articles.addAll(snapshot.data!);
+                  if (!_initialized && snapshot.data != null) {
+                    _initialized = true;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted && _articles.isEmpty) {
+                        setState(() => _articles.addAll(snapshot.data!));
+                      }
+                    });
                   }
-                  final displayArticles = _articles;
                   return _ArticleFeed(
-                    articles: displayArticles,
+                    articles: _articles,
                     onRefresh: _refresh,
                     scrollController: _scrollController,
                     isLoadingMore: _isLoadingMore,
@@ -522,6 +543,79 @@ class _ErrorView extends StatelessWidget {
               onPressed: onRetry,
               child: const Text('Reintentar',
                   style: TextStyle(color: AppColors.accent))),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Banner de refresco ──────────────────────────────────────────────────────
+
+enum _RefreshStatus { idle, refreshing, upToDate, updated }
+
+class _RefreshBanner extends StatelessWidget {
+  final _RefreshStatus status;
+  final bool isDark;
+
+  const _RefreshBanner({required this.status, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    if (status == _RefreshStatus.idle) return const SizedBox.shrink();
+
+    final Color bg;
+    final Color textColor;
+    final IconData icon;
+    final String text;
+
+    switch (status) {
+      case _RefreshStatus.refreshing:
+        bg = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFE8EAF6);
+        textColor = isDark ? const Color(0xFF90CAF9) : const Color(0xFF1565C0);
+        icon = Icons.sync;
+        text = 'Buscando novedades...';
+      case _RefreshStatus.upToDate:
+        bg = isDark ? const Color(0xFF1A2E1A) : const Color(0xFFE8F5E9);
+        textColor = isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32);
+        icon = Icons.check_circle_outline;
+        text = '¡Estás al día!';
+      case _RefreshStatus.updated:
+        bg = isDark ? const Color(0xFF1A2E1A) : const Color(0xFFE8F5E9);
+        textColor = isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32);
+        icon = Icons.new_releases_outlined;
+        text = 'Nuevos artículos disponibles';
+      default:
+        return const SizedBox.shrink();
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: bg,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (status == _RefreshStatus.refreshing)
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                color: textColor,
+                strokeWidth: 2,
+              ),
+            )
+          else
+            Icon(icon, color: textColor, size: 16),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

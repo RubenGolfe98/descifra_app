@@ -11,8 +11,7 @@ import '../services/article_cache.dart';
 class SharedHttp {
   SharedHttp._();
   static http.Client? _client;
-  static http.Client get client =>
-      _client ??= http.Client();
+  static http.Client get client => _client ??= http.Client();
   static void dispose() {
     _client?.close();
     _client = null;
@@ -28,10 +27,10 @@ class ArticleRepository {
       'id,date,title,content,jetpack_featured_media_url,yoast_head_json.author,class_list';
 
   // ─── Claves de caché ──────────────────────────────────────────────────────
-  static const String _cacheKeyLatest      = 'articles_latest';
-  static const String _cacheKeyAnalysis    = 'articles_analysis';
-  static const String _cacheKeyInterviews  = 'articles_interviews';
-  static String _cacheKeyRegion(int id)    => 'articles_region_$id';
+  static const String _cacheKeyLatest = 'articles_latest';
+  static const String _cacheKeyAnalysis = 'articles_analysis';
+  static const String _cacheKeyInterviews = 'articles_interviews';
+  static String _cacheKeyRegion(int id) => 'articles_region_$id';
 
   static const _listTimeout = Duration(seconds: 15);
   static const _detailTimeout = Duration(seconds: 20);
@@ -51,19 +50,19 @@ class ArticleRepository {
     int perPage = 10,
     int page = 1,
     void Function(List<Article>)? onRefreshed,
+    void Function()? onBackgroundRefreshStarted,
   }) async {
     final cached = await _cache.getList(key: _cacheKeyLatest);
 
     if (cached != null) {
       if (kDebugMode) debugPrint('📦 [Cache] Listado desde caché');
       final articles = _parseList(cached);
-      final stale = await _cache.isListStale(key: _cacheKeyLatest);
-      if (stale) {
-        if (kDebugMode) debugPrint('📦 [Cache] Listado obsoleto — refrescando en background');
-        _fetchListFromNetwork(perPage, page).then((fresh) {
-          if (fresh != null && onRefreshed != null) onRefreshed(fresh);
-        });
-      }
+      // Siempre refrescar en background para detectar contenido nuevo
+      if (kDebugMode) debugPrint('📦 [Cache] Refrescando en background');
+      if (onBackgroundRefreshStarted != null) onBackgroundRefreshStarted();
+      _fetchListFromNetwork(perPage, page).then((fresh) {
+        if (fresh != null && onRefreshed != null) onRefreshed(fresh);
+      });
       return articles;
     }
 
@@ -80,15 +79,14 @@ class ArticleRepository {
         '_fields': _listFields,
       });
 
-      final response =
-          await _client.get(uri).timeout(_listTimeout);
+      final response = await _client.get(uri).timeout(_listTimeout);
 
       if (response.statusCode != 200) return null;
 
       await _cache.saveList(response.body, key: _cacheKeyLatest);
       return _parseList(response.body);
     } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Repo] Error listado: $e');
+      if (kDebugMode) debugPrint('📦 [Cache] Error red listado: $e');
       return null;
     }
   }
@@ -136,8 +134,7 @@ class ArticleRepository {
         '_fields': _listFields,
       });
 
-      final response =
-          await _client.get(uri).timeout(_listTimeout);
+      final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode != 200) return null;
 
       await _cache.saveList(response.body, key: cacheKey);
@@ -148,7 +145,7 @@ class ArticleRepository {
     }
   }
 
-  static const int _analysisCategoryId   = 255;
+  static const int _analysisCategoryId = 255;
   static const int _interviewsCategoryId = 271;
 
   Future<List<Article>> fetchAnalysisArticles({
@@ -186,8 +183,7 @@ class ArticleRepository {
         'page': page.toString(),
         '_fields': _listFields,
       });
-      final response =
-          await _client.get(uri).timeout(_listTimeout);
+      final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode == 400) return [];
       if (response.statusCode != 200) return null;
       return _parseList(response.body);
@@ -232,8 +228,7 @@ class ArticleRepository {
         'page': page.toString(),
         '_fields': _listFields,
       });
-      final response =
-          await _client.get(uri).timeout(_listTimeout);
+      final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode == 400) return [];
       if (response.statusCode != 200) return null;
       return _parseList(response.body);
@@ -252,8 +247,7 @@ class ArticleRepository {
         'page': page.toString(),
         '_fields': _listFields,
       });
-      final response =
-          await _client.get(uri).timeout(_listTimeout);
+      final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode != 200) return null;
       await _cache.saveList(response.body, key: cacheKey);
       return _parseList(response.body);
@@ -262,6 +256,7 @@ class ArticleRepository {
       return null;
     }
   }
+
   Future<List<Article>?> fetchMoreArticles({
     required int page,
     int perPage = 10,
@@ -272,10 +267,13 @@ class ArticleRepository {
         'page': page.toString(),
         '_fields': _listFields,
       });
-      final response =
-          await _client.get(uri).timeout(_listTimeout);
-      if (response.statusCode == 400) return []; // página fuera de rango = fin real
-      if (response.statusCode != 200) return null; // error de red → no marcar fin
+      final response = await _client.get(uri).timeout(_listTimeout);
+      if (response.statusCode == 400) {
+        return []; // página fuera de rango = fin real
+      }
+      if (response.statusCode != 200) {
+        return null; // error de red → no marcar fin
+      }
       return _parseList(response.body);
     } catch (e) {
       if (kDebugMode) debugPrint('📦 [Repo] Error paginación p$page: $e');
@@ -296,16 +294,18 @@ class ArticleRepository {
         'page': page.toString(),
         '_fields': _listFields,
       });
-      final response =
-          await _client.get(uri).timeout(_listTimeout);
+      final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode == 400) return [];
       if (response.statusCode != 200) return null;
       return _parseList(response.body);
     } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Repo] Error paginación región $regionId p$page: $e');
+      if (kDebugMode) {
+        debugPrint('📦 [Repo] Error paginación región $regionId p$page: $e');
+      }
       return null;
     }
   }
+
   /// Devuelve null si no se encuentra.
   Future<Article?> fetchArticleBySlug(String slug, {String? cookies}) async {
     try {
@@ -348,14 +348,16 @@ class ArticleRepository {
 
     if (cached != null && !forceRefresh) {
       if (kDebugMode) debugPrint('📦 [Cache] Detalle $id desde caché');
-      final map = jsonDecode(cached) as Map<String, dynamic>;
-      final detail = ArticleDetail.fromJson(map);
+      final detail = ArticleDetail.fromJson(jsonDecode(cached));
 
       // Refrescar si está obsoleto O si el contenido está vacío (puede ser por falta de nonce)
       final stale = await _cache.isDetailStale(id);
       final emptyContent = detail.content.trim().isEmpty;
       if (stale || emptyContent) {
-        if (kDebugMode) debugPrint('📦 [Cache] Detalle $id ${emptyContent ? "contenido vacío" : "obsoleto"} — refrescando');
+        if (kDebugMode) {
+          debugPrint(
+              '📦 [Cache] Detalle $id ${emptyContent ? "contenido vacío" : "obsoleto"} — refrescando');
+        }
         _fetchDetailFromNetwork(id,
                 cookies: cookies,
                 restNonce: restNonce,
@@ -368,14 +370,16 @@ class ArticleRepository {
     }
 
     if (forceRefresh) {
-      if (kDebugMode) debugPrint('📦 [Cache] Detalle $id forzando red (nonce disponible)');
+      if (kDebugMode) {
+        debugPrint('📦 [Cache] Detalle $id forzando red (nonce disponible)');
+      }
     } else {
-      if (kDebugMode) debugPrint('📦 [Cache] Sin caché detalle $id — cargando de red');
+      if (kDebugMode) {
+        debugPrint('📦 [Cache] Sin caché detalle $id — cargando de red');
+      }
     }
     final fresh = await _fetchDetailFromNetwork(id,
-        cookies: cookies,
-        restNonce: restNonce,
-        onNonceExpired: onNonceExpired);
+        cookies: cookies, restNonce: restNonce, onNonceExpired: onNonceExpired);
     if (fresh == null) throw Exception('Error al cargar el artículo');
     return fresh;
   }
@@ -388,8 +392,7 @@ class ArticleRepository {
     int attempt = 1,
   }) async {
     try {
-      final uri =
-          Uri.parse('$_baseUrl/posts/$id').replace(queryParameters: {
+      final uri = Uri.parse('$_baseUrl/posts/$id').replace(queryParameters: {
         '_fields': _detailFields,
       });
 
@@ -399,25 +402,26 @@ class ArticleRepository {
         headers['X-WP-Nonce'] = restNonce;
       }
 
-      var response = await _client
-          .get(uri, headers: headers)
-          .timeout(_detailTimeout);
+      var response =
+          await _client.get(uri, headers: headers).timeout(_detailTimeout);
 
       if (response.statusCode == 401 && onNonceExpired != null) {
         if (kDebugMode) debugPrint('📦 [Repo] Nonce caducado, renovando...');
         final newNonce = await onNonceExpired();
         if (newNonce != null) {
           headers['X-WP-Nonce'] = newNonce;
-          response = await _client
-              .get(uri, headers: headers)
-              .timeout(_detailTimeout);
+          response =
+              await _client.get(uri, headers: headers).timeout(_detailTimeout);
         }
       }
 
-      // 503 = servidor temporalmente caído — reintentar con espera
-      if (response.statusCode == 503 && attempt < 3) {
-        final wait = Duration(seconds: attempt * 3); // 3s, 6s
-        if (kDebugMode) debugPrint('📦 [Cache] 503 — reintentando en ${wait.inSeconds}s (intento $attempt)...');
+      // 503 = servidor temporalmente caído — reintentar con espera mayor
+      if (response.statusCode == 503 && attempt < 4) {
+        final wait = Duration(seconds: attempt * 5); // 5s, 10s, 15s
+        if (kDebugMode) {
+          debugPrint(
+              '📦 [Cache] 503 — reintentando en ${wait.inSeconds}s (intento $attempt)...');
+        }
         await Future.delayed(wait);
         return _fetchDetailFromNetwork(id,
             cookies: cookies,
@@ -428,15 +432,18 @@ class ArticleRepository {
 
       if (response.statusCode != 200) return null;
 
-      final map = jsonDecode(response.body) as Map<String, dynamic>;
-      final detail = ArticleDetail.fromJson(map);
-      await _cache.saveDetail(id, response.body, isPremium: detail.isPremium);
-      return detail;
+      await _cache.saveDetail(id, response.body);
+      return ArticleDetail.fromJson(jsonDecode(response.body));
     } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Cache] Error red detalle $id (intento $attempt): $e');
-      if (attempt < 2) {
-        if (kDebugMode) debugPrint('📦 [Cache] Reintentando en 2s...');
-        await Future.delayed(const Duration(seconds: 2));
+      if (kDebugMode) {
+        debugPrint('📦 [Cache] Error red detalle $id (intento $attempt): $e');
+      }
+      if (attempt < 3) {
+        final wait = Duration(seconds: attempt * 2);
+        if (kDebugMode) {
+          debugPrint('📦 [Cache] Reintentando en ${wait.inSeconds}s...');
+        }
+        await Future.delayed(wait);
         return _fetchDetailFromNetwork(id,
             cookies: cookies,
             restNonce: restNonce,
@@ -450,12 +457,6 @@ class ArticleRepository {
   Future<List<Article>> searchArticles(String query, {int perPage = 10}) async {
     if (query.trim().isEmpty) return [];
     try {
-      // Check search cache first
-      final cached = await _cache.getSearch(query);
-      if (cached != null) {
-        return _parseList(cached);
-      }
-
       final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
         'search': query.trim(),
         'search_columns': 'post_title',
@@ -466,8 +467,8 @@ class ArticleRepository {
       final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode != 200) return [];
 
-      await _cache.saveSearch(query, response.body);
-      return _parseList(response.body);
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((j) => Article.fromJson(j)).toList();
     } catch (e) {
       if (kDebugMode) debugPrint('📦 [Repo] Error búsqueda "$query": $e');
       return [];

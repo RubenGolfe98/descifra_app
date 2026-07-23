@@ -216,7 +216,7 @@ class AuthService {
       throw const AuthException('No se pudo completar el inicio de sesión.');
     }
 
-    if (kDebugMode) debugPrint('🔐 [Auth] Verificando sesión con cookies del WebView...');
+    debugPrint('🔐 [Auth] Verificando sesión con cookies del WebView...');
 
     // Lanzar en paralelo: nonce + membresía desde /mi-cuenta/
     final results = await Future.wait([
@@ -228,17 +228,16 @@ class AuthService {
     final membership = results[1] as MembershipInfo?;
     _lastNonce =
         restNonce; // Cachear para que auth_notifier lo use sin nueva petición
-    if (kDebugMode) {
-      debugPrint('🔐 [Auth] REST nonce obtenido: $restNonce');
-      debugPrint('🔐 [Auth] Membresía: ${membership?.name} / ${membership?.status}');
-    }
+    debugPrint('🔐 [Auth] REST nonce obtenido: $restNonce');
+    debugPrint(
+        '🔐 [Auth] Membresía: ${membership?.name} / ${membership?.status}');
 
     // Obtener datos del usuario con el nonce ya disponible
     final headers = <String, String>{'Cookie': cookieString};
     if (restNonce != null) headers['X-WP-Nonce'] = restNonce;
 
     final userData = await _fetchUserData(cookieString, headers);
-    if (kDebugMode) debugPrint('🔐 [Auth] Datos usuario: $userData');
+    debugPrint('🔐 [Auth] Datos usuario: $userData');
 
     final state = AuthState(
       status: SessionStatus.loggedIn,
@@ -256,6 +255,36 @@ class AuthService {
   // ─── Nonce REST ─────────────────────────────────────────────────────────────
 
   Future<String?> getRestNonce(String cookies) => _fetchRestNonce(cookies);
+
+  /// Devuelve el nonce y si la sesión ha expirado
+  Future<NonceResult> getRestNonceWithStatus(String cookies) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$_siteUrl/wp-admin/admin-ajax.php?action=rest-nonce'),
+        headers: {'Cookie': cookies},
+      ).timeout(const Duration(seconds: 35));
+
+      // 200 con body válido → sesión activa
+      if (response.statusCode == 200 &&
+          response.body.trim().isNotEmpty &&
+          response.body.trim() != '0') {
+        return NonceResult(nonce: response.body.trim(), sessionExpired: false);
+      }
+
+      // 400 o body "0" → sesión de WordPress expirada
+      if (response.statusCode == 400 || response.body.trim() == '0') {
+        if (kDebugMode) {
+          debugPrint(
+              '🔐 [Auth] Nonce devuelve ${response.statusCode}/${response.body.trim()} — sesión expirada');
+        }
+        return const NonceResult(nonce: null, sessionExpired: true);
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('🔐 [Auth] Error obteniendo REST nonce: $e');
+    }
+    // Error de red — no podemos saber si expiró, no cerrar sesión
+    return const NonceResult(nonce: null, sessionExpired: false);
+  }
 
   Future<String?> _fetchRestNonce(String cookies) async {
     try {
@@ -428,4 +457,12 @@ class AuthService {
           key: _keyNewsletter, value: state.membership!.newsletterHtml ?? '');
     }
   }
+}
+
+/// Resultado de la verificación de nonce REST
+class NonceResult {
+  final String? nonce;
+  final bool sessionExpired;
+
+  const NonceResult({required this.nonce, required this.sessionExpired});
 }

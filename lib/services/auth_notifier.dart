@@ -12,15 +12,16 @@ class AuthNotifier extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String? _restNonce;
+  bool _sessionExpired = false;
 
-  AuthNotifier({AuthService? service})
-      : _service = service ?? AuthService();
+  AuthNotifier({AuthService? service}) : _service = service ?? AuthService();
 
   AuthState get state => _state;
   bool get initializing => _initializing;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get restNonce => _restNonce;
+  bool get sessionExpired => _sessionExpired;
 
   Future<void> initialize() async {
     _state = await _service.loadSavedSession();
@@ -29,43 +30,64 @@ class AuthNotifier extends ChangeNotifier {
       final wasSubscriber = _state.isSubscriber;
       final stale = await _service.isMembershipStale();
 
-      // Arrancamos la carga del nonce YA, en paralelo con cualquier
-      // validación de membresía, para que esté listo cuando el
-      // usuario toque un artículo premium.
-      final nonceFuture = _service.getRestNonce(_state.cookies!);
-
       if (stale) {
-        if (kDebugMode) debugPrint('🔐 [Auth] Primera entrada del día — validando membresía');
+        if (kDebugMode) {
+          debugPrint('🔐 [Auth] Primera entrada del día — validando membresía');
+        }
         final updated = await _service.refreshMembership(_state.cookies!);
         if (updated != null) {
           _state = updated;
           if (wasSubscriber && !updated.isSubscriber) {
-            if (kDebugMode) debugPrint('🔐 [Auth] Suscripción expirada — limpiando caché');
+            if (kDebugMode) {
+              debugPrint('🔐 [Auth] Suscripción expirada — limpiando caché');
+            }
             await ArticleCache().clearExclusiveContent();
           }
         }
       }
-
-      // Esperamos el nonce (ya debería haber llegado, corría en paralelo)
-      _restNonce = await nonceFuture;
-      if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST pre-cargado: $_restNonce');
     }
 
     _initializing = false;
     notifyListeners();
+
+    // Nonce REST en background — detectar sesión expirada
+    if (_state.isLoggedIn && _state.cookies != null) {
+      final nonceResult =
+          await _service.getRestNonceWithStatus(_state.cookies!);
+      _restNonce = nonceResult.nonce;
+
+      if (nonceResult.sessionExpired) {
+        if (kDebugMode) {
+          debugPrint(
+              '🔐 [Auth] Sesión de WordPress expirada — cerrando sesión');
+        }
+        _sessionExpired = true;
+        await _service.logout();
+        _state = const AuthState.unknown();
+        _restNonce = null;
+      } else {
+        if (kDebugMode) {
+          debugPrint('🔐 [Auth] Nonce REST pre-cargado: $_restNonce');
+        }
+      }
+      notifyListeners();
+    }
   }
 
   /// Recibe las cookies extraídas del WebView
   Future<void> loginWithCookies(String cookieString) async {
     _isLoading = true;
     _errorMessage = null;
+    _sessionExpired = false;
     notifyListeners();
     try {
       final newState = await _service.loginWithCookies(cookieString);
       _state = newState;
       _restNonce = _service.lastNonce;
-      if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST tras login: $_restNonce');
-      } on AuthException catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔐 [Auth] Nonce REST tras login: $_restNonce');
+      }
+    } on AuthException catch (e) {
       _errorMessage = e.message;
     } catch (e, stack) {
       if (kDebugMode) debugPrint('Login error: $e\n$stack');
@@ -86,12 +108,28 @@ class AuthNotifier extends ChangeNotifier {
     _state = const AuthState.unknown();
     _errorMessage = null;
     _restNonce = null;
+    _sessionExpired = false;
     notifyListeners();
   }
 
   Future<String?> renewRestNonce() async {
     if (_state.cookies == null) return null;
-    _restNonce = await _service.getRestNonce(_state.cookies!);
+    final result = await _service.getRestNonceWithStatus(_state.cookies!);
+
+    if (result.sessionExpired) {
+      if (kDebugMode) {
+        debugPrint(
+            '🔐 [Auth] Sesión expirada al renovar nonce — cerrando sesión');
+      }
+      _sessionExpired = true;
+      await _service.logout();
+      _state = const AuthState.unknown();
+      _restNonce = null;
+      notifyListeners();
+      return null;
+    }
+
+    _restNonce = result.nonce;
     if (kDebugMode) debugPrint('🔐 [Auth] Nonce REST renovado: $_restNonce');
     notifyListeners();
     return _restNonce;
@@ -99,6 +137,11 @@ class AuthNotifier extends ChangeNotifier {
 
   void clearError() {
     _errorMessage = null;
+    notifyListeners();
+  }
+
+  void clearSessionExpired() {
+    _sessionExpired = false;
     notifyListeners();
   }
 }

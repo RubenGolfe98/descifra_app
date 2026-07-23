@@ -19,6 +19,20 @@ class ProfileScreen extends StatelessWidget {
     final auth = context.watch<AuthNotifier>();
     final isDark = context.watch<ThemeNotifier>().isDark;
 
+    // Si la sesión ha expirado, mostrar un mensaje y redirigir al login
+    if (auth.sessionExpired) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        auth.clearSessionExpired();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Tu sesión ha caducado. Por favor, inicia sesión de nuevo.'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.bg(isDark),
       body: SafeArea(
