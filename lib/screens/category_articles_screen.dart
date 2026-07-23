@@ -112,15 +112,29 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-              child: Text(
-                widget.title,
-                style: TextStyle(
-                  color: AppColors.textPri(isDark),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              decoration: BoxDecoration(
+                border: Border(
+                    bottom:
+                        BorderSide(color: AppColors.bord(isDark), width: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back_ios_new,
+                        color: AppColors.textPri(isDark), size: 18),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      color: AppColors.textPri(isDark),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
