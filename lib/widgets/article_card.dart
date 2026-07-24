@@ -132,22 +132,23 @@ class ArticleCategoryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
     final Color bg;
     final Color fg;
     final String label;
 
     switch (category) {
       case ArticleCategory.analisis:
-        bg = AppColors.analysisBg;
-        fg = AppColors.analysisText;
+        bg = AppColors.analysisBg(isDark);
+        fg = AppColors.analysisText(isDark);
         label = 'Análisis';
       case ArticleCategory.entrevista:
-        bg = AppColors.interviewBg;
-        fg = AppColors.interviewText;
+        bg = AppColors.interviewBg(isDark);
+        fg = AppColors.interviewText(isDark);
         label = 'Entrevista';
       case ArticleCategory.noticia:
-        bg = AppColors.newsBg;
-        fg = AppColors.newsText;
+        bg = AppColors.newsBg(isDark);
+        fg = AppColors.newsText(isDark);
         label = 'Noticia';
     }
 
@@ -162,7 +163,7 @@ class ArticleCategoryBadge extends StatelessWidget {
         style: TextStyle(
           color: fg,
           fontSize: 9,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -201,20 +202,20 @@ class ArticleTagBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mostrar solo el primer tag para no saturar la fila
+    final isDark = context.watch<ThemeNotifier>().isDark;
     final name = TagService.getTagName('tag-${tagSlugs.first}');
     if (name == null) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.tagBg,
+        color: AppColors.tagBg(isDark),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         name,
-        style: const TextStyle(
-          color: AppColors.tagText,
+        style: TextStyle(
+          color: AppColors.tagText(isDark),
           fontSize: 9,
           fontWeight: FontWeight.w700,
         ),

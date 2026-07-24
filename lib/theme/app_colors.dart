@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // ─── Tema oscuro ─────────────────────────────────────────────────────────────
-  static const background = Color(0xFF0D0D0D);
-  static const surface = Color(0xFF1A1A1A);
-  static const border = Color(0xFF242424);
+  static const background = Color(0xFF000000);
+  static const surface = Color(0xFF0A0A0A);
+  static const border = Color(0xFF1A1A1A);
 
   static const textPrimary = Color(0xFFFFFFFF);
   static const textSecondary = Color(0xFF888888);
@@ -26,14 +26,23 @@ class AppColors {
   static const premiumBg = Color(0x33C0392B);
   static const premiumText = Color(0xFFE57A72);
 
-  static const analysisBg = Color(0x22185FA5);
-  static const analysisText = Color(0xFF85B7EB);
-  static const newsBg = Color(0x221D9E75);
-  static const newsText = Color(0xFF5DCAA5);
-  static const interviewBg = Color(0x22A0522D);
-  static const interviewText = Color(0xFFE8956D);
-  static const tagBg = Color(0x33757575);
-  static const tagText = Color(0xFFA0A0A0);
+  // ─── Badges dinámicos ────────────────────────────────────────────────────────
+  static Color analysisBg(bool isDark) =>
+      isDark ? const Color(0x33185FA5) : const Color(0x22185FA5);
+  static Color analysisText(bool isDark) =>
+      isDark ? const Color(0xFF4A9BE0) : const Color(0xFF1557A0);
+  static Color newsBg(bool isDark) =>
+      isDark ? const Color(0x331D9E75) : const Color(0x221D9E75);
+  static Color newsText(bool isDark) =>
+      isDark ? const Color(0xFF2DBD8E) : const Color(0xFF167A56);
+  static Color interviewBg(bool isDark) =>
+      isDark ? const Color(0x33A0522D) : const Color(0x22A0522D);
+  static Color interviewText(bool isDark) =>
+      isDark ? const Color(0xFFD4815E) : const Color(0xFF8B4226);
+  static Color tagBg(bool isDark) =>
+      isDark ? const Color(0x33757575) : const Color(0x22555555);
+  static Color tagText(bool isDark) =>
+      isDark ? const Color(0xFFA0A0A0) : const Color(0xFF555555);
 
   static const subscriberBorder = Color(0xFF2E5E2E);
   static const subscriberText = Color(0xFF4CAF50);

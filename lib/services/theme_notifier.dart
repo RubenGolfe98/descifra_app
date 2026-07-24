@@ -192,8 +192,10 @@ class ThemeNotifier extends ChangeNotifier {
     final savedTypeface = await _storage.read(key: _keyFont);
 
     if (savedTheme != null) {
-      _themeMode =
-          savedTheme == 'light' ? AppThemeMode.light : AppThemeMode.dark;
+      _themeMode = AppThemeMode.values.firstWhere(
+        (e) => e.name == savedTheme,
+        orElse: () => AppThemeMode.dark,
+      );
     }
     if (savedFont != null) {
       _fontSize = AppFontSize.values.firstWhere((e) => e.name == savedFont,

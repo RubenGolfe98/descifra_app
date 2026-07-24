@@ -138,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Desarrollada por Rubén Golfe Cazalla',
+                  'Desarrollada por 👨🏼‍💻RubenGolfe98',
                   style: TextStyle(color: sec, fontSize: 13),
                 ),
                 const SizedBox(height: 16),
@@ -222,12 +222,13 @@ class _ThemeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = context.watch<ThemeNotifier>().themeMode;
     return Row(
       children: [
         _ThemeOption(
           label: 'Oscuro',
           icon: Icons.dark_mode_outlined,
-          selected: isDark,
+          selected: themeMode == AppThemeMode.dark,
           surf: surf,
           bord: bord,
           pri: pri,
@@ -238,7 +239,7 @@ class _ThemeSelector extends StatelessWidget {
         _ThemeOption(
           label: 'Claro',
           icon: Icons.light_mode_outlined,
-          selected: !isDark,
+          selected: themeMode == AppThemeMode.light,
           surf: surf,
           bord: bord,
           pri: pri,

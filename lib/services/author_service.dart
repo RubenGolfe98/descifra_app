@@ -25,8 +25,6 @@ class AuthorService {
         _authorsMap = Map<String, int>.from((jsonDecode(cached) as Map)
             .map((k, v) => MapEntry(k as String, v as int)));
         _loaded = true;
-        if (kDebugMode)
-          debugPrint('👤 [Authors] ${_authorsMap.length} autores desde caché');
         return;
       }
     } catch (e) {
@@ -66,9 +64,6 @@ class AuthorService {
         _authorsMap = map;
         _loaded = true;
         await _storage.write(key: _storageKey, value: jsonEncode(map));
-        if (kDebugMode)
-          debugPrint(
-              '👤 [Authors] ${map.length} autores descargados y cacheados');
       }
     } catch (e) {
       if (kDebugMode) debugPrint('👤 [Authors] Error descargando autores: $e');

@@ -5,6 +5,7 @@ class Seminar {
   final String coverUrl;
   final String link;
   final bool isPremium;
+  final String contentHtml;
 
   const Seminar({
     required this.id,
@@ -13,6 +14,7 @@ class Seminar {
     required this.coverUrl,
     required this.link,
     this.isPremium = false,
+    this.contentHtml = '',
   });
 
   factory Seminar.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class Seminar {
       coverUrl: coverUrl,
       link: json['link'] ?? '',
       isPremium: classList.contains('rcp-is-restricted'),
+      contentHtml: json['content']?['rendered'] ?? '',
     );
   }
 

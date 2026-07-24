@@ -18,7 +18,8 @@ class SeminarRepository {
   static final Map<String, List<SeminarSession>> _sessionsCache = {};
   static final Map<String, SeminarSessionDetail> _detailCache = {};
 
-  SeminarRepository({http.Client? client}) : _client = client ?? SharedHttp.client;
+  SeminarRepository({http.Client? client})
+      : _client = client ?? SharedHttp.client;
 
   /// Limpia la caché (usar tras logout)
   static void clearCache() {
@@ -41,7 +42,7 @@ class SeminarRepository {
     try {
       final uri = Uri.parse(
         '$_baseUrl/seminario'
-        '?_fields=id,title,link,class_list,yoast_head_json.og_image,yoast_head_json.og_description'
+        '?_fields=id,title,link,content,class_list,yoast_head_json.og_image,yoast_head_json.og_description'
         '&per_page=20&orderby=date&order=desc',
       );
       final response =

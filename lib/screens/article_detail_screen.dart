@@ -216,15 +216,15 @@ class _ArticleShell extends StatelessWidget {
                               ? 'Entrevista'
                               : 'Noticia',
                       bg: article.category == ArticleCategory.analisis
-                          ? AppColors.analysisBg
+                          ? AppColors.analysisBg(isDark)
                           : article.category == ArticleCategory.entrevista
-                              ? AppColors.interviewBg
-                              : AppColors.newsBg,
+                              ? AppColors.interviewBg(isDark)
+                              : AppColors.newsBg(isDark),
                       fg: article.category == ArticleCategory.analisis
-                          ? AppColors.analysisText
+                          ? AppColors.analysisText(isDark)
                           : article.category == ArticleCategory.entrevista
-                              ? AppColors.interviewText
-                              : AppColors.newsText,
+                              ? AppColors.interviewText(isDark)
+                              : AppColors.newsText(isDark),
                       onTap: () {
                         if (article.category == ArticleCategory.noticia) {
                           Navigator.of(context)
@@ -249,8 +249,8 @@ class _ArticleShell extends StatelessWidget {
                         if (name == null) return const SizedBox.shrink();
                         return _ClickableBadge(
                           label: name,
-                          bg: AppColors.tagBg,
-                          fg: AppColors.tagText,
+                          bg: AppColors.tagBg(isDark),
+                          fg: AppColors.tagText(isDark),
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => FilteredArticlesScreen(
@@ -327,6 +327,12 @@ class _ArticleShell extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
+      return 'Hoy';
+    }
     const months = [
       'enero',
       'febrero',

@@ -1,11 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_html/flutter_html.dart' show Html, TagExtension;
+import 'package:url_launcher/url_launcher.dart';
 import '../models/seminar.dart';
 import '../repositories/seminar_repository.dart';
 import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/html_styles.dart';
 import 'seminar_session_screen.dart';
 
 class SeminarDetailScreen extends StatefulWidget {
@@ -78,7 +82,7 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
         builder: (context, snapshot) {
           return CustomScrollView(
             slivers: [
-              // Cabecera con título y descripción
+              // ── Cabecera: título y descripción ──────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -111,7 +115,7 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
                 ),
               ),
 
-              // Listado de sesiones
+              // ── Listado de sesiones ─────────────────────────────────────
               if (snapshot.connectionState == ConnectionState.waiting)
                 const SliverToBoxAdapter(
                   child: Center(
@@ -168,6 +172,68 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
                     childCount: snapshot.data!.length,
                   ),
                 ),
+
+              // ── Contenido HTML del seminario ────────────────────────────
+              if (widget.seminar.contentHtml.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Divider(color: bord, thickness: 0.5),
+                        Builder(builder: (context) {
+                          final screenWidth = MediaQuery.of(context).size.width;
+                          return Html(
+                            data: widget.seminar.contentHtml,
+                            onLinkTap: (url, _, __) async {
+                              if (url == null) return;
+                              final uri = Uri.tryParse(url);
+                              if (uri != null && await canLaunchUrl(uri)) {
+                                await launchUrl(uri,
+                                    mode: LaunchMode.externalApplication);
+                              }
+                            },
+                            style: articleHtmlStyles(isDark),
+                            extensions: [
+                              TagExtension(
+                                tagsToExtend: {'img'},
+                                builder: (extensionContext) {
+                                  final src =
+                                      extensionContext.attributes['src'] ?? '';
+                                  if (src.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: CachedNetworkImage(
+                                        imageUrl: src,
+                                        width: screenWidth - 40,
+                                        fit: BoxFit.cover,
+                                        memCacheWidth:
+                                            ((screenWidth - 40) * 2).toInt(),
+                                        placeholder: (_, __) => Container(
+                                          height: 200,
+                                          color: surf,
+                                        ),
+                                        errorWidget: (_, __, ___) =>
+                                            const SizedBox.shrink(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           );
@@ -177,6 +243,7 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
   }
 }
 
+// ─── Tile de sesión ───────────────────────────────────────────────────────────
 class _SessionTile extends StatelessWidget {
   final SeminarSession session;
   final int index;

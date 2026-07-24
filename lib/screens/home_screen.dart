@@ -462,9 +462,11 @@ class _ArticleMeta extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inDays == 0) return 'Hoy';
-    if (diff.inDays == 1) return 'Ayer';
+    final today = DateTime(now.year, now.month, now.day);
+    final articleDay = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(articleDay).inDays;
+    if (diff == 0) return 'Hoy';
+    if (diff == 1) return 'Ayer';
     return '${date.day} ${_months[date.month - 1]}';
   }
 
