@@ -4,12 +4,13 @@ import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../screens/article_detail_screen.dart';
 import '../services/auth_notifier.dart';
+import '../services/tag_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import 'access_dialog.dart';
 
 /// Tarjeta de artículo reutilizable en todas las pantallas.
-/// Gestiona internamente el tap, paywall y navegación al detalle.
+/// Gestiona internamente el tap, control de acceso y navegación al detalle.
 class ArticleCard extends StatelessWidget {
   final Article article;
   final VoidCallback? onTap;
@@ -29,6 +30,7 @@ class ArticleCard extends StatelessWidget {
       showAccessDialog(
         context,
         onLoginTap: () => TabNavigator.of(context)?.jumpToProfile(),
+        source: 'article',
       );
       return;
     }
@@ -48,7 +50,8 @@ class ArticleCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
+          border: Border(
+              bottom: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,10 +63,12 @@ class ArticleCard extends StatelessWidget {
                 width: 100,
                 height: 80,
                 fit: BoxFit.cover,
-                memCacheWidth: 200,
+                memCacheWidth: 300,
                 fadeInDuration: const Duration(milliseconds: 150),
-                placeholder: (_, __) => Container(width: 100, height: 80, color: AppColors.surf(isDark)),
-                errorWidget: (_, __, ___) => Container(width: 100, height: 80, color: AppColors.surf(isDark)),
+                placeholder: (_, __) => Container(
+                    width: 100, height: 80, color: AppColors.surf(isDark)),
+                errorWidget: (_, __, ___) => Container(
+                    width: 100, height: 80, color: AppColors.surf(isDark)),
               ),
             ),
             const SizedBox(width: 12),
@@ -75,21 +80,38 @@ class ArticleCard extends StatelessWidget {
                     article.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColors.textPri(isDark), fontSize: 13, fontWeight: FontWeight.w800, height: 1.35),
+                    style: TextStyle(
+                        color: AppColors.textPri(isDark),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        height: 1.35),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     article.description,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColors.textSec(isDark), fontSize: 11, height: 1.4),
+                    style: TextStyle(
+                        color: AppColors.textSec(isDark),
+                        fontSize: 11,
+                        height: 1.4),
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
                       ArticleCategoryBadge(category: article.category),
+                      if (article.tagSlugs.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        ArticleTagBadge(tagSlugs: article.tagSlugs),
+                      ],
                       const SizedBox(width: 6),
-                      Expanded(child: Text(article.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textPri(isDark), fontSize: 10))),
+                      Expanded(
+                          child: Text(article.author,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: AppColors.textPri(isDark),
+                                  fontSize: 10))),
                       if (article.isPremium) const ArticlePremiumBadge(),
                     ],
                   ),
@@ -167,6 +189,35 @@ class ArticlePremiumBadge extends StatelessWidget {
           Text('Exclusivo',
               style: TextStyle(color: AppColors.premiumText, fontSize: 9)),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Badge de tag (país/tema) ─────────────────────────────────────────────────
+class ArticleTagBadge extends StatelessWidget {
+  final List<String> tagSlugs;
+  const ArticleTagBadge({super.key, required this.tagSlugs});
+
+  @override
+  Widget build(BuildContext context) {
+    // Mostrar solo el primer tag para no saturar la fila
+    final name = TagService.getTagName('tag-${tagSlugs.first}');
+    if (name == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.tagBg,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        name,
+        style: const TextStyle(
+          color: AppColors.tagText,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

@@ -42,6 +42,11 @@ class _HomeScreenState extends State<HomeScreen> {
       onBackgroundRefreshStarted: () {
         if (mounted) setState(() => _refreshStatus = _RefreshStatus.refreshing);
       },
+      onBackgroundRefreshFailed: () {
+        if (mounted) {
+          setState(() => _refreshStatus = _RefreshStatus.idle);
+        }
+      },
       onRefreshed: (fresh) {
         if (mounted) {
           final hasNewContent = fresh.isNotEmpty &&
@@ -190,14 +195,19 @@ class _AppHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  'DESCIFRANDO LA GUERRA',
-                  style: context.read<ThemeNotifier>().font.style(
-                        color: AppColors.accent,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
-                      ),
+                MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: TextScaler.noScaling,
+                  ),
+                  child: Text(
+                    'DESCIFRANDO LA GUERRA',
+                    style: context.read<ThemeNotifier>().font.style(
+                          color: AppColors.accent,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                  ),
                 ),
               ],
             ),
@@ -417,12 +427,16 @@ class _ArticleImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    final cacheWidth = width != null
+        ? (width! * dpr).toInt()
+        : (MediaQuery.of(context).size.width * dpr).toInt().clamp(0, 1200);
     return CachedNetworkImage(
       imageUrl: url,
       width: width,
       height: height,
       fit: BoxFit.cover,
-      memCacheWidth: width != null ? (width! * 2).toInt() : 400,
+      memCacheWidth: cacheWidth,
       fadeInDuration: const Duration(milliseconds: 200),
       placeholder: (_, __) => Container(
           width: width, height: height, color: AppColors.surf(isDark)),

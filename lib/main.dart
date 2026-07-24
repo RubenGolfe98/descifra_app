@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'repositories/article_repository.dart';
 import 'services/auth_notifier.dart';
 import 'services/favorites_service.dart';
 import 'services/connectivity_service.dart';
+import 'services/tag_service.dart';
 import 'services/theme_notifier.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_colors.dart';
+import 'services/author_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,11 +18,12 @@ void main() async {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
+  PaintingBinding.instance.imageCache.maximumSize = 100;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
 
-  // Aumentamos el límite de la caché de imágenes para reducir
-  // evicciones prematuras al hacer scroll o abrir detalle.
-  PaintingBinding.instance.imageCache.maximumSize = 500;
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 100 * 1024 * 1024;
+  // Tags en background — no bloquea el arranque
+  await TagService.initialize();
+  await AuthorService.initialize();
 
   runApp(const DlgApp());
 }
@@ -43,19 +45,8 @@ class DlgApp extends StatelessWidget {
   }
 }
 
-class _AppRoot extends StatefulWidget {
+class _AppRoot extends StatelessWidget {
   const _AppRoot();
-
-  @override
-  State<_AppRoot> createState() => _AppRootState();
-}
-
-class _AppRootState extends State<_AppRoot> {
-  @override
-  void dispose() {
-    SharedHttp.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,54 +95,37 @@ class _AppGate extends StatefulWidget {
 }
 
 class _AppGateState extends State<_AppGate> {
-  bool _favoritesHandled = false;
+  bool _minTimeElapsed = false;
 
   @override
   void initState() {
     super.initState();
-    // Escuchar cambios en AuthNotifier para cargar favoritos tras inicializar
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<AuthNotifier>().addListener(_onAuthChanged);
-      // Comprobar si ya está inicializado
-      _onAuthChanged();
-    });
-  }
-
-  @override
-  void dispose() {
-    // No podemos acceder a context tras dispose, pero el notifier
-    // vivirá mientras el provider exista; ignoramos errores silenciosamente.
-    try {
-      context.read<AuthNotifier>().removeListener(_onAuthChanged);
-    } catch (_) {}
-    super.dispose();
-  }
-
-  void _onAuthChanged() {
-    if (_favoritesHandled) return;
-    final auth = context.read<AuthNotifier>();
-    if (auth.initializing) return;
-    _favoritesHandled = true;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final favorites = context.read<FavoritesService>();
-      if (auth.state.isLoggedIn) {
-        if (!favorites.loaded) {
-          favorites.loadFavorites(auth.state.cookies ?? '');
-        }
-      } else {
-        favorites.clear();
-      }
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) setState(() => _minTimeElapsed = true);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthNotifier>();
+    final ready = !auth.initializing && _minTimeElapsed;
 
-    if (auth.initializing) {
+    // Cargar favoritos cuando el usuario está logueado — fuera del build
+    if (ready) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final favorites = context.read<FavoritesService>();
+        if (auth.state.isLoggedIn) {
+          if (!favorites.loaded) {
+            favorites.loadFavorites(auth.state.cookies ?? '');
+          }
+        } else {
+          favorites.clear();
+        }
+      });
+    }
+
+    if (!ready) {
       return Scaffold(
         backgroundColor: AppColors.bg(widget.isDark),
         body: Center(
@@ -160,7 +134,9 @@ class _AppGateState extends State<_AppGate> {
             children: [
               ClipOval(
                 child: Image(
-                  image: AssetImage(widget.isDark ? 'assets/images/logo_dlg_dark.png' : 'assets/images/logo_dlg.png'),
+                  image: AssetImage(widget.isDark
+                      ? 'assets/images/logo_dlg_dark.png'
+                      : 'assets/images/logo_dlg.png'),
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,

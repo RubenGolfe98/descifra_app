@@ -1,14 +1,13 @@
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart' show Html;
+import 'package:flutter_html/flutter_html.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/book.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
-import '../theme/html_styles.dart';
 
 class BooksScreen extends StatefulWidget {
   const BooksScreen({super.key});
@@ -41,10 +40,10 @@ class _BooksScreenState extends State<BooksScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final bg   = AppColors.bg(isDark);
+    final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
+    final pri = AppColors.textPri(isDark);
 
     return Scaffold(
       backgroundColor: bg,
@@ -55,7 +54,9 @@ class _BooksScreenState extends State<BooksScreen> {
           icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Libros', style: TextStyle(color: pri, fontSize: 16, fontWeight: FontWeight.w600)),
+        title: Text('Libros',
+            style: TextStyle(
+                color: pri, fontSize: 16, fontWeight: FontWeight.w600)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(0.5),
           child: Divider(height: 0.5, color: bord),
@@ -66,7 +67,8 @@ class _BooksScreenState extends State<BooksScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
+              child: CircularProgressIndicator(
+                  color: AppColors.accent, strokeWidth: 2),
             );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -77,20 +79,22 @@ class _BooksScreenState extends State<BooksScreen> {
           }
 
           final books = snapshot.data!;
+          final fontSize = context.watch<ThemeNotifier>().fontSize;
           return GridView.builder(
             padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: 0.55,
+              childAspectRatio: fontSize.gridAspectRatio,
             ),
             itemCount: books.length,
             itemBuilder: (context, index) {
               final book = books[index];
               return GestureDetector(
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => BookDetailScreen(book: book)),
+                  MaterialPageRoute(
+                      builder: (_) => BookDetailScreen(book: book)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +123,7 @@ class _BooksScreenState extends State<BooksScreen> {
                     const SizedBox(height: 8),
                     Text(
                       book.title,
-                      maxLines: 2,
+                      maxLines: fontSize.gridMaxLines,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: pri,
@@ -161,24 +165,26 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
   Future<void> _fetchFicha() async {
     try {
-      final response = await http.get(Uri.parse(_book.link))
+      final response = await http
+          .get(Uri.parse(_book.link))
           .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return;
       final html = response.body;
 
       // Fecha de publicación
-      final dateMatch = RegExp(r'Fecha de publicaci[oó]n:?\s*</strong>\s*([\d/]+)')
-          .firstMatch(html);
+      final dateMatch =
+          RegExp(r'Fecha de publicaci[oó]n:?\s*</strong>\s*([\d/]+)')
+              .firstMatch(html);
       final publishDate = dateMatch?.group(1)?.trim() ?? '';
 
       // Autores
-      final authorMatches = RegExp(r'class="dlg-book-author-name">([^<]+)<')
-          .allMatches(html);
+      final authorMatches =
+          RegExp(r'class="dlg-book-author-name">([^<]+)<').allMatches(html);
       final authors = authorMatches.map((m) => m.group(1)!.trim()).toList();
 
       // Editorial
-      final editorialMatch = RegExp(r'Editorial:?\s*</strong>\s*([^<\n]+)')
-          .firstMatch(html);
+      final editorialMatch =
+          RegExp(r'Editorial:?\s*</strong>\s*([^<\n]+)').firstMatch(html);
       final editorial = editorialMatch?.group(1)?.trim() ?? '';
 
       // URLs de Amazon — extraer por orden de aparición junto al texto del botón
@@ -218,11 +224,11 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final bg   = AppColors.bg(isDark);
+    final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
 
     return Scaffold(
       backgroundColor: bg,
@@ -251,7 +257,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   imageUrl: _book.coverUrl,
                   width: 200,
                   fit: BoxFit.contain,
-                  placeholder: (_, __) => Container(width: 200, height: 300, color: surf),
+                  placeholder: (_, __) =>
+                      Container(width: 200, height: 300, color: surf),
                 ),
               ),
             ),
@@ -260,13 +267,18 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             // Título
             Text(
               _book.title,
-              style: TextStyle(color: pri, fontSize: 20, fontWeight: FontWeight.w600, height: 1.3),
+              style: TextStyle(
+                  color: pri,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3),
             ),
             const SizedBox(height: 12),
 
             // Descripción
             if (_book.description.isNotEmpty) ...[
-              Text(_book.description, style: TextStyle(color: sec, fontSize: 14, height: 1.6)),
+              Text(_book.description,
+                  style: TextStyle(color: sec, fontSize: 14, height: 1.6)),
               const SizedBox(height: 20),
             ],
 
@@ -275,13 +287,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(children: [
-                  SizedBox(width: 14, height: 14,
-                    child: CircularProgressIndicator(color: AppColors.textMut(isDark), strokeWidth: 1.5)),
+                  SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          color: AppColors.textMut(isDark), strokeWidth: 1.5)),
                   const SizedBox(width: 8),
-                  Text('Cargando ficha...', style: TextStyle(color: AppColors.textMut(isDark), fontSize: 12)),
+                  Text('Cargando ficha...',
+                      style: TextStyle(
+                          color: AppColors.textMut(isDark), fontSize: 12)),
                 ]),
               )
-            else if (_book.publishDate.isNotEmpty || _book.authors.isNotEmpty || _book.editorial.isNotEmpty) ...[
+            else if (_book.publishDate.isNotEmpty ||
+                _book.authors.isNotEmpty ||
+                _book.editorial.isNotEmpty) ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
@@ -294,11 +313,30 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Ficha del libro',
-                      style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                        style: TextStyle(
+                            color: AppColors.accent,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5)),
                     const SizedBox(height: 10),
-                    if (_book.publishDate.isNotEmpty) _FichaRow(label: 'Fecha', value: _book.publishDate, pri: pri, sec: sec),
-                    if (_book.editorial.isNotEmpty) _FichaRow(label: 'Editorial', value: _book.editorial, pri: pri, sec: sec),
-                    if (_book.authors.isNotEmpty) _FichaRow(label: 'Autores', value: _book.authors.join(', '), pri: pri, sec: sec),
+                    if (_book.publishDate.isNotEmpty)
+                      _FichaRow(
+                          label: 'Fecha',
+                          value: _book.publishDate,
+                          pri: pri,
+                          sec: sec),
+                    if (_book.editorial.isNotEmpty)
+                      _FichaRow(
+                          label: 'Editorial',
+                          value: _book.editorial,
+                          pri: pri,
+                          sec: sec),
+                    if (_book.authors.isNotEmpty)
+                      _FichaRow(
+                          label: 'Autores',
+                          value: _book.authors.join(', '),
+                          pri: pri,
+                          sec: sec),
                   ],
                 ),
               ),
@@ -313,7 +351,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   onPressed: () async {
                     final uri = Uri.parse(_book.amazonUrl);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
                     }
                   },
                   icon: const Icon(Icons.shopping_cart_outlined, size: 18),
@@ -321,7 +360,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.accent,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
@@ -333,7 +373,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   onPressed: () async {
                     final uri = Uri.parse(_book.amazonKindleUrl);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
                     }
                   },
                   icon: const Icon(Icons.tablet_outlined, size: 18),
@@ -342,7 +383,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     foregroundColor: AppColors.accent,
                     side: const BorderSide(color: AppColors.accent, width: 0.8),
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
@@ -354,7 +396,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   onPressed: () async {
                     final uri = Uri.parse(_book.link);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
                     }
                   },
                   icon: const Icon(Icons.shopping_cart_outlined, size: 18),
@@ -362,7 +405,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.accent,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
@@ -379,7 +423,23 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 }
               },
-              style: bookHtmlStyles(isDark),
+              style: {
+                'body': Style(
+                  color: isDark
+                      ? const Color(0xFFCCCCCC)
+                      : const Color(0xFF333333),
+                  fontSize: FontSize(14),
+                  lineHeight: const LineHeight(1.7),
+                  margin: Margins.zero,
+                  padding: HtmlPaddings.zero,
+                  backgroundColor: Colors.transparent,
+                ),
+                'p': Style(margin: Margins.only(bottom: 14)),
+                'a': Style(
+                    color: AppColors.accent,
+                    textDecoration: TextDecoration.none),
+                'strong': Style(color: pri, fontWeight: FontWeight.w600),
+              },
             ),
           ],
         ),
@@ -394,7 +454,11 @@ class _FichaRow extends StatelessWidget {
   final Color pri;
   final Color sec;
 
-  const _FichaRow({required this.label, required this.value, required this.pri, required this.sec});
+  const _FichaRow(
+      {required this.label,
+      required this.value,
+      required this.pri,
+      required this.sec});
 
   @override
   Widget build(BuildContext context) {
@@ -405,7 +469,9 @@ class _FichaRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 72,
-            child: Text(label, style: TextStyle(color: sec, fontSize: 12, fontWeight: FontWeight.w500)),
+            child: Text(label,
+                style: TextStyle(
+                    color: sec, fontSize: 12, fontWeight: FontWeight.w500)),
           ),
           Expanded(
             child: Text(value, style: TextStyle(color: pri, fontSize: 12)),

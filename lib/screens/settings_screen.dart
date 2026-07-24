@@ -346,39 +346,41 @@ class _FontSizeSelector extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: List.generate(_sizes.length, (i) {
                     final isSelected = _sizes[i] == current;
-                    return GestureDetector(
-                      onTap: () =>
-                          context.read<ThemeNotifier>().setFontSize(_sizes[i]),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        width: 52,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'A',
-                              style: TextStyle(
-                                fontSize: _displaySizes[i],
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w400,
-                                color: isSelected
-                                    ? AppColors.accent
-                                    : AppColors.textMut(isDark),
+                    return Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => context
+                            .read<ThemeNotifier>()
+                            .setFontSize(_sizes[i]),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'A',
+                                style: TextStyle(
+                                  fontSize: _displaySizes[i],
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                  color: isSelected
+                                      ? AppColors.accent
+                                      : AppColors.textMut(isDark),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            // Punto indicador
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              width: isSelected ? 20 : 6,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.accent : bord,
-                                borderRadius: BorderRadius.circular(2),
+                              const SizedBox(height: 8),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                width: isSelected ? 20 : 6,
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppColors.accent : bord,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );

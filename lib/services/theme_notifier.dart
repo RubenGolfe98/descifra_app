@@ -40,6 +40,35 @@ enum AppFontSize {
         return 'Muy grande';
     }
   }
+
+  /// Ratio de aspecto para grids de libros
+  double get gridAspectRatio {
+    switch (this) {
+      case AppFontSize.xsmall:
+        return 0.52;
+      case AppFontSize.small:
+        return 0.50;
+      case AppFontSize.normal:
+        return 0.48;
+      case AppFontSize.large:
+        return 0.44;
+      case AppFontSize.xlarge:
+        return 0.44;
+    }
+  }
+
+  /// Líneas máximas para títulos en grids
+  int get gridMaxLines {
+    switch (this) {
+      case AppFontSize.xsmall:
+      case AppFontSize.small:
+      case AppFontSize.normal:
+        return 4;
+      case AppFontSize.large:
+      case AppFontSize.xlarge:
+        return 5;
+    }
+  }
 }
 
 enum AppFont {

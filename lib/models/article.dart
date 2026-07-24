@@ -8,6 +8,7 @@ class Article {
   final bool isPremium;
   final ArticleCategory category;
   final String slug;
+  final List<String> tagSlugs; // slugs de tags (sin prefijo "tag-");
 
   const Article({
     required this.id,
@@ -19,6 +20,7 @@ class Article {
     required this.isPremium,
     this.category = ArticleCategory.noticia,
     this.slug = '',
+    this.tagSlugs = const [],
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
@@ -30,7 +32,12 @@ class Article {
     } else if (classList.contains('category-entrevistas')) {
       category = ArticleCategory.entrevista;
     }
-    
+
+    // Extraer tags del class_list (entradas que empiezan con "tag-")
+    final tagSlugs = classList
+        .where((c) => c.startsWith('tag-'))
+        .map((c) => c.substring(4))
+        .toList();
 
     return Article(
       id: json['id'] as int,
@@ -42,6 +49,7 @@ class Article {
       isPremium: classList.contains('rcp-is-restricted'),
       category: category,
       slug: json['slug'] ?? '',
+      tagSlugs: tagSlugs,
     );
   }
 

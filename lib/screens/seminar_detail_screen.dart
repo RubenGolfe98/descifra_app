@@ -31,11 +31,16 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
     _future = _fetchWithRetry(cookies);
   }
 
-  Future<List<SeminarSession>> _fetchWithRetry(String cookies, {int attempt = 1}) async {
-    final sessions = await _repository.fetchSessions(widget.seminar.link, cookies);
+  Future<List<SeminarSession>> _fetchWithRetry(String cookies,
+      {int attempt = 1}) async {
+    final sessions =
+        await _repository.fetchSessions(widget.seminar.link, cookies);
     if (sessions.isEmpty && attempt < 3) {
       final wait = Duration(seconds: attempt * 3);
-      if (kDebugMode) debugPrint('📚 [Seminar] Sin sesiones, reintentando en ${wait.inSeconds}s');
+      if (kDebugMode) {
+        debugPrint(
+            '📚 [Seminar] Sin sesiones, reintentando en ${wait.inSeconds}s');
+      }
       await Future.delayed(wait);
       return _fetchWithRetry(cookies, attempt: attempt + 1);
     }
@@ -48,11 +53,11 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final bg   = AppColors.bg(isDark);
+    final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
 
     return Scaffold(
       backgroundColor: bg,
@@ -81,20 +86,25 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(widget.seminar.title,
-                        style: TextStyle(color: pri, fontSize: 20, fontWeight: FontWeight.w700, height: 1.3)),
+                          style: TextStyle(
+                              color: pri,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w700,
+                              height: 1.3)),
                       if (widget.seminar.description.isNotEmpty) ...[
                         const SizedBox(height: 10),
                         Text(widget.seminar.description,
-                          style: TextStyle(color: sec, fontSize: 14, height: 1.6)),
+                            style: TextStyle(
+                                color: sec, fontSize: 14, height: 1.6)),
                       ],
                       const SizedBox(height: 20),
                       Text('Sesiones',
-                        style: TextStyle(
-                          color: AppColors.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1,
-                        )),
+                          style: TextStyle(
+                            color: AppColors.accent,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1,
+                          )),
                       const SizedBox(height: 10),
                     ],
                   ),
@@ -104,9 +114,11 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
               // Listado de sesiones
               if (snapshot.connectionState == ConnectionState.waiting)
                 const SliverToBoxAdapter(
-                  child: Center(child: Padding(
+                  child: Center(
+                      child: Padding(
                     padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                        color: AppColors.accent, strokeWidth: 2),
                   )),
                 )
               else if (!snapshot.hasData || snapshot.data!.isEmpty)
@@ -116,15 +128,17 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.wifi_off_outlined, color: AppColors.accent, size: 40),
+                        Icon(Icons.wifi_off_outlined,
+                            color: AppColors.accent, size: 40),
                         const SizedBox(height: 16),
                         Text('No se pudieron cargar las sesiones',
-                          style: TextStyle(color: sec, fontSize: 15),
-                          textAlign: TextAlign.center),
+                            style: TextStyle(color: sec, fontSize: 15),
+                            textAlign: TextAlign.center),
                         const SizedBox(height: 20),
                         FilledButton(
                           onPressed: () => setState(_load),
-                          style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
+                          style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.accent),
                           child: const Text('Reintentar'),
                         ),
                       ],
@@ -169,13 +183,17 @@ class _SessionTile extends StatelessWidget {
   final bool isDark;
   final VoidCallback onTap;
 
-  const _SessionTile({required this.session, required this.index, required this.isDark, required this.onTap});
+  const _SessionTile(
+      {required this.session,
+      required this.index,
+      required this.isDark,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
+    final pri = AppColors.textPri(isDark);
 
     return GestureDetector(
       onTap: onTap,
@@ -190,20 +208,28 @@ class _SessionTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 32, height: 32,
+              width: 32,
+              height: 32,
               decoration: const BoxDecoration(
                 color: AppColors.accentDim,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text('$index',
-                  style: const TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.w700)),
+                    style: const TextStyle(
+                        color: AppColors.accent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(session.title,
-                style: TextStyle(color: pri, fontSize: 14, fontWeight: FontWeight.w500, height: 1.3)),
+                  style: TextStyle(
+                      color: pri,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 1.3)),
             ),
             Icon(Icons.play_circle_outline, color: AppColors.accent, size: 22),
           ],

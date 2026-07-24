@@ -14,8 +14,11 @@ import '../services/favorites_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/html_styles.dart';
-import '../widgets/article_card.dart';
 import '../widgets/image_viewer.dart';
+import 'filtered_articles_screen.dart';
+import 'analysis_screen.dart';
+import 'interviews_screen.dart';
+import '../services/tag_service.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
   final Article article;
@@ -101,6 +104,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
         completer.complete();
       }
     }
+
     auth.addListener(listener);
     try {
       await completer.future.timeout(const Duration(seconds: 10));
@@ -159,19 +163,19 @@ class _ArticleShell extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight: 260,
+          expandedHeight: 0,
           pinned: true,
           backgroundColor: _Colors.surf(isDark),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new,
-                color: Colors.white, size: 18),
+            icon: Icon(Icons.arrow_back_ios_new,
+                color: _Colors.textPrimary(isDark), size: 18),
             onPressed: () => Navigator.of(context).pop(),
           ),
           actions: [
-            _FavoriteButton(article: article),
+            _FavoriteButton(article: article, isDark: isDark),
             IconButton(
-              icon: const Icon(Icons.share_outlined,
-                  color: Colors.white, size: 20),
+              icon: Icon(Icons.share_outlined,
+                  color: _Colors.textPrimary(isDark), size: 20),
               onPressed: () {
                 final url = article.slug.isNotEmpty
                     ? 'https://www.descifrandolaguerra.es/${article.slug}/'
@@ -181,44 +185,6 @@ class _ArticleShell extends StatelessWidget {
               },
             ),
           ],
-          flexibleSpace: FlexibleSpaceBar(
-            background: Stack(
-              children: [
-                if (article.imageUrl.isNotEmpty)
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTap: () => showImageViewer(context, article.imageUrl),
-                      child: CachedNetworkImage(
-                        imageUrl: article.imageUrl,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                        memCacheWidth: 800,
-                        fadeInDuration: const Duration(milliseconds: 150),
-                        placeholder: (_, __) =>
-                            Container(color: _Colors.surf(isDark)),
-                        errorWidget: (_, __, ___) =>
-                            Container(color: _Colors.surf(isDark)),
-                      ),
-                    ),
-                  ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0.65, 1.0],
-                        colors: [
-                          Colors.transparent,
-                          isDark ? Colors.black : Colors.white,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
 
         // ── Título y meta — disponibles AL INSTANTE ───────────────────────
@@ -228,43 +194,82 @@ class _ArticleShell extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ArticleCategoryBadge(category: article.category),
-                    if (article.isPremium) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0x33C0392B),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.lock_outline,
-                                color: Color(0xFFE57A72), size: 11),
-                            SizedBox(width: 4),
-                            Text('Exclusivo',
-                                style: TextStyle(
-                                    color: Color(0xFFE57A72), fontSize: 11)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
                 const SizedBox(height: 10),
                 Text(
                   article.title,
                   style: TextStyle(
                     color: _Colors.textPrimary(isDark),
                     fontSize: 22,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w700,
                     height: 1.3,
                   ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _ClickableBadge(
+                      label: article.category == ArticleCategory.analisis
+                          ? 'Análisis'
+                          : article.category == ArticleCategory.entrevista
+                              ? 'Entrevista'
+                              : 'Noticia',
+                      bg: article.category == ArticleCategory.analisis
+                          ? AppColors.analysisBg
+                          : article.category == ArticleCategory.entrevista
+                              ? AppColors.interviewBg
+                              : AppColors.newsBg,
+                      fg: article.category == ArticleCategory.analisis
+                          ? AppColors.analysisText
+                          : article.category == ArticleCategory.entrevista
+                              ? AppColors.interviewText
+                              : AppColors.newsText,
+                      onTap: () {
+                        if (article.category == ArticleCategory.noticia) {
+                          Navigator.of(context)
+                              .popUntil((route) => route.isFirst);
+                        } else if (article.category ==
+                            ArticleCategory.analisis) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const AnalysisScreen()),
+                          );
+                        } else {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const InterviewsScreen()),
+                          );
+                        }
+                      },
+                    ),
+                    for (final slug in article.tagSlugs)
+                      Builder(builder: (context) {
+                        final name = TagService.getTagName('tag-$slug');
+                        if (name == null) return const SizedBox.shrink();
+                        return _ClickableBadge(
+                          label: name,
+                          bg: AppColors.tagBg,
+                          fg: AppColors.tagText,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => FilteredArticlesScreen(
+                                name: slug,
+                                displayName: name,
+                                filterType: FilterType.tag,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    if (article.isPremium)
+                      _ClickableBadge(
+                        label: 'Exclusivo',
+                        bg: const Color(0x33C0392B),
+                        fg: const Color(0xFFE57A72),
+                        icon: Icons.lock_outline,
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -272,10 +277,21 @@ class _ArticleShell extends StatelessWidget {
                     Icon(Icons.person_outline,
                         color: _Colors.textSecondary(isDark), size: 14),
                     const SizedBox(width: 4),
-                    Text(article.author,
-                        style: TextStyle(
-                            color: _Colors.textSecondary(isDark),
-                            fontSize: 12)),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FilteredArticlesScreen(
+                            name: article.author,
+                            filterType: FilterType.author,
+                          ),
+                        ),
+                      ),
+                      child: Text(article.author,
+                          style: TextStyle(
+                              color: AppColors.accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600)),
+                    ),
                     const SizedBox(width: 12),
                     Icon(Icons.calendar_today_outlined,
                         color: _Colors.textSecondary(isDark), size: 12),
@@ -283,7 +299,8 @@ class _ArticleShell extends StatelessWidget {
                     Text(_formatDate(article.date),
                         style: TextStyle(
                             color: _Colors.textSecondary(isDark),
-                            fontSize: 12)),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -311,8 +328,18 @@ class _ArticleShell extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre'
     ];
     return '${date.day} de ${months[date.month - 1]} de ${date.year}';
   }
@@ -657,7 +684,8 @@ class _ContentError extends StatelessWidget {
 // ─── Botón de favorito ────────────────────────────────────────────────────────
 class _FavoriteButton extends StatelessWidget {
   final Article article;
-  const _FavoriteButton({required this.article});
+  final bool isDark;
+  const _FavoriteButton({required this.article, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -671,13 +699,59 @@ class _FavoriteButton extends StatelessWidget {
     return IconButton(
       icon: Icon(
         isSaved ? Icons.bookmark : Icons.bookmark_outline,
-        color: isSaved ? AppColors.accent : Colors.white,
+        color: isSaved ? AppColors.accent : _Colors.textPrimary(isDark),
         size: 22,
       ),
       onPressed: () async {
         final cookies = auth.state.cookies ?? '';
         await favorites.toggleFavorite(article.id, cookies);
       },
+    );
+  }
+}
+
+// ─── Badge clickable ──────────────────────────────────────────────────────────
+class _ClickableBadge extends StatelessWidget {
+  final String label;
+  final Color bg;
+  final Color fg;
+  final IconData? icon;
+  final VoidCallback? onTap;
+
+  const _ClickableBadge({
+    required this.label,
+    required this.bg,
+    required this.fg,
+    this.icon,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: fg, size: 12),
+              const SizedBox(width: 4),
+            ],
+            Text(label,
+                style: TextStyle(
+                  color: fg,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                )),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -51,6 +51,7 @@ class ArticleRepository {
     int page = 1,
     void Function(List<Article>)? onRefreshed,
     void Function()? onBackgroundRefreshStarted,
+    void Function()? onBackgroundRefreshFailed,
   }) async {
     final cached = await _cache.getList(key: _cacheKeyLatest);
 
@@ -61,7 +62,11 @@ class ArticleRepository {
       if (kDebugMode) debugPrint('📦 [Cache] Refrescando en background');
       if (onBackgroundRefreshStarted != null) onBackgroundRefreshStarted();
       _fetchListFromNetwork(perPage, page).then((fresh) {
-        if (fresh != null && onRefreshed != null) onRefreshed(fresh);
+        if (fresh != null && onRefreshed != null) {
+          onRefreshed(fresh);
+        } else if (fresh == null && onBackgroundRefreshFailed != null) {
+          onBackgroundRefreshFailed();
+        }
       });
       return articles;
     }
@@ -472,6 +477,158 @@ class ArticleRepository {
     } catch (e) {
       if (kDebugMode) debugPrint('📦 [Repo] Error búsqueda "$query": $e');
       return [];
+    }
+  }
+
+// ─── Artículos por autor ───────────────────────────────────────────────────
+
+  /// Busca el ID de un autor por nombre.
+  Future<int?> fetchAuthorId(String authorName) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/users').replace(queryParameters: {
+        'search': authorName,
+        '_fields': 'id,name',
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 35));
+      if (response.statusCode != 200) return null;
+      final List<dynamic> data = jsonDecode(response.body);
+      if (data.isEmpty) return null;
+      return data.first['id'] as int;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('📦 [Repo] Error buscando autor "$authorName": $e');
+      }
+      return null;
+    }
+  }
+
+  /// Devuelve artículos de un autor por su ID.
+  Future<List<Article>> fetchArticlesByAuthor({
+    required int authorId,
+    int perPage = 10,
+    void Function(List<Article>)? onRefreshed,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'author': authorId.toString(),
+        'per_page': perPage.toString(),
+        'page': '1',
+        'orderby': 'date',
+        'order': 'desc',
+        '_fields': _listFields,
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 35));
+      if (response.statusCode != 200) return [];
+      return _parseList(response.body);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('📦 [Repo] Error artículos autor $authorId: $e');
+      }
+      return [];
+    }
+  }
+
+  /// Carga más artículos de un autor (página 2+).
+  Future<List<Article>?> fetchMoreArticlesByAuthor({
+    required int authorId,
+    required int page,
+    int perPage = 10,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'author': authorId.toString(),
+        'per_page': perPage.toString(),
+        'page': page.toString(),
+        'orderby': 'date',
+        'order': 'desc',
+        '_fields': _listFields,
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 35));
+      if (response.statusCode == 400) return [];
+      if (response.statusCode != 200) return null;
+      return _parseList(response.body);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('📦 [Repo] Error artículos autor $authorId p$page: $e');
+      }
+      return null;
+    }
+  }
+
+  // ─── Artículos por tag ─────────────────────────────────────────────────────
+
+  /// Busca el ID de un tag por slug.
+  Future<int?> fetchTagId(String tagSlug) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/tags').replace(queryParameters: {
+        'slug': tagSlug,
+        '_fields': 'id,name',
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 35));
+      if (response.statusCode != 200) return null;
+      final List<dynamic> data = jsonDecode(response.body);
+      if (data.isEmpty) return null;
+      return data.first['id'] as int;
+    } catch (e) {
+      if (kDebugMode) debugPrint('📦 [Repo] Error buscando tag "$tagSlug": $e');
+      return null;
+    }
+  }
+
+  /// Devuelve artículos con un tag específico.
+  Future<List<Article>> fetchArticlesByTag({
+    required int tagId,
+    int perPage = 10,
+    void Function(List<Article>)? onRefreshed,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'tags': tagId.toString(),
+        'per_page': perPage.toString(),
+        'page': '1',
+        'orderby': 'date',
+        'order': 'desc',
+        '_fields': _listFields,
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 35));
+      if (response.statusCode != 200) return [];
+      return _parseList(response.body);
+    } catch (e) {
+      if (kDebugMode) debugPrint('📦 [Repo] Error artículos tag $tagId: $e');
+      return [];
+    }
+  }
+
+  /// Carga más artículos de un tag (página 2+).
+  Future<List<Article>?> fetchMoreArticlesByTag({
+    required int tagId,
+    required int page,
+    int perPage = 10,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        'tags': tagId.toString(),
+        'per_page': perPage.toString(),
+        'page': page.toString(),
+        'orderby': 'date',
+        'order': 'desc',
+        '_fields': _listFields,
+      });
+      final response =
+          await _client.get(uri).timeout(const Duration(seconds: 35));
+      if (response.statusCode == 400) return [];
+      if (response.statusCode != 200) return null;
+      return _parseList(response.body);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('📦 [Repo] Error artículos tag $tagId p$page: $e');
+      }
+      return null;
     }
   }
 }
