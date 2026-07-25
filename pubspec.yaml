@@ -53,6 +53,7 @@ flutter_native_splash:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/logo_dlg.png"
+  image_path: "assets/images/logo_dlg_alfa.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/logo_dlg.png"
+  adaptive_icon_foreground: "assets/images/logo_dlg_alfa.png"
+  remove_alpha_ios: true

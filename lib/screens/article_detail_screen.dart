@@ -265,8 +265,8 @@ class _ArticleShell extends StatelessWidget {
                     if (article.isPremium)
                       _ClickableBadge(
                         label: 'Exclusivo',
-                        bg: const Color(0x33C0392B),
-                        fg: const Color(0xFFE57A72),
+                        bg: AppColors.premiumBg(isDark),
+                        fg: AppColors.premiumText(isDark),
                         icon: Icons.lock_outline,
                       ),
                   ],

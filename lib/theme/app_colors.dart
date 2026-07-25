@@ -23,10 +23,11 @@ class AppColors {
   static const accent = Color(0xFFC0392B);
   static const accentDim = Color(0x33C0392B);
 
-  static const premiumBg = Color(0x33C0392B);
-  static const premiumText = Color(0xFFE57A72);
-
   // ─── Badges dinámicos ────────────────────────────────────────────────────────
+  static Color premiumBg(bool isDark) =>
+      isDark ? const Color(0x33C0392B) : const Color(0x22C0392B);
+  static Color premiumText(bool isDark) =>
+      isDark ? const Color(0xFFE57A72) : const Color(0xFFA52D22);
   static Color analysisBg(bool isDark) =>
       isDark ? const Color(0x33185FA5) : const Color(0x22185FA5);
   static Color analysisText(bool isDark) =>

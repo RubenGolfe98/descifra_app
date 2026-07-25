@@ -176,19 +176,24 @@ class ArticlePremiumBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeNotifier>().isDark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.premiumBg,
+        color: AppColors.premiumBg(isDark),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
-          Icon(Icons.lock_outline, color: AppColors.premiumText, size: 8),
-          SizedBox(width: 3),
+        children: [
+          Icon(Icons.lock_outline,
+              color: AppColors.premiumText(isDark), size: 8),
+          const SizedBox(width: 3),
           Text('Exclusivo',
-              style: TextStyle(color: AppColors.premiumText, fontSize: 9)),
+              style: TextStyle(
+                  color: AppColors.premiumText(isDark),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700)),
         ],
       ),
     );

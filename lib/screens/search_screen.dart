@@ -98,19 +98,31 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   String _formatDate(DateTime date) {
-    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
-                    'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const months = [
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic'
+    ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final bg   = AppColors.bg(isDark);
+    final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri  = AppColors.textPri(isDark);
-    final sec  = AppColors.textSec(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
 
     return Scaffold(
       backgroundColor: bg,
@@ -167,7 +179,8 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             Icon(Icons.search, color: AppColors.bord(isDark), size: 48),
             const SizedBox(height: 12),
-            Text('Busca artículos por título', style: TextStyle(color: sec, fontSize: 14)),
+            Text('Busca artículos por título',
+                style: TextStyle(color: sec, fontSize: 14)),
           ],
         ),
       );
@@ -176,7 +189,8 @@ class _SearchScreenState extends State<SearchScreen> {
     // Cargando
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
+        child:
+            CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
       );
     }
 
@@ -208,7 +222,8 @@ class _SearchScreenState extends State<SearchScreen> {
     // Sugerencias en tiempo real
     if (_suggestions.isEmpty) {
       return Center(
-        child: Text('Sin resultados', style: TextStyle(color: sec, fontSize: 14)),
+        child:
+            Text('Sin resultados', style: TextStyle(color: sec, fontSize: 14)),
       );
     }
 
@@ -221,13 +236,15 @@ class _SearchScreenState extends State<SearchScreen> {
             itemBuilder: (_, i) {
               final article = _suggestions[i];
               return ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 leading: Icon(Icons.article_outlined, color: sec, size: 20),
                 title: Text(
                   article.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: pri, fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      color: pri, fontSize: 13, fontWeight: FontWeight.w500),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -247,18 +264,23 @@ class _SearchScreenState extends State<SearchScreen> {
                       if (article.isPremium) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.premiumBg,
+                            color: AppColors.premiumBg(isDark),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.lock_outline, color: AppColors.premiumText, size: 8),
+                            children: [
+                              Icon(Icons.lock_outline,
+                                  color: AppColors.premiumText(isDark),
+                                  size: 8),
                               SizedBox(width: 3),
                               Text('Exclusivo',
-                                  style: TextStyle(color: AppColors.premiumText, fontSize: 9)),
+                                  style: TextStyle(
+                                      color: AppColors.premiumText(isDark),
+                                      fontSize: 9)),
                             ],
                           ),
                         ),
