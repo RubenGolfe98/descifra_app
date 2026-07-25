@@ -32,7 +32,7 @@ class ArticleRepository {
   static const String _cacheKeyInterviews = 'articles_interviews';
   static String _cacheKeyRegion(int id) => 'articles_region_$id';
 
-  static const _listTimeout = Duration(seconds: 15);
+  static const _listTimeout = Duration(seconds: 30);
   static const _detailTimeout = Duration(seconds: 20);
 
   final http.Client _client;

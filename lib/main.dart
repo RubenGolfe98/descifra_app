@@ -21,10 +21,6 @@ void main() async {
   PaintingBinding.instance.imageCache.maximumSize = 100;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
 
-  // Tags en background — no bloquea el arranque
-  await TagService.initialize();
-  await AuthorService.initialize();
-
   runApp(const DlgApp());
 }
 
@@ -96,13 +92,27 @@ class _AppGate extends StatefulWidget {
 
 class _AppGateState extends State<_AppGate> {
   bool _minTimeElapsed = false;
+  bool _taxonomiesStarted = false;
 
   @override
   void initState() {
     super.initState();
+
+    // Mínimo de permanencia de la splash para branding
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) setState(() => _minTimeElapsed = true);
     });
+  }
+
+  Future<void> _loadTaxonomies() async {
+    await Future.wait([
+      TagService.initialize(),
+      AuthorService.initialize(),
+    ]).timeout(const Duration(seconds: 8), onTimeout: () => []);
+
+    // Forzar reconstrucción para que ArticleTagBadge y ArticleDetailScreen
+    // recojan los tags cargados (si aún no se habían cargado antes).
+    if (mounted) setState(() {});
   }
 
   @override
@@ -121,6 +131,14 @@ class _AppGateState extends State<_AppGate> {
           }
         } else {
           favorites.clear();
+        }
+
+        // Tags y autores se cargan en segundo plano DESPUÉS de que MainScreen
+        // y la petición de artículos ya se hayan lanzado.
+        // Así no compiten por ancho de banda con el contenido principal.
+        if (!_taxonomiesStarted) {
+          _taxonomiesStarted = true;
+          _loadTaxonomies();
         }
       });
     }
