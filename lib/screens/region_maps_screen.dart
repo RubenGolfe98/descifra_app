@@ -6,6 +6,7 @@ import '../models/region.dart';
 import '../repositories/maps_repository.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../widgets/dlg_app_bar.dart';
 import '../widgets/image_viewer.dart';
 
 class RegionMapsScreen extends StatefulWidget {
@@ -32,27 +33,13 @@ class _RegionMapsScreenState extends State<RegionMapsScreen> {
     final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
-    final pri = AppColors.textPri(isDark);
     final sec = AppColors.textSec(isDark);
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: surf,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'Mapas · ${widget.region.name}',
-          style:
-              TextStyle(color: pri, fontSize: 15, fontWeight: FontWeight.w600),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0.5),
-          child: Divider(height: 0.5, color: bord),
-        ),
+      appBar: DlgAppBar(
+        title: 'Mapas · ${widget.region.name}',
+        isDark: isDark,
       ),
       body: FutureBuilder<List<MapImage>>(
         future: _future,

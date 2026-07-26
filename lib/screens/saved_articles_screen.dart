@@ -5,6 +5,7 @@ import '../services/favorites_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
+import '../widgets/dlg_app_bar.dart';
 
 class SavedArticlesScreen extends StatelessWidget {
   const SavedArticlesScreen({super.key});
@@ -14,26 +15,11 @@ class SavedArticlesScreen extends StatelessWidget {
     final isDark = context.watch<ThemeNotifier>().isDark;
     final auth = context.watch<AuthNotifier>();
     final favorites = context.watch<FavoritesService>();
-    final pri = AppColors.textPri(isDark);
     final sec = AppColors.textSec(isDark);
 
     return Scaffold(
       backgroundColor: AppColors.bg(isDark),
-      appBar: AppBar(
-        backgroundColor: AppColors.surf(isDark),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text('Guardados',
-            style: TextStyle(color: pri, fontSize: 16, fontWeight: FontWeight.w600)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0.5),
-          child: Divider(height: 0.5, color: AppColors.bord(isDark)),
-        ),
-
-      ),
+      appBar: DlgAppBar(title: 'Guardados', isDark: isDark),
       body: !favorites.loaded
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))

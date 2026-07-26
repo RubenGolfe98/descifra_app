@@ -5,6 +5,7 @@ import '../models/article.dart';
 import '../repositories/article_repository.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../utils/date_formatter.dart';
 import '../widgets/article_card.dart';
 import 'article_detail_screen.dart';
 
@@ -95,24 +96,6 @@ class _SearchScreenState extends State<SearchScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => ArticleDetailScreen(article: article)),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'ene',
-      'feb',
-      'mar',
-      'abr',
-      'may',
-      'jun',
-      'jul',
-      'ago',
-      'sep',
-      'oct',
-      'nov',
-      'dic'
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   @override
@@ -258,7 +241,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       Text('·', style: TextStyle(color: sec, fontSize: 11)),
                       const SizedBox(width: 6),
                       Text(
-                        _formatDate(article.date),
+                        DateFormatter.medium(article.date),
                         style: TextStyle(color: sec, fontSize: 11),
                       ),
                       if (article.isPremium) ...[

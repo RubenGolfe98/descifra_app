@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../widgets/dlg_app_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -38,26 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: surf,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'Ajustes',
-          style: TextStyle(
-            color: pri,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0.5),
-          child: Divider(height: 0.5, color: bord),
-        ),
-      ),
+      appBar: DlgAppBar(title: 'Ajustes', isDark: isDark),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

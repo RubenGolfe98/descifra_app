@@ -10,6 +10,7 @@ import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/html_styles.dart';
+import '../widgets/dlg_app_bar.dart';
 import 'seminar_session_screen.dart';
 
 class SeminarDetailScreen extends StatefulWidget {
@@ -65,18 +66,7 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: surf,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0.5),
-          child: Divider(height: 0.5, color: bord),
-        ),
-      ),
+      appBar: DlgAppBar(title: '', isDark: isDark),
       body: FutureBuilder<List<SeminarSession>>(
         future: _future,
         builder: (context, snapshot) {

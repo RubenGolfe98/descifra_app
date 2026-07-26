@@ -5,6 +5,7 @@ import '../models/coverage.dart';
 import '../repositories/coverage_repository.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../widgets/dlg_app_bar.dart';
 import 'coverage_detail_screen.dart';
 
 class CoveragesScreen extends StatefulWidget {
@@ -78,25 +79,11 @@ class _CoveragesScreenState extends State<CoveragesScreen> {
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
     final bg  = AppColors.bg(isDark);
-    final pri = AppColors.textPri(isDark);
     final sec = AppColors.textSec(isDark);
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: AppColors.surf(isDark),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text('Coberturas',
-            style: TextStyle(color: pri, fontSize: 16, fontWeight: FontWeight.w600)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0.5),
-          child: Divider(height: 0.5, color: AppColors.bord(isDark)),
-        ),
-      ),
+      appBar: DlgAppBar(title: 'Coberturas', isDark: isDark),
       body: FutureBuilder<List<Coverage>>(
         future: _firstPageFuture,
         builder: (context, snapshot) {

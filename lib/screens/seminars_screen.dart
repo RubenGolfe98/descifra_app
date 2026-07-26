@@ -7,6 +7,7 @@ import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/access_dialog.dart';
+import '../widgets/dlg_app_bar.dart';
 import 'seminar_detail_screen.dart';
 
 class SeminarsScreen extends StatefulWidget {
@@ -57,21 +58,7 @@ class _SeminarsScreenState extends State<SeminarsScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: surf,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text('Seminarios',
-            style: TextStyle(
-                color: pri, fontSize: 16, fontWeight: FontWeight.w600)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0.5),
-          child: Divider(height: 0.5, color: bord),
-        ),
-      ),
+      appBar: DlgAppBar(title: 'Seminarios', isDark: isDark),
       body: FutureBuilder<List<Seminar>>(
         future: _future,
         builder: (context, snapshot) {

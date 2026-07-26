@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../repositories/article_repository.dart';
-import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../widgets/article_card.dart';
-import 'article_detail_screen.dart';
 import 'search_screen.dart';
-import '../widgets/access_dialog.dart';
+import '../utils/access_helper.dart';
+import '../utils/date_formatter.dart';
 
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 class HomeScreen extends StatefulWidget {
@@ -315,17 +314,7 @@ class _FeaturedArticle extends StatelessWidget {
   const _FeaturedArticle({required this.article, required this.isDark});
 
   void _handleTap(BuildContext context) {
-    final auth = context.read<AuthNotifier>();
-    final canAccess = !article.isPremium ||
-        (auth.state.isLoggedIn && auth.state.isSubscriber);
-    if (!canAccess) {
-      showAccessDialog(context,
-          onLoginTap: () => TabNavigator.of(context)?.jumpToProfile(),
-          source: 'article');
-      return;
-    }
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => ArticleDetailScreen(article: article)));
+    openArticle(context, article);
   }
 
   @override
@@ -460,31 +449,6 @@ class _ArticleMeta extends StatelessWidget {
   const _ArticleMeta(
       {required this.author, required this.date, required this.isDark});
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final articleDay = DateTime(date.year, date.month, date.day);
-    final diff = today.difference(articleDay).inDays;
-    if (diff == 0) return 'Hoy';
-    if (diff == 1) return 'Ayer';
-    return '${date.day} ${_months[date.month - 1]}';
-  }
-
-  static const _months = [
-    'ene',
-    'feb',
-    'mar',
-    'abr',
-    'may',
-    'jun',
-    'jul',
-    'ago',
-    'sep',
-    'oct',
-    'nov',
-    'dic'
-  ];
-
   @override
   Widget build(BuildContext context) {
     final mut = AppColors.textPri(isDark);
@@ -502,7 +466,8 @@ class _ArticleMeta extends StatelessWidget {
               height: 2,
               decoration: BoxDecoration(color: mut, shape: BoxShape.circle)),
         ),
-        Text(_formatDate(date), style: TextStyle(color: mut, fontSize: 10)),
+        Text(DateFormatter.short(date),
+            style: TextStyle(color: mut, fontSize: 10)),
       ],
     );
   }

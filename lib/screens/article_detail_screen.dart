@@ -14,6 +14,7 @@ import '../services/favorites_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/html_styles.dart';
+import '../utils/date_formatter.dart';
 import '../widgets/image_viewer.dart';
 import 'filtered_articles_screen.dart';
 import 'analysis_screen.dart';
@@ -127,7 +128,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeNotifier>().isDark;
     return Scaffold(
-      backgroundColor: _Colors.bg(isDark),
+      backgroundColor: AppColors.bg(isDark),
       body: _ArticleShell(
         article: widget.article,
         detailFuture: _detailFuture,
@@ -165,17 +166,17 @@ class _ArticleShell extends StatelessWidget {
         SliverAppBar(
           expandedHeight: 0,
           pinned: true,
-          backgroundColor: _Colors.surf(isDark),
+          backgroundColor: AppColors.surf(isDark),
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios_new,
-                color: _Colors.textPrimary(isDark), size: 18),
+                color: AppColors.textPri(isDark), size: 18),
             onPressed: () => Navigator.of(context).pop(),
           ),
           actions: [
             _FavoriteButton(article: article, isDark: isDark),
             IconButton(
               icon: Icon(Icons.share_outlined,
-                  color: _Colors.textPrimary(isDark), size: 20),
+                  color: AppColors.textPri(isDark), size: 20),
               onPressed: () {
                 final url = article.slug.isNotEmpty
                     ? 'https://www.descifrandolaguerra.es/${article.slug}/'
@@ -198,7 +199,7 @@ class _ArticleShell extends StatelessWidget {
                 Text(
                   article.title,
                   style: TextStyle(
-                    color: _Colors.textPrimary(isDark),
+                    color: AppColors.textPri(isDark),
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                     height: 1.3,
@@ -275,7 +276,7 @@ class _ArticleShell extends StatelessWidget {
                 Row(
                   children: [
                     Icon(Icons.person_outline,
-                        color: _Colors.textSecondary(isDark), size: 14),
+                        color: AppColors.textSec(isDark), size: 14),
                     const SizedBox(width: 4),
                     GestureDetector(
                       onTap: () => Navigator.of(context).push(
@@ -294,17 +295,17 @@ class _ArticleShell extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Icon(Icons.calendar_today_outlined,
-                        color: _Colors.textSecondary(isDark), size: 12),
+                        color: AppColors.textSec(isDark), size: 12),
                     const SizedBox(width: 4),
-                    Text(_formatDate(article.date),
+                    Text(DateFormatter.long(article.date),
                         style: TextStyle(
-                            color: _Colors.textSecondary(isDark),
+                            color: AppColors.textSec(isDark),
                             fontSize: 12,
                             fontWeight: FontWeight.w600)),
                   ],
                 ),
                 const SizedBox(height: 20),
-                Divider(color: _Colors.bord(isDark), thickness: 0.5),
+                Divider(color: AppColors.bord(isDark), thickness: 0.5),
                 const SizedBox(height: 8),
               ],
             ),
@@ -326,29 +327,6 @@ class _ArticleShell extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    if (date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day) {
-      return 'Hoy';
-    }
-    const months = [
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre'
-    ];
-    return '${date.day} de ${months[date.month - 1]} de ${date.year}';
-  }
 }
 
 // ─── Contenido del artículo (FutureBuilder + paywall) ─────────────────────────
@@ -488,7 +466,7 @@ class _HtmlContent extends StatelessWidget {
                       memCacheWidth: ((screenWidth - 40) * 2).toInt(),
                       placeholder: (_, __) => Container(
                         height: 200,
-                        color: _Colors.surf(isDark),
+                        color: AppColors.surf(isDark),
                       ),
                       errorWidget: (_, __, ___) => const SizedBox.shrink(),
                     ),
@@ -531,7 +509,7 @@ class _PaywallBlock extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   height: 14,
                   decoration: BoxDecoration(
-                    color: _Colors.surf(isDark),
+                    color: AppColors.surf(isDark),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   width: i == 4 ? 160 : double.infinity,
@@ -555,7 +533,7 @@ class _PaywallBlock extends StatelessWidget {
             'Contenido exclusivo para suscriptores',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: _Colors.textPrimary(isDark),
+              color: AppColors.textPri(isDark),
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -566,7 +544,7 @@ class _PaywallBlock extends StatelessWidget {
             'completa de la política internacional.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: _Colors.textSecondary(isDark),
+              color: AppColors.textSec(isDark),
               fontSize: 13,
               height: 1.5,
             ),
@@ -600,15 +578,6 @@ class _PaywallBlock extends StatelessWidget {
       ),
     );
   }
-}
-
-// ─── Colores dinámicos ────────────────────────────────────────────────────────
-class _Colors {
-  static Color bg(bool d) => AppColors.bg(d);
-  static Color surf(bool d) => AppColors.surf(d);
-  static Color bord(bool d) => AppColors.bord(d);
-  static Color textPrimary(bool d) => AppColors.textPri(d);
-  static Color textSecondary(bool d) => AppColors.textSec(d);
 }
 
 // ─── Skeleton del contenido mientras carga ────────────────────────────────────
@@ -674,7 +643,7 @@ class _ContentError extends StatelessWidget {
       child: Column(
         children: [
           Text('Error al cargar el contenido',
-              style: TextStyle(color: _Colors.textSecondary(isDark))),
+              style: TextStyle(color: AppColors.textSec(isDark))),
           const SizedBox(height: 12),
           TextButton(
             onPressed: onRetry,
@@ -705,7 +674,7 @@ class _FavoriteButton extends StatelessWidget {
     return IconButton(
       icon: Icon(
         isSaved ? Icons.bookmark : Icons.bookmark_outline,
-        color: isSaved ? AppColors.accent : _Colors.textPrimary(isDark),
+        color: isSaved ? AppColors.accent : AppColors.textPri(isDark),
         size: 22,
       ),
       onPressed: () async {

@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/book.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
+import '../widgets/dlg_app_bar.dart';
 
 class BooksScreen extends StatefulWidget {
   const BooksScreen({super.key});
@@ -42,26 +43,11 @@ class _BooksScreenState extends State<BooksScreen> {
     final isDark = context.watch<ThemeNotifier>().isDark;
     final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
-    final bord = AppColors.bord(isDark);
     final pri = AppColors.textPri(isDark);
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: surf,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text('Libros',
-            style: TextStyle(
-                color: pri, fontSize: 16, fontWeight: FontWeight.w600)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0.5),
-          child: Divider(height: 0.5, color: bord),
-        ),
-      ),
+      appBar: DlgAppBar(title: 'Libros', isDark: isDark),
       body: FutureBuilder<List<Book>>(
         future: _future,
         builder: (context, snapshot) {
@@ -232,18 +218,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: surf,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0.5),
-          child: Divider(height: 0.5, color: bord),
-        ),
-      ),
+      appBar: DlgAppBar(title: '', isDark: isDark),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

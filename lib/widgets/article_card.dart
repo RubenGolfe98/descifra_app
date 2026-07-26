@@ -2,12 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
-import '../screens/article_detail_screen.dart';
-import '../services/auth_notifier.dart';
 import '../services/tag_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
-import 'access_dialog.dart';
+import '../utils/access_helper.dart';
 
 /// Tarjeta de artículo reutilizable en todas las pantallas.
 /// Gestiona internamente el tap, control de acceso y navegación al detalle.
@@ -22,24 +20,7 @@ class ArticleCard extends StatelessWidget {
       onTap!();
       return;
     }
-    final auth = context.read<AuthNotifier>();
-    final canAccess = !article.isPremium ||
-        (auth.state.isLoggedIn && auth.state.isSubscriber);
-
-    if (!canAccess) {
-      showAccessDialog(
-        context,
-        onLoginTap: () => TabNavigator.of(context)?.jumpToProfile(),
-        source: 'article',
-      );
-      return;
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ArticleDetailScreen(article: article),
-      ),
-    );
+    openArticle(context, article);
   }
 
   @override
