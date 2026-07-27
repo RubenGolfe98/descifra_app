@@ -32,7 +32,7 @@ void main() {
         expect(region.slug, isNotEmpty);
         expect(region.count, isPositive);
         expect(region.imageUrl, isNotEmpty);
-        expect(region.imageUrl, startsWith('https://'));
+        expect(region.imageUrl, startsWith('assets/'));
       }
     });
 
@@ -53,9 +53,10 @@ void main() {
       expect(names, contains('África Subsahariana'));
     });
 
-    test('image URLs point to descifrandolaguerra.es', () {
+    test('image paths point to assets/regions', () {
       for (final region in kRegions) {
-        expect(region.imageUrl, contains('descifrandolaguerra.es'));
+        expect(region.imageUrl, startsWith('assets/images/regions/'));
+        expect(region.imageUrl, endsWith('.svg'));
       }
     });
   });

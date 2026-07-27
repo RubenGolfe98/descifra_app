@@ -127,12 +127,11 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(24),
-                      child: SvgPicture.network(
+                      child: SvgPicture.asset(
                         widget.region.imageUrl,
                         fit: BoxFit.contain,
                         colorFilter: const ColorFilter.mode(
-                            Color(0x44C0392B), BlendMode.srcIn),
-                        placeholderBuilder: (_) => const SizedBox.shrink(),
+                            AppColors.accent, BlendMode.srcIn),
                       ),
                     ),
                     Positioned(
@@ -208,7 +207,8 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                 }
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => ArticleCard(article: displayArticles[index]),
+                    (context, index) =>
+                        ArticleCard(article: displayArticles[index]),
                     childCount: displayArticles.length,
                   ),
                 );
