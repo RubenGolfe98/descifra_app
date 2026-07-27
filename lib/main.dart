@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'repositories/article_repository.dart';
 import 'services/auth_notifier.dart';
 import 'services/favorites_service.dart';
 import 'services/connectivity_service.dart';
@@ -34,7 +35,8 @@ class DlgApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthNotifier()..initialize()),
         ChangeNotifierProvider(create: (_) => ThemeNotifier()..initialize()),
         ChangeNotifierProvider(create: (_) => ConnectivityService()),
-        ChangeNotifierProvider(create: (_) => FavoritesService()),
+        ChangeNotifierProvider(
+            create: (_) => FavoritesService(client: SharedHttp.bgClient)),
       ],
       child: const _AppRoot(),
     );
@@ -106,8 +108,8 @@ class _AppGateState extends State<_AppGate> {
 
   Future<void> _loadTaxonomies() async {
     await Future.wait([
-      TagService.initialize(),
-      AuthorService.initialize(),
+      TagService.initialize(client: SharedHttp.bgClient),
+      AuthorService.initialize(client: SharedHttp.bgClient),
     ]).timeout(const Duration(seconds: 8), onTimeout: () => []);
 
     // Forzar reconstrucción para que ArticleTagBadge y ArticleDetailScreen

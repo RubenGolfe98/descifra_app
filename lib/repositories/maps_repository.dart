@@ -37,12 +37,12 @@ class MapsRepository {
     _mapsCachedAt = null;
   }
 
-  Future<Map<String, List<MapImage>>> fetchAllMaps() async {
+  Future<Map<String, List<MapImage>>> fetchAllMaps({int attempt = 1}) async {
     if (_cacheValid) return _mapsCache!;
 
     try {
       final uri = Uri.parse('$_baseUrl/pages/$_pageId?_fields=content');
-      final response = await _client.get(uri).timeout(const Duration(seconds: 15));
+      final response = await _client.get(uri).timeout(const Duration(seconds: 30));
       if (response.statusCode != 200) return _mapsCache ?? {};
       final json = jsonDecode(response.body);
       final html = json['content']?['rendered'] as String? ?? '';
@@ -50,7 +50,11 @@ class MapsRepository {
       _mapsCachedAt = DateTime.now();
       return _mapsCache!;
     } catch (e) {
-      if (kDebugMode) debugPrint('🗺️ [Maps] Error: $e');
+      if (kDebugMode) debugPrint('🗺️ [Maps] Error (intento $attempt): $e');
+      if (attempt < 3) {
+        await Future.delayed(Duration(seconds: attempt));
+        return fetchAllMaps(attempt: attempt + 1);
+      }
       return _mapsCache ?? {};
     }
   }

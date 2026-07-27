@@ -68,7 +68,7 @@ class FavoritesService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _client.post(
+      final response = await SharedHttp.userClient.post(
         Uri.parse(_ajaxUrl),
         headers: {
           'Cookie': cookies,

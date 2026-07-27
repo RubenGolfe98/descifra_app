@@ -7,6 +7,7 @@ import 'coverages_screen.dart';
 import 'books_screen.dart';
 import 'interviews_screen.dart';
 import 'seminars_screen.dart';
+import 'all_maps_screen.dart';
 
 class ExploreScreen extends StatelessWidget {
   const ExploreScreen({super.key});
@@ -81,6 +82,14 @@ class ExploreScreen extends StatelessWidget {
                     isDark: isDark,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const BooksScreen()),
+                    ),
+                  ),
+                  _ExploreCard(
+                    icon: Icons.map_outlined,
+                    label: 'Mapas',
+                    isDark: isDark,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AllMapsScreen()),
                     ),
                   ),
                 ],

@@ -1,20 +1,43 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import '../models/article.dart';
 import '../models/article_detail.dart';
 import '../services/article_cache.dart';
 
 /// Cliente HTTP compartido para toda la app.
-/// Todos los repositorios reutilizan esta misma instancia,
-/// lo que permite connection pooling (keep-alive, TLS reutilizado).
+/// Mantiene dos pools de conexiones separados:
+///   - [client] / [userClient]: para peticiones del usuario (6 conexiones por host)
+///   - [bgClient]: para tareas de background (máx. 2 conexiones por host)
 class SharedHttp {
   SharedHttp._();
   static http.Client? _client;
+  static http.Client? _bgClient;
+
+  /// Pool principal — peticiones iniciadas por el usuario (detalle, mapas, etc.)
   static http.Client get client => _client ??= http.Client();
+
+  /// Alias de [client] — mismo pool principal
+  static http.Client get userClient => client;
+
+  /// Pool limitado para tareas de background (tags, autores, favoritos, etc.)
+  /// Solo 2 conexiones simultáneas por host para no saturar al servidor
+  /// ni competir con las peticiones del usuario.
+  static http.Client get bgClient => _bgClient ??= _createBgClient();
+
+  static http.Client _createBgClient() {
+    final io = HttpClient();
+    io.maxConnectionsPerHost = 2;
+    return IOClient(io);
+  }
+
   static void dispose() {
     _client?.close();
     _client = null;
+    _bgClient?.close();
+    _bgClient = null;
   }
 }
 

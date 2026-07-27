@@ -129,36 +129,6 @@ class _RegionMapsScreenState extends State<RegionMapsScreen> {
                                     color: AppColors.bord(isDark), size: 32),
                               ),
                             ),
-                            if (map.alt.isNotEmpty)
-                              Positioned(
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.transparent,
-                                        Colors.black.withValues(alpha: 0.7)
-                                      ],
-                                    ),
-                                  ),
-                                  child: Text(
-                                    map.alt,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ),
