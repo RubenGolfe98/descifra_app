@@ -14,7 +14,7 @@ class ExploreScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final bg = AppColors.bg(isDark);
     final pri = AppColors.textPri(isDark);
 
@@ -123,55 +123,61 @@ class _ExploreCard extends StatelessWidget {
     final pri = AppColors.textPri(isDark);
     final sec = AppColors.textSec(isDark);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: surf,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: bord, width: 0.5),
-        ),
-        child: Stack(
-          children: [
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: AppColors.accent, size: 32),
-                  const SizedBox(height: 10),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: pri,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+    return Material(
+      type: MaterialType.card,
+      elevation: 0,
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: surf,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: bord, width: 0.5),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, color: AppColors.accent, size: 32),
+                    const SizedBox(height: 10),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: pri,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            if (comingSoon)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.accentDim,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'Próximamente',
-                    style: TextStyle(
-                      color: sec,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w500,
+              if (comingSoon)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentDim,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Próximamente',
+                      style: TextStyle(
+                        color: sec,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

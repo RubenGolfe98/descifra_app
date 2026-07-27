@@ -105,7 +105,7 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     return Scaffold(
       backgroundColor: AppColors.bg(isDark),
       body: SafeArea(
@@ -143,9 +143,9 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting &&
                       _articles.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFFC0392B),
+                        color: AppColors.accent,
                         strokeWidth: 2,
                       ),
                     );
@@ -178,7 +178,7 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
                   return RefreshIndicator(
                     onRefresh: _refresh,
                     color: AppColors.accent,
-                    backgroundColor: const Color(0xFF1A1A1A),
+                    backgroundColor: AppColors.surf(isDark),
                     child: ListView.builder(
                       controller: _scrollController,
                       itemCount: displayArticles.length + 1,
@@ -187,12 +187,12 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 20),
                             child: _isLoadingMore
-                                ? const Center(
+                                ? Center(
                                     child: SizedBox(
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                        color: Color(0xFFC0392B),
+                                        color: AppColors.accent,
                                         strokeWidth: 2,
                                       ),
                                     ),

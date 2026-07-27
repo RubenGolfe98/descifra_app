@@ -12,7 +12,7 @@ class RegionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     return Scaffold(
       backgroundColor: AppColors.bg(isDark),
       body: SafeArea(
@@ -131,8 +131,13 @@ class _RegionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final surf = AppColors.surf(isDark);
 
-    return GestureDetector(
-      onTap: () => _showOptions(context),
+    return Material(
+      type: MaterialType.card,
+      elevation: 0,
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => _showOptions(context),
       child: Container(
         decoration: BoxDecoration(
           color: surf,
@@ -179,8 +184,8 @@ class _RegionCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       '${region.count} artículos',
-                      style: TextStyle(
-                          color: AppColors.textSec(isDark), fontSize: 10),
+                  style: TextStyle(
+                      color: AppColors.textSec(isDark), fontSize: 10),
                     ),
                   ],
                 ),
@@ -189,6 +194,7 @@ class _RegionCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

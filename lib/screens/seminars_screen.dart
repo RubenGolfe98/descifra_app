@@ -41,7 +41,7 @@ class _SeminarsScreenState extends State<SeminarsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final auth = context.watch<AuthNotifier>();
 
     // Lanzar prefetch de sesiones una sola vez en background

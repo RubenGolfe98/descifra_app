@@ -40,7 +40,7 @@ class _BooksScreenState extends State<BooksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final pri = AppColors.textPri(isDark);
@@ -209,7 +209,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);

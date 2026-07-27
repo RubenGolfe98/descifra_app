@@ -65,7 +65,7 @@ class _FilteredArticlesScreenState extends State<FilteredArticlesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
 
     if (_loading || _error) {
       return Scaffold(

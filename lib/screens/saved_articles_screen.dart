@@ -12,7 +12,7 @@ class SavedArticlesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final auth = context.watch<AuthNotifier>();
     final favorites = context.watch<FavoritesService>();
     final sec = AppColors.textSec(isDark);

@@ -18,16 +18,33 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  DateTime? _lastTabTap;
+  final _scrollToTopNotifier = ValueNotifier<int?>(null);
 
   void _jumpToProfile() => setState(() => _currentIndex = 3);
 
   void _onTabTap(int index) {
+    final now = DateTime.now();
+    final isDoubleTap = index == _currentIndex &&
+        _lastTabTap != null &&
+        now.difference(_lastTabTap!) < const Duration(milliseconds: 300);
+    _lastTabTap = now;
     setState(() => _currentIndex = index);
+    if (isDoubleTap) {
+      _scrollToTopNotifier.value = index;
+      Future.microtask(() => _scrollToTopNotifier.value = null);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollToTopNotifier.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
 
     const screens = [
       HomeScreen(),
@@ -38,19 +55,22 @@ class _MainScreenState extends State<MainScreen> {
 
     return TabNavigator(
       jumpToProfile: _jumpToProfile,
-      child: Scaffold(
-        backgroundColor: AppColors.bg(isDark),
-        body: IndexedStack(index: _currentIndex, children: screens),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const OfflineBanner(),
-            _BottomNav(
-              currentIndex: _currentIndex,
-              onTap: _onTabTap,
-              isDark: isDark,
-            ),
-          ],
+      child: ChangeNotifierProvider.value(
+        value: _scrollToTopNotifier,
+        child: Scaffold(
+          backgroundColor: AppColors.bg(isDark),
+          body: IndexedStack(index: _currentIndex, children: screens),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const OfflineBanner(),
+              _BottomNav(
+                currentIndex: _currentIndex,
+                onTap: _onTabTap,
+                isDark: isDark,
+              ),
+            ],
+          ),
         ),
       ),
     );

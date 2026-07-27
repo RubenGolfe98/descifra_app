@@ -30,7 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeNotifier>();
-    final isDark = theme.isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);

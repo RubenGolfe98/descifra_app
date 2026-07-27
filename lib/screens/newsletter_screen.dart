@@ -13,7 +13,7 @@ class NewsletterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final bg = AppColors.bg(isDark);
     final pri = AppColors.textPri(isDark);
     final sec = AppColors.textSec(isDark);

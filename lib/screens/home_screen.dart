@@ -32,11 +32,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Estado del banner de refresco
   _RefreshStatus _refreshStatus = _RefreshStatus.idle;
+  VoidCallback? _scrollListener;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollListener = () {
+        final notifier = context.read<ValueNotifier<int?>>();
+        if (notifier.value == 0 && mounted) {
+          _scrollController.animateTo(0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut);
+        }
+      };
+      context.read<ValueNotifier<int?>>().addListener(_scrollListener!);
+    });
     _firstPageFuture = _repository.fetchLatestArticles(
       onBackgroundRefreshStarted: () {
         if (mounted) setState(() => _refreshStatus = _RefreshStatus.refreshing);
@@ -68,6 +80,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    if (_scrollListener != null) {
+      try {
+        context.read<ValueNotifier<int?>>().removeListener(_scrollListener!);
+      } catch (_) {}
+    }
     _scrollController.dispose();
     super.dispose();
   }
@@ -116,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     return Scaffold(
       backgroundColor: AppColors.bg(isDark),
       body: SafeArea(
@@ -319,10 +336,14 @@ class _FeaturedArticle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _handleTap(context),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Material(
+        type: MaterialType.card,
+        elevation: 0,
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _handleTap(context),
         child: SizedBox(
           height: 210,
           child: Stack(
@@ -399,6 +420,7 @@ class _FeaturedArticle extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_notifier.dart';
+import '../services/theme_notifier.dart';
+import '../theme/app_colors.dart';
 
 /// Muestra el diálogo de acceso exclusivo según el estado de autenticación
 Future<void> showAccessDialog(BuildContext context,
@@ -26,10 +28,17 @@ class _PaywallSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final surf = AppColors.surf(isDark);
+    final bord = AppColors.bord(isDark);
+    final pri = AppColors.textPri(isDark);
+    final sec = AppColors.textSec(isDark);
+    final mut = AppColors.textMut(isDark);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF141414),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: surf,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
       child: Column(
@@ -40,7 +49,7 @@ class _PaywallSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: const Color(0xFF333333),
+              color: bord,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -60,10 +69,10 @@ class _PaywallSheet extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Título
-          const Text(
+          Text(
             'Contenido exclusivo',
             style: TextStyle(
-              color: Colors.white,
+              color: pri,
               fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
@@ -76,8 +85,8 @@ class _PaywallSheet extends StatelessWidget {
                 ? 'Tu plan actual no incluye acceso a este contenido. Puedes gestionar tu suscripción desde la página web oficial.'
                 : 'Este artículo es exclusivo para suscriptores de Descifrando la Guerra. Inicia sesión si ya tienes cuenta.',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF888888),
+            style: TextStyle(
+              color: sec,
               fontSize: 14,
               height: 1.5,
             ),
@@ -108,8 +117,8 @@ class _PaywallSheet extends StatelessWidget {
 
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar',
-                style: TextStyle(color: Color(0xFF555555), fontSize: 14)),
+            child: Text('Cerrar',
+                style: TextStyle(color: mut, fontSize: 14)),
           ),
         ],
       ),

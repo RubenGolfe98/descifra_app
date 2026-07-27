@@ -77,7 +77,7 @@ class _CoveragesScreenState extends State<CoveragesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final bg  = AppColors.bg(isDark);
     final sec = AppColors.textSec(isDark);
 
@@ -160,11 +160,16 @@ class _CoverageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => CoverageDetailScreen(coverage: coverage)),
-      ),
-      child: Container(
+    return Material(
+      type: MaterialType.card,
+      elevation: 0,
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => CoverageDetailScreen(coverage: coverage)),
+        ),
+        child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         height: 200,
         clipBehavior: Clip.hardEdge,
@@ -220,6 +225,7 @@ class _CoverageCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart' show Html, TagExtension;
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/article.dart';
 import '../models/article_detail.dart';
 import '../repositories/article_repository.dart';
@@ -13,13 +10,14 @@ import '../services/auth_notifier.dart';
 import '../services/favorites_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
-import '../theme/html_styles.dart';
 import '../utils/date_formatter.dart';
-import '../widgets/image_viewer.dart';
 import 'filtered_articles_screen.dart';
 import 'analysis_screen.dart';
 import 'interviews_screen.dart';
 import '../services/tag_service.dart';
+import '../widgets/shimmer.dart';
+import '../widgets/article_content_html.dart';
+import '../widgets/article_paywall.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
   final Article article;
@@ -36,12 +34,28 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   bool _refreshing = false;
   int _loadVersion = 0;
 
+  late ScrollController _scrollController;
+  final ValueNotifier<double> _scrollProgress = ValueNotifier(0.0);
+
   @override
   void initState() {
     super.initState();
-    // Asignamos inmediatamente para evitar LateInitializationError;
-    // el primer await difiere la ejecución real al microtask queue.
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     _detailFuture = _startLoad();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final max = _scrollController.position.maxScrollExtent;
+    if (max <= 0) {
+      if (_scrollProgress.value != 0.0) _scrollProgress.value = 0.0;
+      return;
+    }
+    final progress = (_scrollController.offset / max).clamp(0.0, 1.0);
+    if ((progress - _scrollProgress.value).abs() > 0.005) {
+      _scrollProgress.value = progress;
+    }
   }
 
   /// Siempre asigna [_detailFuture] — nunca deja la variable sin inicializar.
@@ -125,8 +139,18 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   }
 
   @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _scrollProgress.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+
+
     return Scaffold(
       backgroundColor: AppColors.bg(isDark),
       body: _ArticleShell(
@@ -136,6 +160,8 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
         isDark: isDark,
         refreshing: _refreshing,
         repository: _repository,
+        scrollController: _scrollController,
+        scrollProgressNotifier: _scrollProgress,
       ),
     );
   }
@@ -149,6 +175,8 @@ class _ArticleShell extends StatelessWidget {
   final bool isDark;
   final bool refreshing;
   final ArticleRepository repository;
+  final ScrollController scrollController;
+  final ValueNotifier<double> scrollProgressNotifier;
 
   const _ArticleShell({
     required this.article,
@@ -157,11 +185,14 @@ class _ArticleShell extends StatelessWidget {
     required this.isDark,
     this.refreshing = false,
     required this.repository,
+    required this.scrollController,
+    required this.scrollProgressNotifier,
   });
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
+      controller: scrollController,
       slivers: [
         SliverAppBar(
           expandedHeight: 0,
@@ -186,6 +217,24 @@ class _ArticleShell extends StatelessWidget {
               },
             ),
           ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(2),
+            child: ValueListenableBuilder<double>(
+              valueListenable: scrollProgressNotifier,
+              builder: (context, progress, _) => AnimatedOpacity(
+                opacity: progress > 0.01 ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 150),
+                child: SizedBox(
+                  height: 2,
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: AppColors.bord(isDark),
+                    valueColor: AlwaysStoppedAnimation(AppColors.accent),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
 
         // ── Título y meta — disponibles AL INSTANTE ───────────────────────
@@ -372,426 +421,56 @@ class _ArticleContent extends StatelessWidget {
           }
 
           if (showPaywall) {
-            return _PaywallBlock(isLoggedIn: auth.state.isLoggedIn);
+            return ArticlePaywall(isLoggedIn: auth.state.isLoggedIn);
           }
-          return _HtmlContent(html: detail.content, repository: repository);
+          return ArticleContentHtml(
+            html: detail.content,
+            repository: repository,
+            onLinkArticle: (article) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ArticleDetailScreen(article: article),
+                ),
+              );
+            },
+          );
         },
       ),
     );
   }
 }
-
-// ─── Contenido HTML ───────────────────────────────────────────────────────────
-class _HtmlContent extends StatelessWidget {
-  final String html;
-  final ArticleRepository repository;
-
-  const _HtmlContent({required this.html, required this.repository});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Html(
-        data: html,
-        onLinkTap: (url, _, __) async {
-          if (url == null || url.isEmpty) return;
-          final uri = Uri.tryParse(url);
-          if (uri == null) return;
-
-          final isInternal = uri.host.contains('descifrandolaguerra.es');
-
-          if (isInternal) {
-            final segments =
-                uri.pathSegments.where((s) => s.isNotEmpty).toList();
-
-            if (segments.isNotEmpty) {
-              final slug = segments.last;
-
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Cargando artículo...',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    duration: Duration(seconds: 2),
-                    backgroundColor: Color(0xFF2A2A2A),
-                  ),
-                );
-              }
-
-              final article = await repository.fetchArticleBySlug(slug);
-
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              }
-
-              if (article != null && context.mounted) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ArticleDetailScreen(article: article),
-                  ),
-                );
-                return;
-              }
-            }
-          }
-
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
-        },
-        style: articleHtmlStyles(isDark),
-        extensions: [
-          TagExtension(
-            tagsToExtend: {'img'},
-            builder: (extensionContext) {
-              final src = extensionContext.attributes['src'] ?? '';
-              if (src.isEmpty) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: GestureDetector(
-                  onTap: () => showImageViewer(context, src),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: src,
-                      width: screenWidth - 40,
-                      fit: BoxFit.cover,
-                      memCacheWidth: ((screenWidth - 40) * 2).toInt(),
-                      placeholder: (_, __) => Container(
-                        height: 200,
-                        color: AppColors.surf(isDark),
-                      ),
-                      errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          TagExtension(
-            tagsToExtend: {'iframe'},
-            builder: (extensionContext) {
-              final src = extensionContext.attributes['src'] ?? '';
-              if (src.isEmpty) return const SizedBox.shrink();
-
-              final ytMatch = RegExp(r'youtube\.com/embed/([a-zA-Z0-9_-]+)')
-                  .firstMatch(src);
-
-              if (ytMatch != null) {
-                final videoId = ytMatch.group(1)!;
-                final thumbUrl =
-                    'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: GestureDetector(
-                    onTap: () async {
-                      final uri =
-                          Uri.parse('https://www.youtube.com/watch?v=$videoId');
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri,
-                            mode: LaunchMode.externalApplication);
-                      }
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CachedNetworkImage(
-                            imageUrl: thumbUrl,
-                            width: screenWidth - 40,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(
-                              height: 200,
-                              color: AppColors.surf(isDark),
-                            ),
-                            errorWidget: (_, __, ___) =>
-                                const SizedBox.shrink(),
-                          ),
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.7),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.play_arrow,
-                                color: Colors.white, size: 32),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              // Spotify
-              final spotifyMatch = RegExp(
-                r'open\.spotify\.com/embed/(episode|show|track|playlist)/([a-zA-Z0-9]+)',
-              ).firstMatch(src);
-
-              if (spotifyMatch != null) {
-                final type = spotifyMatch.group(1)!;
-                final id = spotifyMatch.group(2)!;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: GestureDetector(
-                    onTap: () async {
-                      final uri =
-                          Uri.parse('https://open.spotify.com/$type/$id');
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri,
-                            mode: LaunchMode.externalApplication);
-                      }
-                    },
-                    child: Container(
-                      width: screenWidth - 40,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1DB954).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFF1DB954).withValues(alpha: 0.3),
-                          width: 0.5,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF1DB954),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.play_arrow,
-                                color: Colors.white, size: 28),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  type == 'episode'
-                                      ? 'Escuchar podcast'
-                                      : 'Escuchar en Spotify',
-                                  style: const TextStyle(
-                                    color: Color(0xFF1DB954),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Abrir en Spotify',
-                                  style: TextStyle(
-                                    color: AppColors.textSec(isDark),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.open_in_new,
-                              color: AppColors.textMut(isDark), size: 18),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              // Otros iframes — fallback
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: GestureDetector(
-                  onTap: () async {
-                    final uri = Uri.tryParse(src);
-                    if (uri != null && await canLaunchUrl(uri)) {
-                      await launchUrl(uri,
-                          mode: LaunchMode.externalApplication);
-                    }
-                  },
-                  child: Container(
-                    width: screenWidth - 40,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: AppColors.surf(isDark),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.play_circle_outline,
-                            color: AppColors.accent, size: 24),
-                        const SizedBox(width: 8),
-                        Text('Ver vídeo',
-                            style: TextStyle(
-                                color: AppColors.accent,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ─── Contenido exclusivo inline ─────────────────────────────────────────────
-class _PaywallBlock extends StatelessWidget {
-  final bool isLoggedIn;
-
-  const _PaywallBlock({required this.isLoggedIn});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      child: Column(
-        children: [
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFAAAAAA), Colors.transparent],
-              stops: [0.0, 0.8],
-            ).createShader(bounds),
-            blendMode: BlendMode.dstIn,
-            child: Column(
-              children: List.generate(
-                5,
-                (i) => Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: AppColors.surf(isDark),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  width: i == 4 ? 160 : double.infinity,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Container(
-            width: 56,
-            height: 56,
-            decoration: const BoxDecoration(
-              color: Color(0x22C0392B),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.lock_outline,
-                color: Color(0xFFC0392B), size: 26),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Contenido exclusivo para suscriptores',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textPri(isDark),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Accede a análisis en profundidad y cobertura '
-            'completa de la política internacional.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textSec(isDark),
-              fontSize: 13,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 28),
-          if (!isLoggedIn) ...[
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFC0392B),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Iniciar sesión',
-                    style: TextStyle(fontSize: 15, color: Colors.white)),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar',
-                style: TextStyle(color: Color(0xFF555555), fontSize: 14)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Skeleton del contenido mientras carga ────────────────────────────────────
 class _ContentSkeleton extends StatelessWidget {
   const _ContentSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
-    final skeletonColor =
-        isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE0D9CF);
+    final screenWidth = MediaQuery.of(context).size.width;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ...List.generate(12, (i) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              height: 13,
-              decoration: BoxDecoration(
-                  color: skeletonColor, borderRadius: BorderRadius.circular(4)),
-              width: i % 4 == 3
-                  ? MediaQuery.of(context).size.width * 0.6
-                  : double.infinity,
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: ShimmerWidget(
+                height: 13,
+                width: i % 4 == 3 ? screenWidth * 0.6 : double.infinity,
+              ),
             );
           }),
           const SizedBox(height: 20),
-          Container(
-            height: 200,
-            decoration: BoxDecoration(
-                color: skeletonColor, borderRadius: BorderRadius.circular(8)),
-          ),
+          const ShimmerWidget(height: 200, borderRadius: 8),
           const SizedBox(height: 20),
           ...List.generate(
               8,
-              (i) => Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    height: 13,
-                    decoration: BoxDecoration(
-                        color: skeletonColor,
-                        borderRadius: BorderRadius.circular(4)),
-                    width: i % 3 == 2
-                        ? MediaQuery.of(context).size.width * 0.5
-                        : double.infinity,
+              (i) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: ShimmerWidget(
+                      height: 13,
+                      width: i % 3 == 2 ? screenWidth * 0.5 : double.infinity,
+                    ),
                   )),
         ],
       ),
@@ -806,7 +485,9 @@ class _ContentError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeNotifier>().isDark;
+    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -872,8 +553,9 @@ class _ClickableBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
