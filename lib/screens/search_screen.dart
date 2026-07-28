@@ -106,6 +106,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final bord = AppColors.bord(isDark);
     final pri = AppColors.textPri(isDark);
     final sec = AppColors.textSec(isDark);
+    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
 
     return Scaffold(
       backgroundColor: bg,
@@ -149,11 +150,11 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Divider(height: 0.5, color: bord),
         ),
       ),
-      body: _buildBody(isDark, surf, bord, pri, sec),
+      body: _buildBody(isDark, surf, bord, pri, sec, justified),
     );
   }
 
-  Widget _buildBody(bool isDark, Color surf, Color bord, Color pri, Color sec) {
+  Widget _buildBody(bool isDark, Color surf, Color bord, Color pri, Color sec, bool justified) {
     // Estado vacío
     if (_controller.text.isEmpty) {
       return Center(
@@ -226,6 +227,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   article.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: justified ? TextAlign.justify : TextAlign.start,
                   style: TextStyle(
                       color: pri, fontSize: 13, fontWeight: FontWeight.w500),
                 ),

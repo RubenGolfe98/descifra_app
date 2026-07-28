@@ -2,30 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'app_colors.dart';
 
-Style _bodyStyle(bool isDark) => Style(
+Style _bodyStyle(bool isDark, {bool justified = true}) => Style(
       color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF333333),
       fontSize: FontSize(15),
       lineHeight: const LineHeight(1.75),
+      textAlign: justified ? TextAlign.justify : TextAlign.start,
       margin: Margins.zero,
       padding: HtmlPaddings.zero,
       backgroundColor: Colors.transparent,
     );
 
-Map<String, Style> articleHtmlStyles(bool isDark) => {
-      'body': _bodyStyle(isDark),
+Map<String, Style> articleHtmlStyles(bool isDark, {bool justified = true}) => {
+      'body': _bodyStyle(isDark, justified: justified),
       'h2': Style(
         color: AppColors.textPri(isDark),
         fontSize: FontSize(20),
         fontWeight: FontWeight.w700,
+        textAlign: justified ? TextAlign.justify : TextAlign.start,
         margin: Margins.only(top: 24, bottom: 10),
       ),
       'h3': Style(
         color: AppColors.textPri(isDark),
         fontSize: FontSize(17),
         fontWeight: FontWeight.w700,
+        textAlign: justified ? TextAlign.justify : TextAlign.start,
         margin: Margins.only(top: 20, bottom: 8),
       ),
-      'p': Style(margin: Margins.only(bottom: 16)),
+      'p': Style(
+        margin: Margins.only(bottom: 16),
+        textAlign: justified ? TextAlign.justify : TextAlign.start,
+      ),
       'a': Style(color: AppColors.accent, textDecoration: TextDecoration.none),
       'strong':
           Style(color: AppColors.textPri(isDark), fontWeight: FontWeight.w600),
@@ -58,16 +64,20 @@ Map<String, Style> articleHtmlStyles(bool isDark) => {
       ),
     };
 
-Map<String, Style> bookHtmlStyles(bool isDark) => {
+Map<String, Style> bookHtmlStyles(bool isDark, {bool justified = true}) => {
       'body': Style(
         color: isDark ? const Color(0xFFCCCCCC) : const Color(0xFF333333),
         fontSize: FontSize(14),
         lineHeight: const LineHeight(1.7),
+        textAlign: justified ? TextAlign.justify : TextAlign.start,
         margin: Margins.zero,
         padding: HtmlPaddings.zero,
         backgroundColor: Colors.transparent,
       ),
-      'p': Style(margin: Margins.only(bottom: 14)),
+      'p': Style(
+        margin: Margins.only(bottom: 14),
+        textAlign: justified ? TextAlign.justify : TextAlign.start,
+      ),
       'a': Style(color: AppColors.accent, textDecoration: TextDecoration.none),
       'strong':
           Style(color: AppColors.textPri(isDark), fontWeight: FontWeight.w600),

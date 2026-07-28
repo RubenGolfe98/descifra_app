@@ -336,6 +336,8 @@ class _FeaturedArticle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Material(
@@ -344,83 +346,87 @@ class _FeaturedArticle extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _handleTap(context),
-        child: SizedBox(
-          height: 210,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              _ArticleImage(url: article.imageUrl, height: 210, isDark: isDark),
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.0, 0.45, 1.0],
-                    colors: [
-                      Colors.transparent,
-                      Color(0x33000000),
-                      Color(0xE0000000)
-                    ],
+          child: SizedBox(
+            height: 210,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _ArticleImage(
+                    url: article.imageUrl, height: 210, isDark: isDark),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0.0, 0.45, 1.0],
+                      colors: [
+                        Colors.transparent,
+                        Color(0x33000000),
+                        Color(0xE0000000)
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 3),
-                            decoration: BoxDecoration(
-                                color: AppColors.accent,
-                                borderRadius: BorderRadius.circular(4)),
-                            child: const Text('DESTACADO',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.8)),
-                          ),
-                          const SizedBox(width: 6),
-                          ArticleCategoryBadge(category: article.category),
-                          if (article.isPremium) ...[
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                  color: AppColors.accent,
+                                  borderRadius: BorderRadius.circular(4)),
+                              child: const Text('DESTACADO',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.8)),
+                            ),
                             const SizedBox(width: 6),
-                            const ArticlePremiumBadge(),
+                            ArticleCategoryBadge(
+                                category: article.category, overlay: true),
+                            if (article.isPremium) ...[
+                              const SizedBox(width: 6),
+                              const ArticlePremiumBadge(overlay: true),
+                            ],
                           ],
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        article.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            height: 1.35),
-                      ),
-                      const SizedBox(height: 6),
-                      _ArticleMeta(
-                          author: article.author,
-                          date: article.date,
-                          isDark: isDark),
-                    ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          article.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign:
+                              justified ? TextAlign.justify : TextAlign.start,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              height: 1.35),
+                        ),
+                        const SizedBox(height: 6),
+                        _ArticleMeta(
+                            author: article.author,
+                            date: article.date,
+                            isDark: isDark),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

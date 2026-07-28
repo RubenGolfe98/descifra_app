@@ -150,7 +150,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
 
-
     return Scaffold(
       backgroundColor: AppColors.bg(isDark),
       body: _ArticleShell(
@@ -191,6 +190,8 @@ class _ArticleShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     return CustomScrollView(
       controller: scrollController,
       slivers: [
@@ -247,6 +248,7 @@ class _ArticleShell extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   article.title,
+                  textAlign: justified ? TextAlign.justify : TextAlign.start,
                   style: TextStyle(
                     color: AppColors.textPri(isDark),
                     fontSize: 22,
@@ -293,25 +295,32 @@ class _ArticleShell extends StatelessWidget {
                         }
                       },
                     ),
-                    for (final slug in article.tagSlugs)
-                      Builder(builder: (context) {
-                        final name = TagService.getTagName('tag-$slug');
-                        if (name == null) return const SizedBox.shrink();
-                        return _ClickableBadge(
-                          label: name,
-                          bg: AppColors.tagBg(isDark),
-                          fg: AppColors.tagText(isDark),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => FilteredArticlesScreen(
-                                name: slug,
-                                displayName: name,
-                                filterType: FilterType.tag,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
+                    if (article.tagSlugs.isNotEmpty)
+                      Wrap(
+                        spacing: 0,
+                        runSpacing: 0,
+                        children: [
+                          for (final slug in article.tagSlugs)
+                            Builder(builder: (context) {
+                              final name = TagService.getTagName('tag-$slug');
+                              if (name == null) return const SizedBox.shrink();
+                              return _ClickableBadge(
+                                label: name,
+                                bg: AppColors.tagBg(isDark),
+                                fg: AppColors.tagText(isDark),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => FilteredArticlesScreen(
+                                      name: slug,
+                                      displayName: name,
+                                      filterType: FilterType.tag,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                        ],
+                      ),
                     if (article.isPremium)
                       _ClickableBadge(
                         label: 'Exclusivo',
@@ -439,6 +448,7 @@ class _ArticleContent extends StatelessWidget {
     );
   }
 }
+
 // ─── Contenido exclusivo inline ─────────────────────────────────────────────
 class _ContentSkeleton extends StatelessWidget {
   const _ContentSkeleton();
@@ -486,7 +496,6 @@ class _ContentError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -553,6 +562,8 @@ class _ClickableBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
@@ -570,6 +581,7 @@ class _ClickableBadge extends StatelessWidget {
               const SizedBox(width: 4),
             ],
             Text(label,
+                textAlign: justified ? TextAlign.justify : TextAlign.start,
                 style: TextStyle(
                   color: fg,
                   fontSize: 12,

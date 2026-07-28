@@ -17,6 +17,7 @@ class ExploreScreen extends StatelessWidget {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final bg = AppColors.bg(isDark);
     final pri = AppColors.textPri(isDark);
+    final wide = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
       backgroundColor: bg,
@@ -36,11 +37,11 @@ class ExploreScreen extends StatelessWidget {
             ),
             Expanded(
               child: GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: wide ? 4 : 2,
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 1.1,
+                childAspectRatio: wide ? 1.3 : 1.1,
                 children: [
                   _ExploreCard(
                     icon: Icons.bar_chart_outlined,

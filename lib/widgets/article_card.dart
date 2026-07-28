@@ -26,6 +26,7 @@ class ArticleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     return Material(
       type: MaterialType.card,
       elevation: 0,
@@ -68,6 +69,7 @@ class ArticleCard extends StatelessWidget {
                           article.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                          textAlign: justified ? TextAlign.justify : TextAlign.start,
                           style: TextStyle(
                               color: AppColors.textPri(isDark),
                               fontSize: 13,
@@ -79,6 +81,7 @@ class ArticleCard extends StatelessWidget {
                           article.description,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
+                          textAlign: justified ? TextAlign.justify : TextAlign.start,
                           style: TextStyle(
                               color: AppColors.textSec(isDark),
                               fontSize: 11,
@@ -118,28 +121,52 @@ class ArticleCard extends StatelessWidget {
 // ─── Badge de categoría ───────────────────────────────────────────────────────
 class ArticleCategoryBadge extends StatelessWidget {
   final ArticleCategory category;
-  const ArticleCategoryBadge({super.key, required this.category});
+  final bool overlay;
+
+  const ArticleCategoryBadge({
+    super.key,
+    required this.category,
+    this.overlay = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final Color bg;
     final Color fg;
     final String label;
 
-    switch (category) {
-      case ArticleCategory.analisis:
-        bg = AppColors.analysisBg(isDark);
-        fg = AppColors.analysisText(isDark);
-        label = 'Análisis';
-      case ArticleCategory.entrevista:
-        bg = AppColors.interviewBg(isDark);
-        fg = AppColors.interviewText(isDark);
-        label = 'Entrevista';
-      case ArticleCategory.noticia:
-        bg = AppColors.newsBg(isDark);
-        fg = AppColors.newsText(isDark);
-        label = 'Noticia';
+    if (overlay) {
+      switch (category) {
+        case ArticleCategory.analisis:
+          bg = const Color(0xFF185FA5);
+          fg = Colors.white;
+          label = 'Análisis';
+        case ArticleCategory.entrevista:
+          bg = const Color(0xFFA0522D);
+          fg = Colors.white;
+          label = 'Entrevista';
+        case ArticleCategory.noticia:
+          bg = const Color(0xFF1D9E75);
+          fg = Colors.white;
+          label = 'Noticia';
+      }
+    } else {
+      switch (category) {
+        case ArticleCategory.analisis:
+          bg = AppColors.analysisBg(isDark);
+          fg = AppColors.analysisText(isDark);
+          label = 'Análisis';
+        case ArticleCategory.entrevista:
+          bg = AppColors.interviewBg(isDark);
+          fg = AppColors.interviewText(isDark);
+          label = 'Entrevista';
+        case ArticleCategory.noticia:
+          bg = AppColors.newsBg(isDark);
+          fg = AppColors.newsText(isDark);
+          label = 'Noticia';
+      }
     }
 
     return Container(
@@ -150,6 +177,7 @@ class ArticleCategoryBadge extends StatelessWidget {
       ),
       child: Text(
         label,
+        textAlign: justified ? TextAlign.justify : TextAlign.start,
         style: TextStyle(
           color: fg,
           fontSize: 9,
@@ -162,26 +190,40 @@ class ArticleCategoryBadge extends StatelessWidget {
 
 // ─── Badge premium ────────────────────────────────────────────────────────────
 class ArticlePremiumBadge extends StatelessWidget {
-  const ArticlePremiumBadge({super.key});
+  final bool overlay;
+
+  const ArticlePremiumBadge({super.key, this.overlay = false});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
+
+    final Color bg;
+    final Color fg;
+    if (overlay) {
+      bg = const Color(0xFFC0392B);
+      fg = Colors.white;
+    } else {
+      bg = AppColors.premiumBg(isDark);
+      fg = AppColors.premiumText(isDark);
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.premiumBg(isDark),
+        color: bg,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lock_outline,
-              color: AppColors.premiumText(isDark), size: 8),
+          Icon(Icons.lock_outline, color: fg, size: 8),
           const SizedBox(width: 3),
           Text('Exclusivo',
+              textAlign: justified ? TextAlign.justify : TextAlign.start,
               style: TextStyle(
-                  color: AppColors.premiumText(isDark),
+                  color: fg,
                   fontSize: 9,
                   fontWeight: FontWeight.w700)),
         ],
@@ -198,6 +240,7 @@ class ArticleTagBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final name = TagService.getTagName('tag-$slug');
     if (name == null) return const SizedBox.shrink();
 
@@ -209,6 +252,7 @@ class ArticleTagBadge extends StatelessWidget {
       ),
       child: Text(
         name,
+        textAlign: justified ? TextAlign.justify : TextAlign.start,
         style: TextStyle(
           color: AppColors.tagText(isDark),
           fontSize: 9,

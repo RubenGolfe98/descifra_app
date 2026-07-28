@@ -78,6 +78,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
             pri: pri,
             sec: sec,
           ),
+          // ── Texto justificado ────────────────────────────────────────────
+          _SectionHeader(label: 'Texto', textColor: AppColors.accent),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: surf,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: bord, width: 0.5),
+            ),
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                'Texto justificado',
+                style: TextStyle(color: pri, fontSize: 14),
+              ),
+              subtitle: Text(
+                'Alinea el texto a ambos márgenes',
+                style: TextStyle(color: sec, fontSize: 12),
+              ),
+              value: theme.justifiedText,
+              activeThumbColor: AppColors.accent,
+              onChanged: (v) => theme.setJustifiedText(v),
+            ),
+          ),
           const SizedBox(height: 24),
 
           // ── Acerca de ────────────────────────────────────────────────────

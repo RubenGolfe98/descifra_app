@@ -13,6 +13,9 @@ class RegionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final wide = screenWidth > 600;
+
     return Scaffold(
       backgroundColor: AppColors.bg(isDark),
       body: SafeArea(
@@ -32,11 +35,11 @@ class RegionsScreen extends StatelessWidget {
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: wide ? 4 : 2,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  childAspectRatio: 1.1,
+                  childAspectRatio: wide ? 1.3 : 1.1,
                 ),
                 itemCount: kRegions.length,
                 itemBuilder: (context, index) =>
@@ -138,63 +141,63 @@ class _RegionCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: () => _showOptions(context),
-      child: Container(
-        decoration: BoxDecoration(
-          color: surf,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.bord(isDark), width: 0.5),
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: SvgPicture.asset(
-                    region.imageUrl,
-                    fit: BoxFit.contain,
-                    colorFilter: const ColorFilter.mode(
-                        AppColors.accent, BlendMode.srcIn),
+        child: Container(
+          decoration: BoxDecoration(
+            color: surf,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.bord(isDark), width: 0.5),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: SvgPicture.asset(
+                      region.imageUrl,
+                      fit: BoxFit.contain,
+                      colorFilter: const ColorFilter.mode(
+                          AppColors.accent, BlendMode.srcIn),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      region.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppColors.textPri(isDark),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        height: 1.3,
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        region.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.textPri(isDark),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${region.count} artículos',
-                  style: TextStyle(
-                      color: AppColors.textSec(isDark), fontSize: 10),
-                    ),
-                  ],
+                      const SizedBox(height: 3),
+                      Text(
+                        '${region.count} artículos',
+                        style: TextStyle(
+                            color: AppColors.textSec(isDark), fontSize: 10),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
   }
 }

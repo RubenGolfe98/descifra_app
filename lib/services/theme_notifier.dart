@@ -172,6 +172,7 @@ class ThemeNotifier extends ChangeNotifier {
   static const _keyFontSize = 'dlg_font_size';
   static const _keyFont = 'dlg_font';
   static const _keyRefreshRate = 'dlg_refresh_rate';
+  static const _keyJustifiedText = 'dlg_justified_text';
 
   static final _storage = FlutterSecureStorage();
 
@@ -179,11 +180,13 @@ class ThemeNotifier extends ChangeNotifier {
   AppFontSize _fontSize = AppFontSize.normal;
   AppFont _font = AppFont.raleway;
   AppRefreshRate _refreshRate = AppRefreshRate.standard;
+  bool _justifiedText = true;
 
   AppThemeMode get themeMode => _themeMode;
   AppFontSize get fontSize => _fontSize;
   AppFont get font => _font;
   AppRefreshRate get refreshRate => _refreshRate;
+  bool get justifiedText => _justifiedText;
   bool get isDark => _themeMode == AppThemeMode.dark;
 
   Future<void> initialize() async {
@@ -211,6 +214,12 @@ class ThemeNotifier extends ChangeNotifier {
           ? AppRefreshRate.high
           : AppRefreshRate.standard;
     }
+
+    final savedJustified = await _storage.read(key: _keyJustifiedText);
+    if (savedJustified != null) {
+      _justifiedText = savedJustified == 'true';
+    }
+
     notifyListeners();
   }
 
@@ -237,6 +246,12 @@ class ThemeNotifier extends ChangeNotifier {
   Future<void> setFont(AppFont font) async {
     _font = font;
     await _storage.write(key: _keyFont, value: font.name);
+    notifyListeners();
+  }
+
+  Future<void> setJustifiedText(bool value) async {
+    _justifiedText = value;
+    await _storage.write(key: _keyJustifiedText, value: value.toString());
     notifyListeners();
   }
 }

@@ -9,6 +9,7 @@ import '../services/auth_notifier.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/html_styles.dart';
+import '../utils/snackbar_utils.dart';
 import '../widgets/image_viewer.dart';
 import 'article_detail_screen.dart';
 import '../repositories/article_repository.dart';
@@ -176,14 +177,7 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                       if (segments.isNotEmpty) {
                         final slug = segments.last;
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Cargando artículo...',
-                                  style: TextStyle(color: Colors.white)),
-                              duration: Duration(seconds: 2),
-                              backgroundColor: Color(0xFF2A2A2A),
-                            ),
-                          );
+                          showArticleLoadingSnackBar(context);
                         }
                         final cookies =
                             context.read<AuthNotifier>().state.cookies ?? '';

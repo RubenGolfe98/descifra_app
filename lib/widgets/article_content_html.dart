@@ -8,6 +8,7 @@ import '../repositories/article_repository.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/html_styles.dart';
+import '../utils/snackbar_utils.dart';
 import 'image_viewer.dart';
 
 class ArticleContentHtml extends StatelessWidget {
@@ -25,6 +26,7 @@ class ArticleContentHtml extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
@@ -46,16 +48,7 @@ class ArticleContentHtml extends StatelessWidget {
                   final slug = segments.last;
 
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Cargando artículo...',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        duration: Duration(seconds: 2),
-                        backgroundColor: Color(0xFF2A2A2A),
-                      ),
-                    );
+                    showArticleLoadingSnackBar(context);
                   }
 
                   final article = await repository.fetchArticleBySlug(slug);
@@ -75,7 +68,7 @@ class ArticleContentHtml extends StatelessWidget {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               }
             },
-            style: articleHtmlStyles(isDark),
+            style: articleHtmlStyles(isDark, justified: justified),
             extensions: [
               TagExtension(
                 tagsToExtend: {'img'},
