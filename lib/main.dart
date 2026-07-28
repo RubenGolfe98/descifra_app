@@ -75,9 +75,6 @@ class _AppRoot extends StatelessWidget {
         textTheme: theme.font.textTheme(
           isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
         ),
-        splashFactory: InkRipple.splashFactory,
-        highlightColor: isDark ? Colors.white24 : Colors.black26,
-        splashColor: isDark ? Colors.white38 : Colors.black38,
       ),
       home: _AppGate(isDark: isDark, font: theme.font),
     );

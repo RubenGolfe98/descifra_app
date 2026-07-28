@@ -82,14 +82,16 @@ class _BottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
   final bool isDark;
 
-  const _BottomNav({required this.currentIndex, required this.onTap, required this.isDark});
+  const _BottomNav(
+      {required this.currentIndex, required this.onTap, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surf(isDark),
-        border: Border(top: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
+        border:
+            Border(top: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
       ),
       child: BottomNavigationBar(
         currentIndex: currentIndex,
@@ -100,12 +102,27 @@ class _BottomNav extends StatelessWidget {
         unselectedItemColor: AppColors.textSec(isDark),
         selectedFontSize: 9,
         unselectedFontSize: 9,
+        iconSize: 30,
         type: BottomNavigationBarType.fixed,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Inicio'),
-          BottomNavigationBarItem(icon: Icon(Icons.language_outlined), label: 'Regiones'),
-          BottomNavigationBarItem(icon: Icon(Icons.explore_outlined), label: 'Explorar'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Inicio'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.language_outlined),
+              activeIcon: Icon(Icons.language),
+              label: 'Regiones'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.explore_outlined),
+              activeIcon: Icon(Icons.explore),
+              label: 'Explorar'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Perfil'),
         ],
       ),
     );

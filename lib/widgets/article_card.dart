@@ -38,70 +38,74 @@ class ArticleCard extends StatelessWidget {
             border: Border(
                 bottom: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
           ),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: CachedNetworkImage(
-                  imageUrl: article.imageUrl,
-                  width: 100,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  memCacheWidth: 300,
-                  fadeInDuration: const Duration(milliseconds: 150),
-                  placeholder: (_, __) => Container(
-                      width: 100, height: 80, color: AppColors.surf(isDark)),
-                  errorWidget: (_, __, ___) => Container(
-                      width: 100, height: 80, color: AppColors.surf(isDark)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      article.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: AppColors.textPri(isDark),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          height: 1.35),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: CachedNetworkImage(
+                      imageUrl: article.imageUrl,
+                      width: 100,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 300,
+                      fadeInDuration: const Duration(milliseconds: 150),
+                      placeholder: (_, __) => Container(
+                          width: 100, height: 80, color: AppColors.surf(isDark)),
+                      errorWidget: (_, __, ___) => Container(
+                          width: 100, height: 80, color: AppColors.surf(isDark)),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      article.description,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: AppColors.textSec(isDark),
-                          fontSize: 11,
-                          height: 1.4),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ArticleCategoryBadge(category: article.category),
-                        if (article.tagSlugs.isNotEmpty) ...[
-                          const SizedBox(width: 6),
-                          ArticleTagBadge(tagSlugs: article.tagSlugs),
-                        ],
-                        const SizedBox(width: 6),
-                        Expanded(
-                            child: Text(article.author,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    color: AppColors.textPri(isDark),
-                                    fontSize: 10))),
-                        if (article.isPremium) const ArticlePremiumBadge(),
+                        Text(
+                          article.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: AppColors.textPri(isDark),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              height: 1.35),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          article.description,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: AppColors.textSec(isDark),
+                              fontSize: 11,
+                              height: 1.4),
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  ArticleCategoryBadge(category: article.category),
+                  if (article.tagSlugs.isNotEmpty) const SizedBox(width: 6),
+                  for (final slug in article.tagSlugs)
+                    ArticleTagBadge(slug: slug),
+                  const SizedBox(width: 6),
+                  Expanded(
+                      child: Text(article.author,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: AppColors.textPri(isDark),
+                              fontSize: 10))),
+                  if (article.isPremium) const ArticlePremiumBadge(),
+                ],
               ),
             ],
           ),
@@ -188,13 +192,13 @@ class ArticlePremiumBadge extends StatelessWidget {
 
 // ─── Badge de tag (país/tema) ─────────────────────────────────────────────────
 class ArticleTagBadge extends StatelessWidget {
-  final List<String> tagSlugs;
-  const ArticleTagBadge({super.key, required this.tagSlugs});
+  final String slug;
+  const ArticleTagBadge({super.key, required this.slug});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-    final name = TagService.getTagName('tag-${tagSlugs.first}');
+    final name = TagService.getTagName('tag-$slug');
     if (name == null) return const SizedBox.shrink();
 
     return Container(
