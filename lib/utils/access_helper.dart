@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
-import '../screens/article_detail_screen.dart';
+import '../screens/articles/article_detail_screen.dart';
 import '../services/auth_notifier.dart';
 import '../widgets/access_dialog.dart';
 

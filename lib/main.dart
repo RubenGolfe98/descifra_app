@@ -8,11 +8,11 @@ import 'services/favorites_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/tag_service.dart';
 import 'services/theme_notifier.dart';
-import 'screens/main_screen.dart';
+import 'screens/home/main_screen.dart';
 import 'theme/app_colors.dart';
 import 'services/author_service.dart';
 import 'services/onboarding_service.dart';
-import 'screens/onboarding_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
