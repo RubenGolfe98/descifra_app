@@ -11,6 +11,8 @@ import 'services/theme_notifier.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_colors.dart';
 import 'services/author_service.dart';
+import 'services/onboarding_service.dart';
+import 'screens/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +23,9 @@ void main() async {
   ));
   PaintingBinding.instance.imageCache.maximumSize = 500;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
+
+  // Estado del onboarding — lectura local, instantánea
+  await OnboardingService.initialize();
 
   runApp(const DlgApp());
 }
@@ -93,6 +98,7 @@ class _AppGate extends StatefulWidget {
 class _AppGateState extends State<_AppGate> {
   bool _minTimeElapsed = false;
   bool _taxonomiesStarted = false;
+  bool _showOnboarding = !OnboardingService.completed;
 
   @override
   void initState() {
@@ -182,6 +188,17 @@ class _AppGateState extends State<_AppGate> {
             ],
           ),
         ),
+      );
+    }
+
+    // Primera vez que se abre la app — bienvenida y configuración inicial.
+    // Va después del gate para que favoritos y taxonomías ya se estén
+    // cargando en segundo plano mientras el usuario lee la bienvenida.
+    if (_showOnboarding) {
+      return OnboardingScreen(
+        onFinished: () {
+          if (mounted) setState(() => _showOnboarding = false);
+        },
       );
     }
 

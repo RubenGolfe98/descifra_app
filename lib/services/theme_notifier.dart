@@ -176,7 +176,7 @@ class ThemeNotifier extends ChangeNotifier {
 
   static final _storage = FlutterSecureStorage();
 
-  AppThemeMode _themeMode = AppThemeMode.dark;
+  AppThemeMode _themeMode = AppThemeMode.light;
   AppFontSize _fontSize = AppFontSize.normal;
   AppFont _font = AppFont.raleway;
   AppRefreshRate _refreshRate = AppRefreshRate.standard;
