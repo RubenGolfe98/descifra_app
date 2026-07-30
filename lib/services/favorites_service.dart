@@ -5,7 +5,8 @@ import '../models/article.dart';
 import '../repositories/article_repository.dart';
 
 class FavoritesService extends ChangeNotifier {
-  static const _ajaxUrl = 'https://www.descifrandolaguerra.es/wp-admin/admin-ajax.php';
+  static const _ajaxUrl =
+      'https://www.descifrandolaguerra.es/wp-admin/admin-ajax.php';
 
   final http.Client _client;
 
@@ -15,7 +16,8 @@ class FavoritesService extends ChangeNotifier {
   final List<Article> _savedArticles = [];
   bool _loaded = false;
 
-  FavoritesService({http.Client? client}) : _client = client ?? SharedHttp.client;
+  FavoritesService({http.Client? client})
+      : _client = client ?? SharedHttp.client;
 
   Set<int> get savedIds => Set.unmodifiable(_savedIds);
   List<Article> get savedArticles => List.unmodifiable(_savedArticles);
@@ -26,17 +28,22 @@ class FavoritesService extends ChangeNotifier {
   /// Carga los favoritos actuales desde el servidor usando action=favorites_array
   Future<void> loadFavorites(String cookies) async {
     try {
-      final response = await _client.post(
-        Uri.parse(_ajaxUrl),
-        headers: {
-          'Cookie': cookies,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'action=favorites_array',
-      ).timeout(const Duration(seconds: 20));
+      final response = await _client
+          .post(
+            Uri.parse(_ajaxUrl),
+            headers: {
+              'Cookie': cookies,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=favorites_array',
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
-        if (kDebugMode) debugPrint('⭐ [Favorites] raw: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
+        if (kDebugMode) {
+          debugPrint(
+              '⭐ [Favorites] raw: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
+        }
         final raw = jsonDecode(response.body);
         // El servidor puede devolver Map con {status, favorites} o List directa
         if (raw is Map<String, dynamic>) {
@@ -68,14 +75,17 @@ class FavoritesService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await SharedHttp.userClient.post(
-        Uri.parse(_ajaxUrl),
-        headers: {
-          'Cookie': cookies,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'action=favorites_favorite&postid=$postId&siteid=1&status=$newStatus&user_consent_accepted=false',
-      ).timeout(const Duration(seconds: 20));
+      final response = await SharedHttp.userClient
+          .post(
+            Uri.parse(_ajaxUrl),
+            headers: {
+              'Cookie': cookies,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body:
+                'action=favorites_favorite&postid=$postId&siteid=1&status=$newStatus&user_consent_accepted=false',
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -161,9 +171,11 @@ class FavoritesService extends ChangeNotifier {
         .replaceAll(RegExp(r'&#\d+;'), '');
 
     final permalink = entry['permalink'] as String? ?? '';
-    final slug = Uri.parse(permalink).pathSegments
-        .where((s) => s.isNotEmpty)
-        .lastOrNull ?? '';
+    final slug = Uri.parse(permalink)
+            .pathSegments
+            .where((s) => s.isNotEmpty)
+            .lastOrNull ??
+        '';
 
     _savedArticles.add(Article(
       id: postId,

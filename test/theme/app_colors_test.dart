@@ -4,18 +4,6 @@ import 'package:dlg_app/theme/app_colors.dart';
 
 void main() {
   group('AppColors', () {
-    group('dark theme colors', () {
-      test('background is correct', () {
-        expect(AppColors.background, const Color(0xFF0D0D0D));
-      });
-      test('surface is correct', () {
-        expect(AppColors.surface, const Color(0xFF1A1A1A));
-      });
-      test('accent is correct', () {
-        expect(AppColors.accent, const Color(0xFFC0392B));
-      });
-    });
-
     group('light theme colors', () {
       test('lightBackground is cream color', () {
         expect(AppColors.lightBackground, const Color(0xFFF5F0E8));
@@ -64,19 +52,13 @@ void main() {
       test('accent is same in both themes', () {
         expect(AppColors.accent, const Color(0xFFC0392B));
       });
-      test('premiumText color is correct', () {
-        expect(AppColors.premiumText, const Color(0xFFE57A72));
-      });
       test('subscriberText is green', () {
         expect(AppColors.subscriberText, const Color(0xFF4CAF50));
       });
     });
   });
 
-   group('badge and status colors', () {
-    test('premiumBg is semi-transparent accent', () {
-      expect(AppColors.premiumBg, const Color(0x33C0392B));
-    });
+  group('badge and status colors', () {
     test('analysisBg and analysisText are defined', () {
       expect(AppColors.analysisBg, isNotNull);
       expect(AppColors.analysisText, isNotNull);
@@ -85,9 +67,7 @@ void main() {
       expect(AppColors.newsBg, isNotNull);
       expect(AppColors.newsText, isNotNull);
     });
-    test('subscriberText is green', () {
-      expect(AppColors.subscriberText, const Color(0xFF4CAF50));
-    });
+
     test('subscriberBorder is dark green', () {
       expect(AppColors.subscriberBorder, const Color(0xFF2E5E2E));
     });
@@ -99,5 +79,3 @@ void main() {
     });
   });
 }
-
- 

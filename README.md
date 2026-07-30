@@ -103,8 +103,8 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 
 ```
 lib/
-├── main.dart                    # Punto de entrada, providers, precarga
-├── models/
+├── main.dart                       # Punto de entrada, providers, precarga
+├── models/                         # Modelos de datos y su parseo desde la API
 │   ├── article.dart
 │   ├── article_detail.dart
 │   ├── auth_exception.dart
@@ -114,49 +114,52 @@ lib/
 │   ├── map_image.dart
 │   ├── region.dart
 │   └── seminar.dart
-├── repositories/
+├── repositories/                   # Acceso a la API con caché y reintentos
 │   ├── article_repository.dart
 │   ├── coverage_repository.dart
 │   ├── maps_repository.dart
 │   └── seminar_repository.dart
-├── screens/
-│   ├── home_screen.dart
-│   ├── analysis_screen.dart
-│   ├── interviews_screen.dart
-│   ├── coverages_screen.dart
-│   ├── coverage_detail_screen.dart
-│   ├── seminars_screen.dart
-│   ├── seminar_detail_screen.dart
-│   ├── seminar_session_screen.dart
-│   ├── newsletter_screen.dart
-│   ├── saved_articles_screen.dart
-│   ├── regions_screen.dart
-│   ├── region_articles_screen.dart
-│   ├── region_maps_screen.dart
-│   ├── article_detail_screen.dart
-│   ├── books_screen.dart
-│   ├── search_screen.dart
-│   ├── explore_screen.dart
-│   ├── profile_screen.dart
-│   ├── settings_screen.dart
-│   ├── login_webview.dart
-│   └── main_screen.dart
-├── services/
+├── screens/                        # Pantallas completas de la aplicación
+│   ├── analysis/
+│   ├── articles/
+│   ├── auth/
+│   ├── books/
+│   ├── coverage/
+│   ├── explore/
+│   ├── home/
+│   ├── interviews/
+│   ├── newsletter/
+│   ├── regions/
+│   ├── search/
+│   ├── seminars/
+│   ├── settings/
+│   └── onboarding/
+├── services/                       # Estado global, sesión y almacenamiento local
 │   ├── analytics_service.dart
 │   ├── article_cache.dart
+│   ├── author_service.dart
 │   ├── auth_notifier.dart
 │   ├── auth_service.dart
 │   ├── connectivity_service.dart
 │   ├── favorites_service.dart
 │   ├── logging_http_client.dart
+│   ├── onboarding_service.dart
+│   ├── tag_service.dart
 │   └── theme_notifier.dart
-├── theme/
-│   └── app_colors.dart
-└── widgets/
-    ├── access_dialog.dart
-    ├── article_card.dart
-    ├── image_viewer.dart
-    └── offline_banner.dart
+├── theme/                          # Colores, tipografías y estilos HTML
+│   ├── app_colors.dart
+│   └── html_styles.dart
+├── widgets/                        # Componentes de interfaz reutilizables
+│   └── access_dialog.dart
+│   ├── article_card.dart
+│   ├── dlg_app_bar.dart
+│   ├── image_viewer.dart
+│   ├── offline_banner.dart
+│   └── shimmer.dart
+└── utils/                          # Funciones auxiliares sin estado
+    ├── access_helper.dart
+    ├── date_formatter.dart
+    └── snackbar_utils.dart
 ```
 ---
 
@@ -206,33 +209,6 @@ flutter test --coverage
 
 # Archivo específico
 flutter test test/models/article_test.dart
-```
-
-```
-test/
-├── models/
-│   ├── article_test.dart
-│   ├── article_detail_test.dart
-│   ├── auth_exception_test.dart
-│   ├── auth_state_test.dart
-│   ├── book_test.dart
-│   ├── coverage_test.dart
-│   ├── map_image_test.dart
-│   ├── region_test.dart
-│   └── seminar_test.dart
-├── repositories/
-│   ├── article_repository_test.dart
-│   ├── coverage_repository_test.dart
-│   ├── maps_repository_test.dart
-│   └── seminar_repository_test.dart
-├── services/
-│   ├── analytics_service_test.dart
-│   ├── auth_notifier_test.dart
-│   ├── favorites_service_test.dart
-│   ├── logging_http_client_test.dart
-│   └── theme_notifier_test.dart
-└── theme/
-    └── app_colors_test.dart
 ```
 
 ### Build de producción
