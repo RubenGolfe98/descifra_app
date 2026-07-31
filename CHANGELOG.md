@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.5.1] — 2026-07-31
+
+### Añadido
+- Nueva pantalla de bienvenida y configuración al abrir la app después de instalar (el texto de bienvenida se puede cambiar)
+- Soporte para vídeos de YouTube y podcasts de Spotify incrustados
+- Acceso a todos los mapas desde la sección de ‘Explorar’
+- Nuevo ajuste para justificar texto (activado por defecto)
+- Doble tap en tab en el menú Inicio → scroll-to-top
+- Barra de progreso de lectura
+
+### Mejorado 
+- Migrar SVGs de regiones a assets locales y mejorar contraste de los mismos
+- Limpieza de la barra de navegación
+- Agrupar badges de países
+- UI en modo horizontal
+
+## [1.5.0] — 2026-07-24
+
+### Añadido
+- Badges (etiquetas) de países
+- En seminarios se ha añadido la introducción de los mismos debajo de las sesiones
+- Autor clickable, al pulsar sobre un autor te lleva a un listado de todos sus textos (análisis, entrevistas y noticias) ordenados por fecha
+- Badges clickables
+
+### Mejorado 
+- Títulos de los seminarios ampliados para que destaquen más
+- En los listados se amplia la resolución de las imágenes sin afectar demasiado al rendimiento, en función del dispositivo donde se está ejecutando la app para que se vean mejor.
+- Badges (etiquetas) en negrita y mejorar contraste para que se vean mejor
+- Subtítulos en negrita
+- Quitar imagen duplicada en detalles de análisis y noticias
+- En entrevistas mejorar el contraste de las preguntas y respuestas
+
+### Corregido
+- En Análisis y Entrevistas ahora aparece la flecha para volver atrás
+- En los libros ahora los títulos entran enteros
+- La letra del título de ‘DESCIFRANDO LA GUERRA’ en la pantalla principal ya no cambia de tamaño
+
 ## [1.4.1] — 2026-06-20
 
 ### Mejorado (rendimiento)
