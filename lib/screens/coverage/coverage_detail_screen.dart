@@ -13,6 +13,8 @@ import '../../utils/snackbar_utils.dart';
 import '../../widgets/image_viewer.dart';
 import '../articles/article_detail_screen.dart';
 import '../../repositories/article_repository.dart';
+import '../../data/coverage_maps.dart';
+import '../../widgets/coverage_map.dart';
 
 class CoverageDetailScreen extends StatefulWidget {
   final Coverage coverage;
@@ -147,6 +149,26 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                 ],
               ),
             ),
+          ),
+
+          // ── Mapa interactivo ──────────────────────────────────────────
+          // Solo en las coberturas que lo tienen asociado.
+          SliverToBoxAdapter(
+            child: Builder(builder: (context) {
+              final mapUrl = coverageMapUrl(widget.coverage.slug);
+              if (mapUrl == null) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  CoverageMap(mapUrl: mapUrl),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Divider(color: bord, thickness: 0.5),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              );
+            }),
           ),
 
           // ── Contenido HTML ────────────────────────────────────────────
