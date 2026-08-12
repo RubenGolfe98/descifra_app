@@ -6,6 +6,7 @@ import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/dlg_app_bar.dart';
 import 'widgets/settings_selectors.dart';
+import '../../widgets/stored_data_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -26,6 +27,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadVersion() async {
     final info = await PackageInfo.fromPlatform();
     if (mounted) setState(() => _version = info.version);
+  }
+
+  Future<void> _abrir(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -152,11 +160,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                Divider(color: bord, thickness: 0.5),
+                const SizedBox(height: 12),
+                Text(
+                  'Privacidad',
+                  style: TextStyle(
+                      color: pri, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 10),
+                _LegalLink(
+                  label: 'Datos que guarda la app',
+                  color: sec,
+                  icon: Icons.lock_outline,
+                  onTap: () => showStoredDataSheet(context),
+                ),
+                const SizedBox(height: 10),
+                _LegalLink(
+                  label: 'Política de privacidad',
+                  color: sec,
+                  icon: Icons.open_in_new,
+                  onTap: () => _abrir(
+                      'https://www.descifrandolaguerra.es/politica-de-privacidad/'),
+                ),
+                const SizedBox(height: 10),
+                _LegalLink(
+                  label: 'Aviso legal',
+                  color: sec,
+                  icon: Icons.open_in_new,
+                  onTap: () =>
+                      _abrir('https://www.descifrandolaguerra.es/aviso-legal/'),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+}
+
+class _LegalLink extends StatelessWidget {
+  final String label;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _LegalLink({
+    required this.label,
+    required this.color,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 14),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: color, fontSize: 13)),
+          ],
+        ),
       ),
     );
   }

@@ -123,7 +123,8 @@ class FontSizeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = context.select<ThemeNotifier, AppFontSize>((t) => t.fontSize);
+    final current =
+        context.select<ThemeNotifier, AppFontSize>((t) => t.fontSize);
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
@@ -285,22 +286,25 @@ class JustifiedTextToggle extends StatelessWidget {
     final pri = AppColors.textPri(isDark);
     final sec = AppColors.textSec(isDark);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: surf,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: bord, width: 0.5),
-      ),
-      child: SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text('Texto justificado',
-            style: TextStyle(color: pri, fontSize: 14)),
-        subtitle: Text('Alinea el texto a ambos márgenes',
-            style: TextStyle(color: sec, fontSize: 12)),
-        value: theme.justifiedText,
-        activeThumbColor: AppColors.accent,
-        onChanged: (v) => theme.setJustifiedText(v),
+    return Material(
+      color: surf,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: bord, width: 0.5),
+        ),
+        child: SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text('Texto justificado',
+              style: TextStyle(color: pri, fontSize: 14)),
+          subtitle: Text('Alinea el texto a ambos márgenes',
+              style: TextStyle(color: sec, fontSize: 12)),
+          value: theme.justifiedText,
+          activeThumbColor: AppColors.accent,
+          onChanged: (v) => theme.setJustifiedText(v),
+        ),
       ),
     );
   }

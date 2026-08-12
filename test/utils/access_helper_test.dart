@@ -41,14 +41,6 @@ class FakeAuthNotifier extends AuthNotifier {
 const _anonimo = AuthState.unknown();
 const _invitado = AuthState.guest();
 
-const _suscriptor = AuthState(
-  status: SessionStatus.loggedIn,
-  cookies: 'wordpress=abc',
-  userEmail: 'lector@ejemplo.es',
-  userDisplayName: 'Lector',
-  isSubscriber: true,
-);
-
 const _registradoSinSuscripcion = AuthState(
   status: SessionStatus.loggedIn,
   cookies: 'wordpress=abc',
