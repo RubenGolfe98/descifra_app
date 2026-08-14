@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.2] — 2026-08-14
+
+### Añadido
+- Mapas interactivos en las coberturas
+
+### Corregido
+- Al caducar la sesión ya no se pierden las preferencias de tema, tipografía y tamaño de letra
+- La pantalla de bienvenida deja de reaparecer tras cerrar sesión
+- Corregido un aviso interno al cambiar de tema en Ajustes
+
 ## [1.5.1] — 2026-07-31
 
 ### Añadido
