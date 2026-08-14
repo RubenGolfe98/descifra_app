@@ -431,7 +431,23 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    await _storage.deleteAll();
+    // Se borran solo las claves de sesión: las preferencias del usuario y el
+    // estado del onboarding deben sobrevivir al cierre de sesión.
+    for (final key in const [
+      _keySessionStatus,
+      _keyCookies,
+      _keyEmail,
+      _keyDisplayName,
+      _keyIsSubscriber,
+      _keyMembershipName,
+      _keyMembershipStatus,
+      _keyMembershipExpires,
+      _keyNewsletter,
+      _keyMembershipRefreshedAt,
+    ]) {
+      await _storage.delete(key: key);
+    }
+
     try {
       final cookieManager = webview.CookieManager.instance();
       await cookieManager.deleteAllCookies();
