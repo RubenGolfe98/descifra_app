@@ -9,6 +9,7 @@ import '../../models/book.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/dlg_app_bar.dart';
+import '../../theme/html_styles.dart';
 
 class BooksScreen extends StatefulWidget {
   const BooksScreen({super.key});
@@ -41,6 +42,8 @@ class _BooksScreenState extends State<BooksScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final pri = AppColors.textPri(isDark);
@@ -111,6 +114,8 @@ class _BooksScreenState extends State<BooksScreen> {
                       book.title,
                       maxLines: fontSize.gridMaxLines,
                       overflow: TextOverflow.ellipsis,
+                      textAlign:
+                          justified ? TextAlign.justify : TextAlign.start,
                       style: TextStyle(
                         color: pri,
                         fontSize: 12,
@@ -210,6 +215,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
@@ -242,6 +249,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             // Título
             Text(
               _book.title,
+              textAlign: justified ? TextAlign.justify : TextAlign.start,
               style: TextStyle(
                   color: pri,
                   fontSize: 20,
@@ -253,6 +261,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             // Descripción
             if (_book.description.isNotEmpty) ...[
               Text(_book.description,
+                  textAlign: justified ? TextAlign.justify : TextAlign.start,
                   style: TextStyle(color: sec, fontSize: 14, height: 1.6)),
               const SizedBox(height: 20),
             ],
@@ -398,23 +407,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 }
               },
-              style: {
-                'body': Style(
-                  color: isDark
-                      ? const Color(0xFFCCCCCC)
-                      : const Color(0xFF333333),
-                  fontSize: FontSize(14),
-                  lineHeight: const LineHeight(1.7),
-                  margin: Margins.zero,
-                  padding: HtmlPaddings.zero,
-                  backgroundColor: Colors.transparent,
-                ),
-                'p': Style(margin: Margins.only(bottom: 14)),
-                'a': Style(
-                    color: AppColors.accent,
-                    textDecoration: TextDecoration.none),
-                'strong': Style(color: pri, fontWeight: FontWeight.w600),
-              },
+              style: bookHtmlStyles(isDark, justified: justified),
             ),
           ],
         ),

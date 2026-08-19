@@ -57,6 +57,8 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final bg = AppColors.bg(isDark);
     final surf = AppColors.surf(isDark);
     final bord = AppColors.bord(isDark);
@@ -222,7 +224,7 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                           mode: LaunchMode.externalApplication);
                     }
                   },
-                  style: articleHtmlStyles(isDark),
+                  style: articleHtmlStyles(isDark, justified: justified),
                   extensions: [
                     TagExtension(
                       tagsToExtend: {'img'},
