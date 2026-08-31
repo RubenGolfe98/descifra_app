@@ -53,6 +53,7 @@ class ArticleRepository {
   static const String _cacheKeyLatest = 'articles_latest';
   static const String _cacheKeyAnalysis = 'articles_analysis';
   static const String _cacheKeyInterviews = 'articles_interviews';
+  static const String _cacheKeyNews = 'articles_news';
   static String _cacheKeyRegion(int id) => 'articles_region_$id';
 
   static const _listTimeout = Duration(seconds: 30);
@@ -179,61 +180,102 @@ class ArticleRepository {
   Future<List<Article>> fetchAnalysisArticles({
     int perPage = 10,
     void Function(List<Article>)? onRefreshed,
-  }) async {
-    const cacheKey = _cacheKeyAnalysis;
-    final cached = await _cache.getList(key: cacheKey);
-
-    if (cached != null) {
-      final articles = _parseList(cached);
-      final stale = await _cache.isListStale(key: cacheKey);
-      if (stale) {
-        _fetchCategoryFromNetwork(_analysisCategoryId, perPage, 1, cacheKey)
-            .then((fresh) {
-          if (fresh != null && onRefreshed != null) onRefreshed(fresh);
-        });
-      }
-      return articles;
-    }
-
-    final fresh = await _fetchCategoryFromNetwork(
-        _analysisCategoryId, perPage, 1, cacheKey);
-    return fresh ?? [];
-  }
+  }) =>
+      _fetchCategory(
+        include: const [_analysisCategoryId],
+        cacheKey: _cacheKeyAnalysis,
+        perPage: perPage,
+        onRefreshed: onRefreshed,
+      );
 
   Future<List<Article>?> fetchMoreAnalysisArticles({
     required int page,
     int perPage = 10,
-  }) async {
-    try {
-      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
-        'categories': _analysisCategoryId.toString(),
-        'per_page': perPage.toString(),
-        'page': page.toString(),
-        '_fields': _listFields,
-      });
-      final response = await _client.get(uri).timeout(_listTimeout);
-      if (response.statusCode == 400) return [];
-      if (response.statusCode != 200) return null;
-      return _parseList(response.body);
-    } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Repo] Error análisis p$page: $e');
-      return null;
-    }
-  }
+  }) =>
+      _fetchMoreCategory(
+        include: const [_analysisCategoryId],
+        page: page,
+        perPage: perPage,
+      );
 
   Future<List<Article>> fetchInterviewArticles({
     int perPage = 10,
     void Function(List<Article>)? onRefreshed,
+  }) =>
+      _fetchCategory(
+        include: const [_interviewsCategoryId],
+        cacheKey: _cacheKeyInterviews,
+        perPage: perPage,
+        onRefreshed: onRefreshed,
+      );
+
+  Future<List<Article>?> fetchMoreInterviewArticles({
+    required int page,
+    int perPage = 10,
+  }) =>
+      _fetchMoreCategory(
+        include: const [_interviewsCategoryId],
+        page: page,
+        perPage: perPage,
+      );
+
+  /// Las noticias son todos los artículos que no pertenecen a las
+  /// categorías de análisis o entrevistas (ver [Article.category]).
+  Future<List<Article>> fetchNewsArticles({
+    int perPage = 10,
+    void Function(List<Article>)? onRefreshed,
+  }) =>
+      _fetchCategory(
+        exclude: const [_analysisCategoryId, _interviewsCategoryId],
+        cacheKey: _cacheKeyNews,
+        perPage: perPage,
+        onRefreshed: onRefreshed,
+      );
+
+  Future<List<Article>?> fetchMoreNewsArticles({
+    required int page,
+    int perPage = 10,
+  }) =>
+      _fetchMoreCategory(
+        exclude: const [_analysisCategoryId, _interviewsCategoryId],
+        page: page,
+        perPage: perPage,
+      );
+
+  // ─── Categorías por inclusión/exclusión de IDs ────────────────────────────
+
+  /// Parámetros de consulta para filtrar categorías por IDs (añade a la query).
+  Map<String, String> _categoryParams({
+    List<int>? include,
+    List<int>? exclude,
+  }) =>
+      {
+        if (include != null) 'categories': include.join(','),
+        if (exclude != null) 'categories_exclude': exclude.join(','),
+      };
+
+  /// Devuelve categorías de caché inmediatamente si existen;
+  /// refresca en background si están obsoletas.
+  Future<List<Article>> _fetchCategory({
+    List<int>? include,
+    List<int>? exclude,
+    required String cacheKey,
+    int perPage = 10,
+    void Function(List<Article>)? onRefreshed,
   }) async {
-    const cacheKey = _cacheKeyInterviews;
     final cached = await _cache.getList(key: cacheKey);
 
     if (cached != null) {
       final articles = _parseList(cached);
       final stale = await _cache.isListStale(key: cacheKey);
       if (stale) {
-        _fetchCategoryFromNetwork(_interviewsCategoryId, perPage, 1, cacheKey)
-            .then((fresh) {
+        _fetchCategoryFromNetwork(
+          include: include,
+          exclude: exclude,
+          cacheKey: cacheKey,
+          perPage: perPage,
+          page: 1,
+        ).then((fresh) {
           if (fresh != null && onRefreshed != null) onRefreshed(fresh);
         });
       }
@@ -241,36 +283,25 @@ class ArticleRepository {
     }
 
     final fresh = await _fetchCategoryFromNetwork(
-        _interviewsCategoryId, perPage, 1, cacheKey);
+      include: include,
+      exclude: exclude,
+      cacheKey: cacheKey,
+      perPage: perPage,
+      page: 1,
+    );
     return fresh ?? [];
   }
 
-  Future<List<Article>?> fetchMoreInterviewArticles({
+  Future<List<Article>?> _fetchCategoryFromNetwork({
+    List<int>? include,
+    List<int>? exclude,
+    required String cacheKey,
+    required int perPage,
     required int page,
-    int perPage = 10,
   }) async {
     try {
       final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
-        'categories': _interviewsCategoryId.toString(),
-        'per_page': perPage.toString(),
-        'page': page.toString(),
-        '_fields': _listFields,
-      });
-      final response = await _client.get(uri).timeout(_listTimeout);
-      if (response.statusCode == 400) return [];
-      if (response.statusCode != 200) return null;
-      return _parseList(response.body);
-    } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Repo] Error entrevistas p$page: $e');
-      return null;
-    }
-  }
-
-  Future<List<Article>?> _fetchCategoryFromNetwork(
-      int categoryId, int perPage, int page, String cacheKey) async {
-    try {
-      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
-        'categories': categoryId.toString(),
+        ..._categoryParams(include: include, exclude: exclude),
         'per_page': perPage.toString(),
         'page': page.toString(),
         '_fields': _listFields,
@@ -280,7 +311,33 @@ class ArticleRepository {
       await _cache.saveList(response.body, key: cacheKey);
       return _parseList(response.body);
     } catch (e) {
-      if (kDebugMode) debugPrint('📦 [Repo] Error categoría $categoryId: $e');
+      if (kDebugMode) {
+        debugPrint('📦 [Repo] Error categoría $cacheKey: $e');
+      }
+      return null;
+    }
+  }
+
+  /// Carga más artículos de una categoría (página 2+) — sin caché.
+  Future<List<Article>?> _fetchMoreCategory({
+    List<int>? include,
+    List<int>? exclude,
+    required int page,
+    int perPage = 10,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
+        ..._categoryParams(include: include, exclude: exclude),
+        'per_page': perPage.toString(),
+        'page': page.toString(),
+        '_fields': _listFields,
+      });
+      final response = await _client.get(uri).timeout(_listTimeout);
+      if (response.statusCode == 400) return [];
+      if (response.statusCode != 200) return null;
+      return _parseList(response.body);
+    } catch (e) {
+      if (kDebugMode) debugPrint('📦 [Repo] Error categoría p$page: $e');
       return null;
     }
   }

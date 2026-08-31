@@ -421,6 +421,63 @@ void main() {
     });
   });
 
+  group('fetchNewsArticles', () {
+    test('descarga de red cuando no hay caché', () async {
+      final repo = ArticleRepository(
+        client: clientReturning(articlesBody(3)),
+        cache: cache,
+      );
+
+      final articles = await repo.fetchNewsArticles();
+
+      expect(articles, hasLength(3));
+      expect(cache.savedListKeys, contains('articles_news'));
+    });
+
+    test('sirve la caché sin refrescar si sigue vigente', () async {
+      cache.lists['articles_news'] = articlesBody(2);
+      final recording = RecordingClient(body: articlesBody(6));
+      final repo = ArticleRepository(client: recording.client, cache: cache);
+
+      final articles = await repo.fetchNewsArticles();
+      await settle();
+
+      expect(articles, hasLength(2));
+      expect(recording.requests, isEmpty);
+    });
+
+    test('refresca en segundo plano si la caché está obsoleta', () async {
+      cache.lists['articles_news'] = articlesBody(2);
+      cache.staleLists.add('articles_news');
+      final repo = ArticleRepository(
+        client: clientReturning(articlesBody(6)),
+        cache: cache,
+      );
+
+      List<Article>? refrescados;
+      await repo.fetchNewsArticles(onRefreshed: (fresh) => refrescados = fresh);
+      await settle();
+
+      expect(refrescados, hasLength(6));
+    });
+
+    test('devuelve lista vacía si la red falla sin caché', () async {
+      final repo = ArticleRepository(client: clientThrowing(), cache: cache);
+
+      expect(await repo.fetchNewsArticles(), isEmpty);
+    });
+
+    test('excluye las categorías de análisis y entrevistas', () async {
+      final recording = RecordingClient(body: articlesBody(1));
+      final repo = ArticleRepository(client: recording.client, cache: cache);
+
+      await repo.fetchNewsArticles();
+
+      expect(recording.lastQuery['categories_exclude'], '255,271');
+      expect(recording.lastQuery['categories'], isNull);
+    });
+  });
+
   group('fetchInterviewArticles', () {
     test('descarga de red cuando no hay caché', () async {
       final repo = ArticleRepository(
@@ -557,6 +614,30 @@ void main() {
           client: clientReturning(articlesBody(4)), cache: cache);
 
       expect(await repo.fetchMoreInterviewArticles(page: 2), hasLength(4));
+    });
+
+    test('fetchMoreNewsArticles distingue fin real de error', () async {
+      final finReal = ArticleRepository(
+          client: clientReturning('', status: 400), cache: cache);
+      final error = ArticleRepository(
+          client: clientReturning('', status: 500), cache: cache);
+      final excepcion =
+          ArticleRepository(client: clientThrowing(), cache: cache);
+
+      expect(await finReal.fetchMoreNewsArticles(page: 9), isEmpty);
+      expect(await error.fetchMoreNewsArticles(page: 2), isNull);
+      expect(await excepcion.fetchMoreNewsArticles(page: 2), isNull);
+    });
+
+    test('fetchMoreNewsArticles excluye las categorías', () async {
+      final recording = RecordingClient(body: articlesBody(3));
+      final repo = ArticleRepository(client: recording.client, cache: cache);
+
+      final more = await repo.fetchMoreNewsArticles(page: 2);
+
+      expect(more, hasLength(3));
+      expect(recording.lastQuery['categories_exclude'], '255,271');
+      expect(recording.lastQuery['categories'], isNull);
     });
 
     test('fetchMoreArticlesByRegion distingue fin real de error', () async {

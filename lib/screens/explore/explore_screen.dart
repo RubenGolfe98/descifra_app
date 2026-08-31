@@ -6,6 +6,7 @@ import '../analysis/analysis_screen.dart';
 import '../coverage/coverages_screen.dart';
 import '../books/books_screen.dart';
 import '../interviews/interviews_screen.dart';
+import '../news/news_screen.dart';
 import '../seminars/seminars_screen.dart';
 import '../regions/all_maps_screen.dart';
 
@@ -43,6 +44,14 @@ class ExploreScreen extends StatelessWidget {
                 mainAxisSpacing: 12,
                 childAspectRatio: wide ? 1.3 : 1.1,
                 children: [
+                  _ExploreCard(
+                    icon: Icons.newspaper_outlined,
+                    label: 'Noticias',
+                    isDark: isDark,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const NewsScreen()),
+                    ),
+                  ),
                   _ExploreCard(
                     icon: Icons.bar_chart_outlined,
                     label: 'Análisis',
