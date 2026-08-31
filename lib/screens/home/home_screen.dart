@@ -415,10 +415,7 @@ class _FeaturedArticle extends StatelessWidget {
                               height: 1.35),
                         ),
                         const SizedBox(height: 6),
-                        _ArticleMeta(
-                            author: article.author,
-                            date: article.date,
-                            isDark: isDark),
+                        _ArticleMeta(date: article.date, isDark: isDark),
                       ],
                     ),
                   ),
@@ -468,32 +465,18 @@ class _ArticleImage extends StatelessWidget {
   }
 }
 
-// ─── Meta (autor + fecha) ─────────────────────────────────────────────────────
+// ─── Meta (fecha) ─────────────────────────────────────────────────────────────
 class _ArticleMeta extends StatelessWidget {
-  final String author;
   final DateTime date;
   final bool isDark;
 
-  const _ArticleMeta(
-      {required this.author, required this.date, required this.isDark});
+  const _ArticleMeta({required this.date, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     final mut = AppColors.textPri(isDark);
     return Row(
       children: [
-        Flexible(
-            child: Text(author,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: mut, fontSize: 10))),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: Container(
-              width: 2,
-              height: 2,
-              decoration: BoxDecoration(color: mut, shape: BoxShape.circle)),
-        ),
         Text(DateFormatter.short(date),
             style: TextStyle(color: mut, fontSize: 10)),
       ],

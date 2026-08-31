@@ -236,13 +236,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Row(
                     children: [
                       Text(
-                        article.author,
-                        style: TextStyle(color: sec, fontSize: 11),
-                      ),
-                      const SizedBox(width: 6),
-                      Text('·', style: TextStyle(color: sec, fontSize: 11)),
-                      const SizedBox(width: 6),
-                      Text(
                         DateFormatter.medium(article.date),
                         style: TextStyle(color: sec, fontSize: 11),
                       ),

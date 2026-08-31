@@ -99,14 +99,7 @@ class ArticleCard extends StatelessWidget {
                   if (article.tagSlugs.isNotEmpty) const SizedBox(width: 6),
                   for (final slug in article.tagSlugs)
                     ArticleTagBadge(slug: slug),
-                  const SizedBox(width: 6),
-                  Expanded(
-                      child: Text(article.author,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              color: AppColors.textPri(isDark),
-                              fontSize: 10))),
+                  const Spacer(),
                   if (article.isPremium) const ArticlePremiumBadge(),
                 ],
               ),
