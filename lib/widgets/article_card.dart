@@ -26,7 +26,8 @@ class ArticleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     return Material(
       type: MaterialType.card,
       elevation: 0,
@@ -55,9 +56,13 @@ class ArticleCard extends StatelessWidget {
                       memCacheWidth: 300,
                       fadeInDuration: const Duration(milliseconds: 150),
                       placeholder: (_, __) => Container(
-                          width: 100, height: 80, color: AppColors.surf(isDark)),
+                          width: 100,
+                          height: 80,
+                          color: AppColors.surf(isDark)),
                       errorWidget: (_, __, ___) => Container(
-                          width: 100, height: 80, color: AppColors.surf(isDark)),
+                          width: 100,
+                          height: 80,
+                          color: AppColors.surf(isDark)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -69,7 +74,8 @@ class ArticleCard extends StatelessWidget {
                           article.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          textAlign: justified ? TextAlign.justify : TextAlign.start,
+                          textAlign:
+                              justified ? TextAlign.justify : TextAlign.start,
                           style: TextStyle(
                               color: AppColors.textPri(isDark),
                               fontSize: 13,
@@ -81,7 +87,8 @@ class ArticleCard extends StatelessWidget {
                           article.description,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
-                          textAlign: justified ? TextAlign.justify : TextAlign.start,
+                          textAlign:
+                              justified ? TextAlign.justify : TextAlign.start,
                           style: TextStyle(
                               color: AppColors.textSec(isDark),
                               fontSize: 11,
@@ -97,8 +104,10 @@ class ArticleCard extends StatelessWidget {
                 children: [
                   ArticleCategoryBadge(category: article.category),
                   if (article.tagSlugs.isNotEmpty) const SizedBox(width: 6),
-                  for (final slug in article.tagSlugs)
-                    ArticleTagBadge(slug: slug),
+                  for (var i = 0; i < article.tagSlugs.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 6),
+                    ArticleTagBadge(slug: article.tagSlugs[i]),
+                  ],
                   const Spacer(),
                   if (article.isPremium) const ArticlePremiumBadge(),
                 ],
@@ -125,7 +134,8 @@ class ArticleCategoryBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final Color bg;
     final Color fg;
     final String label;
@@ -190,7 +200,8 @@ class ArticlePremiumBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
 
     final Color bg;
     final Color fg;
@@ -216,9 +227,7 @@ class ArticlePremiumBadge extends StatelessWidget {
           Text('Exclusivo',
               textAlign: justified ? TextAlign.justify : TextAlign.start,
               style: TextStyle(
-                  color: fg,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700)),
+                  color: fg, fontSize: 9, fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -233,7 +242,8 @@ class ArticleTagBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-    final justified = context.select<ThemeNotifier, bool>((t) => t.justifiedText);
+    final justified =
+        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final name = TagService.getTagName('tag-$slug');
     if (name == null) return const SizedBox.shrink();
 

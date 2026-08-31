@@ -297,8 +297,8 @@ class _ArticleShell extends StatelessWidget {
                     ),
                     if (article.tagSlugs.isNotEmpty)
                       Wrap(
-                        spacing: 0,
-                        runSpacing: 0,
+                        spacing: 6,
+                        runSpacing: 6,
                         children: [
                           for (final slug in article.tagSlugs)
                             Builder(builder: (context) {
