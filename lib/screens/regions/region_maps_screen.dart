@@ -113,7 +113,18 @@ class _RegionMapsScreenState extends State<RegionMapsScreen> {
                   itemBuilder: (context, index) {
                     final map = maps[index];
                     return GestureDetector(
-                      onTap: () => showImageViewer(context, map.url),
+                      onTap: () => showImageGroupedGalleryViewer(
+                        context,
+                        items: [
+                          for (final m in maps)
+                            (
+                              url: m.url,
+                              caption: m.alt.isEmpty ? null : m.alt,
+                              group: widget.region.name,
+                            ),
+                        ],
+                        initialIndex: index,
+                      ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
                         child: Stack(

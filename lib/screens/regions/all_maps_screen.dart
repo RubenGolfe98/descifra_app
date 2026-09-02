@@ -128,6 +128,22 @@ class _AllMapsScreenState extends State<AllMapsScreen> {
                               'Mapas Colaboración con FairPolitik ', ''):
                           entry.value,
                   };
+
+                  // Lista plana con todos los mapas (ordenados por región)
+                  // y el índice de inicio de cada región dentro de ella.
+                  final flatItems = <GalleryItem>[];
+                  final regionOffsets = <String, int>{};
+                  for (final entry in regions.entries) {
+                    regionOffsets[entry.key] = flatItems.length;
+                    for (final m in entry.value) {
+                      flatItems.add((
+                        url: m.url,
+                        caption: m.alt.isEmpty ? null : m.alt,
+                        group: entry.key,
+                      ));
+                    }
+                  }
+
                   return ListView.builder(
                     padding: const EdgeInsets.only(bottom: 24),
                     itemCount: regions.length,
@@ -138,6 +154,8 @@ class _AllMapsScreenState extends State<AllMapsScreen> {
                         regionName: regionName,
                         maps: maps,
                         isDark: isDark,
+                        galleryItems: flatItems,
+                        galleryOffset: regionOffsets[regionName]!,
                       );
                     },
                   );
@@ -156,10 +174,18 @@ class _RegionSection extends StatelessWidget {
   final List<MapImage> maps;
   final bool isDark;
 
+  /// Todos los mapas de todas las regiones, ordenados por región.
+  final List<GalleryItem> galleryItems;
+
+  /// Índice del primer mapa de esta región dentro de [galleryItems].
+  final int galleryOffset;
+
   const _RegionSection({
     required this.regionName,
     required this.maps,
     required this.isDark,
+    required this.galleryItems,
+    required this.galleryOffset,
   });
 
   @override
@@ -194,7 +220,11 @@ class _RegionSection extends StatelessWidget {
           itemBuilder: (context, index) {
             final map = maps[index];
             return GestureDetector(
-              onTap: () => showImageViewer(context, map.url),
+              onTap: () => showImageGroupedGalleryViewer(
+                context,
+                items: galleryItems,
+                initialIndex: galleryOffset + index,
+              ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Stack(
