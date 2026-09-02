@@ -10,6 +10,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/html_styles.dart';
 import '../../../utils/snackbar_utils.dart';
 import '../../../widgets/image_viewer.dart';
+import 'youtube_lazy_player.dart';
 
 class ArticleContentHtml extends StatelessWidget {
   final String html;
@@ -108,50 +109,7 @@ class ArticleContentHtml extends StatelessWidget {
 
                   if (ytMatch != null) {
                     final videoId = ytMatch.group(1)!;
-                    final thumbUrl =
-                        'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: GestureDetector(
-                        onTap: () async {
-                          final uri = Uri.parse(
-                              'https://www.youtube.com/watch?v=$videoId');
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri,
-                                mode: LaunchMode.externalApplication);
-                          }
-                        },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              CachedNetworkImage(
-                                imageUrl: thumbUrl,
-                                width: screenWidth - 40,
-                                fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(
-                                  height: 200,
-                                  color: AppColors.surf(isDark),
-                                ),
-                                errorWidget: (_, __, ___) =>
-                                    const SizedBox.shrink(),
-                              ),
-                              Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.7),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.play_arrow,
-                                    color: Colors.white, size: 32),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
+                    return YoutubeLazyPlayer(videoId: videoId);
                   }
 
                   final spotifyMatch = RegExp(
