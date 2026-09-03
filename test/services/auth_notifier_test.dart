@@ -50,8 +50,9 @@ class FakeAuthService extends AuthService {
   }
 
   @override
-  Future<AuthState> loginWithCookies(String cookieString) async {
+  Future<AuthState> loginWithCookies(String cookieString, {void Function(String step, double progress)? onProgress}) async {
     loginCookies.add(cookieString);
+    onProgress?.call('Obteniendo sesión...', 0.33);
     if (loginError != null) throw loginError!;
     return loginResult ?? const AuthState.unknown();
   }

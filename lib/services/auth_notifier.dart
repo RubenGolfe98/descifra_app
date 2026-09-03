@@ -13,6 +13,8 @@ class AuthNotifier extends ChangeNotifier {
   String? _errorMessage;
   String? _restNonce;
   bool _sessionExpired = false;
+  String? _loginStep;
+  double _loginProgress = 0.0;
 
   AuthNotifier({AuthService? service}) : _service = service ?? AuthService();
 
@@ -22,6 +24,8 @@ class AuthNotifier extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get restNonce => _restNonce;
   bool get sessionExpired => _sessionExpired;
+  String? get loginStep => _loginStep;
+  double get loginProgress => _loginProgress;
 
   Future<void> initialize() async {
     _state = await _service.loadSavedSession();
@@ -79,14 +83,25 @@ class AuthNotifier extends ChangeNotifier {
     _isLoading = true;
     _errorMessage = null;
     _sessionExpired = false;
+    _loginProgress = 0.0;
     notifyListeners();
     try {
-      final newState = await _service.loginWithCookies(cookieString);
-      _state = newState;
+      final newState = await _service.loginWithCookies(cookieString,
+          onProgress: (String step, double progress) {
+        _loginStep = step;
+        _loginProgress = progress;
+        notifyListeners();
+      });
       _restNonce = _service.lastNonce;
       if (kDebugMode) {
         debugPrint('🔐 [Auth] Nonce REST tras login: $_restNonce');
       }
+      // Mostrar el 100% un instante antes de cambiar a la vista de perfil,
+      // para que la barra complete su animación.
+      _loginProgress = 1.0;
+      notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 700));
+      _state = newState;
     } on AuthException catch (e) {
       _errorMessage = e.message;
     } catch (e, stack) {
@@ -94,12 +109,15 @@ class AuthNotifier extends ChangeNotifier {
       _errorMessage = 'Error al verificar la sesión. Inténtalo de nuevo.';
     } finally {
       _isLoading = false;
+      _loginStep = null;
+      _loginProgress = 0.0;
       notifyListeners();
     }
   }
 
   Future<void> continueAsGuest() async {
     _state = await _service.continueAsGuest();
+    _loginProgress = 0.0;
     notifyListeners();
   }
 
@@ -109,6 +127,8 @@ class AuthNotifier extends ChangeNotifier {
     _errorMessage = null;
     _restNonce = null;
     _sessionExpired = false;
+    _loginStep = null;
+    _loginProgress = 0.0;
     notifyListeners();
   }
 

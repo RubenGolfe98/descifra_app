@@ -211,10 +211,12 @@ class AuthService {
 
   // ─── Login con cookies del WebView ─────────────────────────────────────────
 
-  Future<AuthState> loginWithCookies(String cookieString) async {
+  Future<AuthState> loginWithCookies(String cookieString, {void Function(String step, double progress)? onProgress}) async {
     if (cookieString.isEmpty) {
       throw const AuthException('No se pudo completar el inicio de sesión.');
     }
+
+    onProgress?.call('Obteniendo sesión...', 0.33);
 
     if (kDebugMode) {
       debugPrint('🔐 [Auth] Verificando sesión con cookies del WebView...');
@@ -236,6 +238,8 @@ class AuthService {
           '🔐 [Auth] Membresía: ${membership?.name} / ${membership?.status}');
     }
 
+    onProgress?.call('Cargando perfil de usuario...', 0.66);
+
     // Obtener datos del usuario con el nonce ya disponible
     final headers = <String, String>{'Cookie': cookieString};
     if (restNonce != null) headers['X-WP-Nonce'] = restNonce;
@@ -253,6 +257,8 @@ class AuthService {
       isSubscriber: userData['isSubscriber'] as bool,
       membership: membership,
     );
+
+    onProgress?.call('Guardando sesión...', 1.0);
 
     await _persistSession(state);
     return state;

@@ -1,4 +1,7 @@
+import 'dart:math' show exp;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -506,16 +509,52 @@ class _LoginView extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: auth.isLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Iniciar sesión',
-                      style: TextStyle(fontSize: 15, color: Colors.white)),
+              child: const Text('Iniciar sesión',
+                  style: TextStyle(fontSize: 15, color: Colors.white)),
             ),
           ),
+          if (auth.isLoading) ...[
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: _SmoothProgressBar(target: auth.loginProgress),
+            ),
+            const SizedBox(height: 10),
+            if (auth.loginStep != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                        width: 16, height: 16, child: _LoadingIcon()),
+                    const SizedBox(width: 8),
+                    Text(
+                      auth.loginStep!,
+                      style: TextStyle(
+                        color: sec,
+                        fontSize: 13,
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Un momento. Estamos preparándolo todo para ti',
+                style: TextStyle(
+                  color: sec.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
         ],
       ),
@@ -527,6 +566,145 @@ class _LoginView extends StatelessWidget {
     if (cookieString == null || cookieString.isEmpty) return;
     if (!context.mounted) return;
     await context.read<AuthNotifier>().loginWithCookies(cookieString);
+  }
+}
+
+// ─── Icono de carga animado ─────────────────────────────────────────────
+
+class _LoadingIcon extends StatefulWidget {
+  const _LoadingIcon();
+
+  @override
+  State<_LoadingIcon> createState() => _LoadingIconState();
+}
+
+class _LoadingIconState extends State<_LoadingIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: Tween<double>(begin: 0, end: 1).animate(_controller),
+      child: Icon(
+        Icons.refresh_rounded,
+        size: 16,
+        color: AppColors.accent,
+      ),
+    );
+  }
+}
+
+// ─── Barra de progreso suave ─────────────────────────────────────────────────
+
+/// Muestra el progreso del login avanzando continuamente hacia el objetivo.
+///
+/// Mientras espera las respuestas de red, la barra sigue avanzando muy
+/// despacio hacia un techo situado un poco por encima del último punto de
+/// control confirmado, de modo que nunca se queda congelada pero tampoco
+/// reclama como completado un paso que aún está en curso. Cuando llega un
+/// nuevo punto de control, la distancia restante crece y la barra acelera de
+/// forma natural (aproximación exponencial con velocidad adaptativa según el
+/// hueco restante), sin saltos.
+class _SmoothProgressBar extends StatefulWidget {
+  /// Punto de control confirmado por el proceso de login (0.33, 0.66, 1.0).
+  final double target;
+
+  const _SmoothProgressBar({required this.target});
+
+  @override
+  State<_SmoothProgressBar> createState() => _SmoothProgressBarState();
+}
+
+class _SmoothProgressBarState extends State<_SmoothProgressBar>
+    with SingleTickerProviderStateMixin {
+  /// Fracción del recorrido restante que se añade como margen de arrastre.
+  static const double _creepMargin = 0.22;
+
+  /// Velocidad de aproximación en arrastre, cerca del techo (1/s).
+  static const double _kNormal = 0.6;
+
+  /// Velocidad máxima al alcanzar un nuevo punto de control confirmado (1/s).
+  static const double _kCatchUp = 0.5;
+
+  /// Hueco a partir del cual se alcanza la velocidad máxima de alcance.
+  static const double _catchUpGap = 0.08;
+
+  /// Velocidad de aproximación en el tramo final, al cerrar el 100% (1/s).
+  static const double _kFinal = 6.0;
+
+  late final Ticker _ticker;
+  double _value = 0.0;
+  Duration _lastElapsed = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_onTick)..start();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  void _onTick(Duration elapsed) {
+    // dt en segundos, acotado para absorber jank puntual.
+    final dt = ((elapsed - _lastElapsed).inMicroseconds / 1e6).clamp(0.0, 0.05);
+    _lastElapsed = elapsed;
+    if (dt == 0) return;
+
+    final target = widget.target.clamp(0.0, 1.0);
+    // El techo de arrastre queda por encima del punto confirmado, pero nunca
+    // alcanza el siguiente punto de control.
+    final effective =
+        target >= 1.0 ? 1.0 : target + (1.0 - target) * _creepMargin;
+
+    final diff = effective - _value;
+    if (diff <= 0) return; // nunca retrocede
+
+    // Velocidad adaptativa: si la red confirma un nuevo punto de control y
+    // el hueco es grande, acelerar para alcanzarlo; cerca del techo, seguir
+    // con el arrastre lento.
+    final double k;
+    if (target >= 1.0) {
+      k = _kFinal;
+    } else {
+      final t = (diff / _catchUpGap).clamp(0.0, 1.0);
+      k = _kNormal + (_kCatchUp - _kNormal) * t;
+    }
+    var next = _value + diff * (1 - exp(-k * dt));
+
+    // Snap al valor exacto cuando ya está prácticamente cerrado.
+    if (target >= 1.0 && 1.0 - next < 0.02) next = 1.0;
+
+    if (next != _value) setState(() => _value = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LinearProgressIndicator(
+      value: _value,
+      minHeight: 6,
+      backgroundColor: const Color(0x33C0392B),
+      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFC0392B)),
+    );
   }
 }
 
