@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.4] — 2026-09-04
+
+### Corregido
+- Eliminar limite de caracteres en los títulos y metadescripciones de artículos
+
+### Mejorado 
+- **Listados más limpios**: eliminar nombre del autor de los listados
+- **Badges más limpios**: mantener el mismo diseño de badges para artículos con más de un pais.
+
+### Añadido
+- Nueva sección de 'Noticias' dentro de 'Explorar'
+- Galería navegable en el visor de mapas por región
+- Integrar youtube_player_flutter para la visualización de videos de YouTube de manera integrada
+- Nueva barra de progreso al hacer login
+
+
+## [1.5.3] — 2026-08-21
+
+### Corregido
+- El ajuste de texto justificado ahora se aplica en toda la aplicación. Antes se ignoraba en las coberturas, los seminarios y la sección de libros, donde el texto siempre aparecía con la misma alineación independientemente de lo elegido en Ajustes.
+
 ## [1.5.2] — 2026-08-14
 
 ### Añadido
