@@ -138,10 +138,16 @@ class _ImageViewerScreenState extends State<_ImageViewerScreen> {
     }
   }
 
+  void _goToPage(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final caption = widget.items[_currentIndex].caption;
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
@@ -171,6 +177,33 @@ class _ImageViewerScreenState extends State<_ImageViewerScreen> {
             ),
           ),
 
+          // Flechas laterales (se ocultan al ampliar la imagen)
+          if (_isGallery)
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: !_pageScrollEnabled,
+                child: AnimatedOpacity(
+                  opacity: _pageScrollEnabled ? 1 : 0,
+                  duration: const Duration(milliseconds: 150),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _NavArrow(
+                        icon: Icons.chevron_left,
+                        visible: _currentIndex > 0,
+                        onTap: () => _goToPage(_currentIndex - 1),
+                      ),
+                      _NavArrow(
+                        icon: Icons.chevron_right,
+                        visible: _currentIndex < widget.items.length - 1,
+                        onTap: () => _goToPage(_currentIndex + 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
           // Contador "3 / 12" o "Europa 3/11" (solo en modo galería)
           if (_isGallery)
             Positioned(
@@ -187,31 +220,6 @@ class _ImageViewerScreenState extends State<_ImageViewerScreen> {
                   ),
                   child: Text(
                     _counterText,
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                  ),
-                ),
-              ),
-            ),
-
-          // Título del mapa
-          if (caption != null && caption.isNotEmpty)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: MediaQuery.of(context).padding.bottom + 16,
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    caption,
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white, fontSize: 13),
                   ),
                 ),
@@ -291,8 +299,7 @@ class _ZoomableImageState extends State<_ZoomableImage>
   }
 
   void _onTransformChanged() {
-    final zoomed =
-        _transformationController.value.getMaxScaleOnAxis() > 1.01;
+    final zoomed = _transformationController.value.getMaxScaleOnAxis() > 1.01;
     if (zoomed != _panEnabled) {
       setState(() => _panEnabled = zoomed);
       widget.onZoomChanged?.call(zoomed);
@@ -361,6 +368,46 @@ class _ZoomableImageState extends State<_ZoomableImage>
               Icons.broken_image_outlined,
               color: Colors.white54,
               size: 48,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Flecha lateral para pasar a la imagen anterior/siguiente.
+class _NavArrow extends StatelessWidget {
+  final IconData icon;
+  final bool visible;
+  final VoidCallback onTap;
+
+  const _NavArrow({
+    required this.icon,
+    required this.visible,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: AnimatedOpacity(
+        opacity: visible ? 1 : 0,
+        duration: const Duration(milliseconds: 150),
+        child: IgnorePointer(
+          ignoring: !visible,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onTap,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.accent, size: 28),
             ),
           ),
         ),
