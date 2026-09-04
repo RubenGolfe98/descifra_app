@@ -331,35 +331,66 @@ class _ArticleShell extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Row(
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Icon(Icons.person_outline,
-                        color: AppColors.textSec(isDark), size: 14),
-                    const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => FilteredArticlesScreen(
-                            name: article.author,
-                            filterType: FilterType.author,
+                    // ── Autor ──
+                    ConstrainedBox(
+                      // Necesario: dentro de un Wrap las restricciones de ancho son
+                      // infinitas, así que hay que acotar el grupo al ancho útil.
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width - 40,
+                      ),
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => FilteredArticlesScreen(
+                              name: article.author,
+                              filterType: FilterType.author,
+                            ),
                           ),
                         ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.person_outline,
+                                color: AppColors.textSec(isDark), size: 14),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                article.author,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Text(article.author,
-                          style: TextStyle(
-                              color: AppColors.accent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600)),
                     ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.calendar_today_outlined,
-                        color: AppColors.textSec(isDark), size: 12),
-                    const SizedBox(width: 4),
-                    Text(DateFormatter.long(article.date),
-                        style: TextStyle(
+                    // ── Fecha ──
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.calendar_today_outlined,
+                            color: AppColors.textSec(isDark), size: 12),
+                        const SizedBox(width: 4),
+                        Text(
+                          DateFormatter.long(article.date),
+                          style: TextStyle(
                             color: AppColors.textSec(isDark),
                             fontSize: 12,
-                            fontWeight: FontWeight.w600)),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),

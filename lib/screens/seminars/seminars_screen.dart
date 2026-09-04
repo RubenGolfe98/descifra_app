@@ -150,8 +150,6 @@ class _SeminarsScreenState extends State<SeminarsScreen> {
                             if (seminar.description.isNotEmpty) ...[
                               const SizedBox(height: 6),
                               Text(seminar.description,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                       color: sec, fontSize: 13, height: 1.4)),
                             ],

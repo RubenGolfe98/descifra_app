@@ -136,6 +136,13 @@ class _YoutubeLazyPlayerState extends State<YoutubeLazyPlayer> {
         child: YoutubePlayer(
           controller: _controller!,
           showVideoProgressIndicator: true,
+          progressIndicatorColor: AppColors.accent,
+          progressColors: const ProgressBarColors(
+            playedColor: AppColors.accent,
+            handleColor: AppColors.accent,
+            bufferedColor: Colors.white24,
+            backgroundColor: Colors.grey,
+          ),
           topActions: [
             const Spacer(),
             GestureDetector(
@@ -158,6 +165,7 @@ class _YoutubeLazyPlayerState extends State<YoutubeLazyPlayer> {
                   backgroundColor: Colors.grey),
             ),
             const RemainingDuration(),
+            const PlaybackSpeedButton(),
           ],
         ),
       ),
