@@ -124,20 +124,20 @@ class _CoverImage extends StatelessWidget {
     final cacheWidth = imageCacheWidth(context);
     final resolvedUrl = bestImageUrl(
         sizes: sizes, fallbackUrl: url, targetWidth: cacheWidth);
-    return CachedNetworkImage(
-      imageUrl: resolvedUrl,
-      width: double.infinity,
-      height: 160,
-      fit: BoxFit.cover,
-      memCacheWidth: cacheWidth,
-      fadeInDuration: const Duration(milliseconds: 200),
-      placeholder: (_, __) =>
-          Container(height: 160, color: AppColors.surf(isDark)),
-      errorWidget: (_, __, ___) => Container(
-        height: 160,
-        color: AppColors.surf(isDark),
-        child: Icon(Icons.image_not_supported,
-            color: AppColors.textMut(isDark), size: 20),
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: CachedNetworkImage(
+        imageUrl: resolvedUrl,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        memCacheWidth: cacheWidth,
+        fadeInDuration: const Duration(milliseconds: 200),
+        placeholder: (_, __) => Container(color: AppColors.surf(isDark)),
+        errorWidget: (_, __, ___) => Container(
+          color: AppColors.surf(isDark),
+          child: Icon(Icons.image_not_supported,
+              color: AppColors.textMut(isDark), size: 20),
+        ),
       ),
     );
   }

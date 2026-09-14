@@ -67,6 +67,24 @@ void main() {
     await tester.tap(find.text('Púlsame'));
     expect(taps, 1);
   });
+
+  testWidgets(
+      'muestra portada con AspectRatio 16:9 cuando imageUrl no está vacía',
+      (tester) async {
+    await tester.pumpWidget(buildHarness(
+      child: const ContentCard(
+        imageUrl: 'https://example.com/portada.jpg',
+        title: 'Artículo con imagen',
+        description: 'Descripción',
+        onTap: _noOp,
+      ),
+    ));
+
+    final aspectRatioFinder = find.byType(AspectRatio);
+    expect(aspectRatioFinder, findsOneWidget);
+    final aspectRatioWidget = tester.widget<AspectRatio>(aspectRatioFinder);
+    expect(aspectRatioWidget.aspectRatio, closeTo(16 / 9, 0.001));
+  });
 }
 
 void _noOp() {}
