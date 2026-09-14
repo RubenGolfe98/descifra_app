@@ -334,6 +334,7 @@ class _ArticleFeed extends StatelessWidget {
     );
   }
 }
+
 // ─── Tarjeta destacada (hero) ─────────────────────────────────────────────────
 class _FeaturedArticle extends StatelessWidget {
   final Article article;
@@ -347,91 +348,147 @@ class _FeaturedArticle extends StatelessWidget {
         context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final (categoryColor, categoryLabel) = _badgeFor(article.category);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Material(
-        type: MaterialType.card,
-        elevation: 0,
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => openArticle(context, article),
-          child: Stack(
-            children: [
-              Positioned.fill(
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.accent.withValues(alpha: isDark ? 0.35 : 0.22),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.50)
+                : AppColors.accent.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Material(
+          type: MaterialType.card,
+          elevation: 0,
+          color: AppColors.surf(isDark),
+          child: InkWell(
+            onTap: () => openArticle(context, article),
+            child: Stack(
+              children: [
+                Positioned.fill(
                   child: _HeroImage(
-                      url: article.imageUrl,
-                      sizes: article.imageSizes,
-                      isDark: isDark)),
-              const Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.0, 0.45, 1.0],
-                      colors: [
-                        Colors.transparent,
-                        Color(0x33000000),
-                        Color(0xE0000000)
-                      ],
+                    url: article.imageUrl,
+                    sizes: article.imageSizes,
+                    isDark: isDark,
+                  ),
+                ),
+                const Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: [0.0, 0.25, 0.55, 1.0],
+                        colors: [
+                          Colors.transparent,
+                          Color(0x2B000000),
+                          Color(0xCC000000),
+                          Color(0xFA000000),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 140), // espacio visible de la imagen
-                  Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            const CardBadge(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 160), // Espacio visible de la imagen
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              const CardBadge(
                                 label: 'DESTACADO',
                                 background: AppColors.accent,
-                                foreground: Colors.white),
-                            const SizedBox(width: 6),
-                            CardBadge(
+                                foreground: Colors.white,
+                                icon: Icons.star_rounded,
+                              ),
+                              CardBadge(
                                 label: categoryLabel,
                                 background: categoryColor,
-                                foreground: Colors.white),
-                            if (article.isPremium) ...[
-                              const SizedBox(width: 6),
-                              const CardBadge(
+                                foreground: Colors.white,
+                              ),
+                              if (article.isPremium) ...[
+                                const CardBadge(
                                   label: 'Exclusivo',
                                   background: Color(0xFFC0392B),
                                   foreground: Colors.white,
-                                  icon: Icons.lock_outline),
+                                  icon: Icons.lock_outline,
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          article.title,
-                          textAlign: justified
-                              ? TextAlign.justify
-                              : TextAlign.start,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              height: 1.35),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(DateFormatter.short(article.date),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            article.title,
+                            textAlign:
+                                justified ? TextAlign.justify : TextAlign.start,
                             style: const TextStyle(
-                                color: Colors.white70, fontSize: 10)),
-                      ],
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              height: 1.28,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          if (article.description.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              article.description,
+                              textAlign: justified
+                                  ? TextAlign.justify
+                                  : TextAlign.start,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.88),
+                                fontSize: 13.5,
+                                height: 1.42,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.schedule_rounded,
+                                size: 13,
+                                color: Colors.white.withValues(alpha: 0.72),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                DateFormatter.short(article.date),
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.75),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -466,8 +523,8 @@ class _HeroImage extends StatelessWidget {
       return Container(color: AppColors.surf(isDark));
     }
     final cacheWidth = imageCacheWidth(context);
-    final resolvedUrl = bestImageUrl(
-        sizes: sizes, fallbackUrl: url, targetWidth: cacheWidth);
+    final resolvedUrl =
+        bestImageUrl(sizes: sizes, fallbackUrl: url, targetWidth: cacheWidth);
     return CachedNetworkImage(
       imageUrl: resolvedUrl,
       width: double.infinity,
@@ -494,14 +551,35 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-            color: AppColors.textSec(isDark),
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 1),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 13,
+            decoration: BoxDecoration(
+              color: AppColors.accent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              color: AppColors.textPri(isDark),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: AppColors.accent,
+            ),
+          ),
+        ],
       ),
     );
   }
