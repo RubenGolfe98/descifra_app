@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.5.5] — 2026-09-14
+
+### Mejorado
+- **Listados unificados**: noticias, análisis, entrevistas (y por extensión la sección 'Lo último' del inicio, regiones y búsqueda) usan el diseño de las tarjetas de seminarios, con un único componente reutilizable (`ContentCard`) para artículos y seminarios
+- El artículo destacado del inicio conserva su hero con altura adaptable y sin truncado de título
+
+### Corregido
+- El ajuste de texto justificado ahora también se aplica a los títulos y descripciones de las tarjetas
+- **Imágenes nítidas en móvil y tablet**: las imágenes se decodifican a la resolución física exacta de cada pantalla (antes se limitaban a 1200 px y se veían borrosas en tablets y móviles de alta densidad)
+
+### Mejorado
+- **Descarga de imágenes optimizada**: los listados piden a WordPress el tamaño generado más adecuado para cada pantalla en lugar del original completo, con fallback al original si no hay tamaños disponibles
+
+### Eliminado
+- Widget interno `ImageFlowText` (ya sin uso)
+
 ## [1.5.4] — 2026-09-04
 
 ### Corregido

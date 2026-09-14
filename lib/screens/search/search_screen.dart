@@ -194,8 +194,9 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       }
       return ListView.separated(
+        padding: const EdgeInsets.all(16),
         itemCount: _results.length,
-        separatorBuilder: (_, __) => Divider(height: 0.5, color: bord),
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, i) => ArticleCard(
           article: _results[i],
           onTap: () => _openArticle(_results[i]),

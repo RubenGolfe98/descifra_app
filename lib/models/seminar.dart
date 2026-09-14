@@ -3,6 +3,7 @@ class Seminar {
   final String title;
   final String description;
   final String coverUrl;
+  final Map<int, String> imageSizes; // ancho(px) → URL (tamaños generados por WP)
   final String link;
   final bool isPremium;
   final String contentHtml;
@@ -12,6 +13,7 @@ class Seminar {
     required this.title,
     required this.description,
     required this.coverUrl,
+    this.imageSizes = const {},
     required this.link,
     this.isPremium = false,
     this.contentHtml = '',
@@ -29,10 +31,30 @@ class Seminar {
       title: _stripHtml(json['title']?['rendered'] ?? ''),
       description: json['yoast_head_json']?['og_description'] ?? '',
       coverUrl: coverUrl,
+      imageSizes: _parseImageSizes(json),
       link: json['link'] ?? '',
       isPremium: classList.contains('rcp-is-restricted'),
       contentHtml: json['content']?['rendered'] ?? '',
     );
+  }
+
+  /// Tamaños generados por WordPress de la imagen destacada
+  /// (requiere `_embed=1` en la petición). Vacío si no está disponible.
+  static Map<int, String> _parseImageSizes(Map<String, dynamic> json) {
+    final embedded = json['_embedded'] as Map<String, dynamic>?;
+    final media = embedded?['wp:featuredmedia'] as List?;
+    if (media == null || media.isEmpty) return const {};
+    final sizes = media[0]['media_details']?['sizes'] as Map<String, dynamic>?;
+    if (sizes == null) return const {};
+    final out = <int, String>{};
+    for (final entry in sizes.entries) {
+      final value = entry.value;
+      if (value is! Map) continue;
+      final width = value['width'];
+      final url = value['source_url'];
+      if (width is int && url is String) out[width] = url;
+    }
+    return out;
   }
 
   static String _stripHtml(String html) =>

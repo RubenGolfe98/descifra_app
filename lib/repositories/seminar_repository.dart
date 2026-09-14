@@ -43,7 +43,7 @@ class SeminarRepository {
       final uri = Uri.parse(
         '$_baseUrl/seminario'
         '?_fields=id,title,link,content,class_list,yoast_head_json.og_image,yoast_head_json.og_description'
-        '&per_page=20&orderby=date&order=desc',
+        '&per_page=20&orderby=date&order=desc&_embed=1',
       );
       final response =
           await _client.get(uri).timeout(const Duration(seconds: 30));

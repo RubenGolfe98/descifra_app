@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
@@ -6,7 +5,8 @@ import '../services/tag_service.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../utils/access_helper.dart';
-import '../widgets/image_flow_text.dart';
+import '../utils/date_formatter.dart';
+import 'content_card.dart';
 
 /// Tarjeta de artículo reutilizable en todas las pantallas.
 /// Gestiona internamente el tap, control de acceso y navegación al detalle.
@@ -26,70 +26,18 @@ class ArticleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-    final justified =
-        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
-    return Material(
-      type: MaterialType.card,
-      elevation: 0,
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _handleTap(context),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            border: Border(
-                bottom: BorderSide(color: AppColors.bord(isDark), width: 0.5)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ImageFlowText(
-                image: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: CachedNetworkImage(
-                    imageUrl: article.imageUrl,
-                    width: 100,
-                    height: 80,
-                    fit: BoxFit.cover,
-                    memCacheWidth: 300,
-                    fadeInDuration: const Duration(milliseconds: 150),
-                    placeholder: (_, __) => Container(
-                        width: 100, height: 80, color: AppColors.surf(isDark)),
-                    errorWidget: (_, __, ___) => Container(
-                        width: 100, height: 80, color: AppColors.surf(isDark)),
-                  ),
-                ),
-                title: article.title,
-                titleStyle: TextStyle(
-                    color: AppColors.textPri(isDark),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    height: 1.35),
-                description: article.description,
-                descriptionStyle: TextStyle(
-                    color: AppColors.textSec(isDark),
-                    fontSize: 11,
-                    height: 1.4),
-                textAlign: justified ? TextAlign.justify : TextAlign.start,
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  ArticleCategoryBadge(category: article.category),
-                  if (article.tagSlugs.isNotEmpty) const SizedBox(width: 6),
-                  for (var i = 0; i < article.tagSlugs.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 6),
-                    ArticleTagBadge(slug: article.tagSlugs[i]),
-                  ],
-                  const Spacer(),
-                  if (article.isPremium) const ArticlePremiumBadge(),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    return ContentCard(
+      imageUrl: article.imageUrl,
+      imageSizes: article.imageSizes,
+      title: article.title,
+      description: article.description,
+      meta: DateFormatter.short(article.date),
+      badges: [
+        ArticleCategoryBadge(category: article.category),
+        for (final slug in article.tagSlugs) ArticleTagBadge(slug: slug),
+        if (article.isPremium) const ArticlePremiumBadge(),
+      ],
+      onTap: () => _handleTap(context),
     );
   }
 }
@@ -97,113 +45,47 @@ class ArticleCard extends StatelessWidget {
 // ─── Badge de categoría ───────────────────────────────────────────────────────
 class ArticleCategoryBadge extends StatelessWidget {
   final ArticleCategory category;
-  final bool overlay;
 
-  const ArticleCategoryBadge({
-    super.key,
-    required this.category,
-    this.overlay = false,
-  });
+  const ArticleCategoryBadge({super.key, required this.category});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-    final justified =
-        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final Color bg;
     final Color fg;
     final String label;
 
-    if (overlay) {
-      switch (category) {
-        case ArticleCategory.analisis:
-          bg = const Color(0xFF185FA5);
-          fg = Colors.white;
-          label = 'Análisis';
-        case ArticleCategory.entrevista:
-          bg = const Color(0xFFA0522D);
-          fg = Colors.white;
-          label = 'Entrevista';
-        case ArticleCategory.noticia:
-          bg = const Color(0xFF1D9E75);
-          fg = Colors.white;
-          label = 'Noticia';
-      }
-    } else {
-      switch (category) {
-        case ArticleCategory.analisis:
-          bg = AppColors.analysisBg(isDark);
-          fg = AppColors.analysisText(isDark);
-          label = 'Análisis';
-        case ArticleCategory.entrevista:
-          bg = AppColors.interviewBg(isDark);
-          fg = AppColors.interviewText(isDark);
-          label = 'Entrevista';
-        case ArticleCategory.noticia:
-          bg = AppColors.newsBg(isDark);
-          fg = AppColors.newsText(isDark);
-          label = 'Noticia';
-      }
+    switch (category) {
+      case ArticleCategory.analisis:
+        bg = AppColors.analysisBg(isDark);
+        fg = AppColors.analysisText(isDark);
+        label = 'Análisis';
+      case ArticleCategory.entrevista:
+        bg = AppColors.interviewBg(isDark);
+        fg = AppColors.interviewText(isDark);
+        label = 'Entrevista';
+      case ArticleCategory.noticia:
+        bg = AppColors.newsBg(isDark);
+        fg = AppColors.newsText(isDark);
+        label = 'Noticia';
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        textAlign: justified ? TextAlign.justify : TextAlign.start,
-        style: TextStyle(
-          color: fg,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
+    return CardBadge(label: label, background: bg, foreground: fg);
   }
 }
 
 // ─── Badge premium ────────────────────────────────────────────────────────────
 class ArticlePremiumBadge extends StatelessWidget {
-  final bool overlay;
-
-  const ArticlePremiumBadge({super.key, this.overlay = false});
+  const ArticlePremiumBadge({super.key});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-    final justified =
-        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
-
-    final Color bg;
-    final Color fg;
-    if (overlay) {
-      bg = const Color(0xFFC0392B);
-      fg = Colors.white;
-    } else {
-      bg = AppColors.premiumBg(isDark);
-      fg = AppColors.premiumText(isDark);
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.lock_outline, color: fg, size: 8),
-          const SizedBox(width: 3),
-          Text('Exclusivo',
-              textAlign: justified ? TextAlign.justify : TextAlign.start,
-              style: TextStyle(
-                  color: fg, fontSize: 9, fontWeight: FontWeight.w700)),
-        ],
-      ),
+    return CardBadge(
+      label: 'Exclusivo',
+      background: AppColors.premiumBg(isDark),
+      foreground: AppColors.premiumText(isDark),
+      icon: Icons.lock_outline,
     );
   }
 }
@@ -216,26 +98,13 @@ class ArticleTagBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
-    final justified =
-        context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final name = TagService.getTagName('tag-$slug');
     if (name == null) return const SizedBox.shrink();
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.tagBg(isDark),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        name,
-        textAlign: justified ? TextAlign.justify : TextAlign.start,
-        style: TextStyle(
-          color: AppColors.tagText(isDark),
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+    return CardBadge(
+      label: name,
+      background: AppColors.tagBg(isDark),
+      foreground: AppColors.tagText(isDark),
     );
   }
 }

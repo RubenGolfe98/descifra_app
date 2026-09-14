@@ -16,6 +16,39 @@ void main() {
       'class_list': ['post-1', 'post', 'type-post', 'status-publish'],
     };
 
+    test('fromJson parses embedded image sizes', () {
+      final json = Map<String, dynamic>.from(baseJson);
+      json['_embedded'] = {
+        'wp:featuredmedia': [
+          {
+            'media_details': {
+              'sizes': {
+                'medium_large': {
+                  'width': 768,
+                  'source_url': 'https://example.com/image-768.jpg',
+                },
+                'large': {
+                  'width': 1024,
+                  'source_url': 'https://example.com/image-1024.jpg',
+                },
+              },
+            },
+          },
+        ],
+      };
+
+      final article = Article.fromJson(json);
+      expect(article.imageSizes, {
+        768: 'https://example.com/image-768.jpg',
+        1024: 'https://example.com/image-1024.jpg',
+      });
+    });
+
+    test('fromJson without _embedded leaves imageSizes empty', () {
+      final article = Article.fromJson(baseJson);
+      expect(article.imageSizes, isEmpty);
+    });
+
     test('fromJson parses basic fields correctly', () {
       final article = Article.fromJson(baseJson);
 

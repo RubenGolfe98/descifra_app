@@ -10,6 +10,7 @@ import '../../services/auth_notifier.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/html_styles.dart';
+import '../../utils/image_url.dart';
 import '../../widgets/dlg_app_bar.dart';
 import 'seminar_session_screen.dart';
 
@@ -206,8 +207,9 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
                                         imageUrl: src,
                                         width: screenWidth - 40,
                                         fit: BoxFit.cover,
-                                        memCacheWidth:
-                                            ((screenWidth - 40) * 2).toInt(),
+                                        memCacheWidth: imageCacheWidth(
+                                            context,
+                                            width: screenWidth - 40),
                                         placeholder: (_, __) => Container(
                                           height: 200,
                                           color: surf,

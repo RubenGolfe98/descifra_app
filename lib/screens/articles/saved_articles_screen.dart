@@ -44,8 +44,10 @@ class SavedArticlesScreen extends StatelessWidget {
                   onRefresh: () => favorites.loadFavorites(auth.state.cookies ?? ''),
                   color: AppColors.accent,
                   backgroundColor: AppColors.surf(isDark),
-                  child: ListView.builder(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16),
                     itemCount: favorites.savedArticles.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) =>
                         ArticleCard(article: favorites.savedArticles[index]),
                   ),

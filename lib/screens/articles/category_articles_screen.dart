@@ -179,13 +179,15 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
                     onRefresh: _refresh,
                     color: AppColors.accent,
                     backgroundColor: AppColors.surf(isDark),
-                    child: ListView.builder(
+                    child: ListView.separated(
                       controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
                       itemCount: displayArticles.length + 1,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index == displayArticles.length) {
                           return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                             child: _isLoadingMore
                                 ? Center(
                                     child: SizedBox(

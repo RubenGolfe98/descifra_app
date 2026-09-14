@@ -8,6 +8,7 @@ import '../../../repositories/article_repository.dart';
 import '../../../services/theme_notifier.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/html_styles.dart';
+import '../../../utils/image_url.dart';
 import '../../../utils/snackbar_utils.dart';
 import '../../../widgets/image_viewer.dart';
 import 'youtube_lazy_player.dart';
@@ -86,7 +87,8 @@ class ArticleContentHtml extends StatelessWidget {
                           imageUrl: src,
                           width: screenWidth - 40,
                           fit: BoxFit.cover,
-                          memCacheWidth: ((screenWidth - 40) * 2).toInt(),
+                          memCacheWidth: imageCacheWidth(context,
+                              width: screenWidth - 40),
                           placeholder: (_, __) => Container(
                             height: 200,
                             color: AppColors.surf(isDark),

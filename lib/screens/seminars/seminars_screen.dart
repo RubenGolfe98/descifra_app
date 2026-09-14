@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/seminar.dart';
@@ -7,6 +6,7 @@ import '../../services/auth_notifier.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/access_dialog.dart';
+import '../../widgets/content_card.dart';
 import '../../widgets/dlg_app_bar.dart';
 import 'seminar_detail_screen.dart';
 
@@ -39,6 +39,20 @@ class _SeminarsScreenState extends State<SeminarsScreen> {
     } catch (_) {}
   }
 
+  void _openSeminar(BuildContext context, Seminar seminar) {
+    final auth = context.read<AuthNotifier>();
+    final canAccess = !seminar.isPremium ||
+        (auth.state.isLoggedIn && auth.state.isSubscriber);
+
+    if (!canAccess) {
+      showAccessDialog(context, onLoginTap: () {}, source: 'seminar');
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => SeminarDetailScreen(seminar: seminar)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = context.select<ThemeNotifier, bool>((t) => t.isDark);
@@ -50,14 +64,8 @@ class _SeminarsScreenState extends State<SeminarsScreen> {
       _prefetchAllSessions(auth.state.cookies ?? '');
     }
 
-    final bg = AppColors.bg(isDark);
-    final surf = AppColors.surf(isDark);
-    final bord = AppColors.bord(isDark);
-    final pri = AppColors.textPri(isDark);
-    final sec = AppColors.textSec(isDark);
-
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: AppColors.bg(isDark),
       appBar: DlgAppBar(title: 'Seminarios', isDark: isDark),
       body: FutureBuilder<List<Seminar>>(
         future: _future,
@@ -70,7 +78,7 @@ class _SeminarsScreenState extends State<SeminarsScreen> {
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(
                 child: Text('No hay seminarios disponibles',
-                    style: TextStyle(color: sec)));
+                    style: TextStyle(color: AppColors.textSec(isDark))));
           }
 
           final seminars = snapshot.data!;
@@ -80,85 +88,20 @@ class _SeminarsScreenState extends State<SeminarsScreen> {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final seminar = seminars[index];
-              return GestureDetector(
-                onTap: () {
-                  if (!auth.state.isLoggedIn) {
-                    showAccessDialog(context,
-                        onLoginTap: () {}, source: 'seminar');
-                    return;
-                  }
-                  if (seminar.isPremium && !auth.state.isSubscriber) {
-                    showAccessDialog(context,
-                        onLoginTap: () {}, source: 'seminar');
-                    return;
-                  }
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => SeminarDetailScreen(seminar: seminar)),
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: surf,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: bord, width: 0.5),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Portada
-                      if (seminar.coverUrl.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(12)),
-                          child: CachedNetworkImage(
-                            imageUrl: seminar.coverUrl,
-                            width: double.infinity,
-                            height: 160,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(
-                                height: 160, color: AppColors.bord(isDark)),
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Badge premium
-                            if (seminar.isPremium)
-                              Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: AppColors.accentDim,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Text('Exclusivo',
-                                    style: TextStyle(
-                                        color: AppColors.accent,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600)),
-                              ),
-                            Text(seminar.title,
-                                style: TextStyle(
-                                    color: pri,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.3)),
-                            if (seminar.description.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Text(seminar.description,
-                                  style: TextStyle(
-                                      color: sec, fontSize: 13, height: 1.4)),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              return ContentCard(
+                imageUrl: seminar.coverUrl,
+                imageSizes: seminar.imageSizes,
+                title: seminar.title,
+                description: seminar.description,
+                badges: [
+                  if (seminar.isPremium)
+                    const CardBadge(
+                      label: 'Exclusivo',
+                      background: AppColors.accentDim,
+                      foreground: AppColors.accent,
+                    ),
+                ],
+                onTap: () => _openSeminar(context, seminar),
               );
             },
           );

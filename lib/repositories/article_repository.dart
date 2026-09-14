@@ -106,6 +106,7 @@ class ArticleRepository {
         'per_page': perPage.toString(),
         'page': page.toString(),
         '_fields': _listFields,
+        '_embed': '1',
       });
 
       final response = await _client.get(uri).timeout(_listTimeout);
@@ -161,6 +162,7 @@ class ArticleRepository {
         'per_page': perPage.toString(),
         'page': page.toString(),
         '_fields': _listFields,
+        '_embed': '1',
       });
 
       final response = await _client.get(uri).timeout(_listTimeout);
@@ -305,6 +307,7 @@ class ArticleRepository {
         'per_page': perPage.toString(),
         'page': page.toString(),
         '_fields': _listFields,
+        '_embed': '1',
       });
       final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode != 200) return null;
@@ -331,6 +334,7 @@ class ArticleRepository {
         'per_page': perPage.toString(),
         'page': page.toString(),
         '_fields': _listFields,
+        '_embed': '1',
       });
       final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode == 400) return [];
@@ -351,6 +355,7 @@ class ArticleRepository {
         'per_page': perPage.toString(),
         'page': page.toString(),
         '_fields': _listFields,
+        '_embed': '1',
       });
       final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode == 400) {
@@ -378,6 +383,7 @@ class ArticleRepository {
         'per_page': perPage.toString(),
         'page': page.toString(),
         '_fields': _listFields,
+        '_embed': '1',
       });
       final response = await _client.get(uri).timeout(_listTimeout);
       if (response.statusCode == 400) return [];
@@ -397,6 +403,7 @@ class ArticleRepository {
       final uri = Uri.parse('$_baseUrl/posts').replace(queryParameters: {
         'slug': slug,
         '_fields': _listFields,
+        '_embed': '1',
       });
 
       final headers = <String, String>{};
@@ -547,6 +554,7 @@ class ArticleRepository {
         'search_columns': 'post_title',
         'per_page': '$perPage',
         '_fields': _listFields,
+        '_embed': '1',
       });
 
       final response = await _client.get(uri).timeout(_listTimeout);
@@ -597,6 +605,7 @@ class ArticleRepository {
         'orderby': 'date',
         'order': 'desc',
         '_fields': _listFields,
+        '_embed': '1',
       });
       final response =
           await _client.get(uri).timeout(const Duration(seconds: 35));
@@ -624,6 +633,7 @@ class ArticleRepository {
         'orderby': 'date',
         'order': 'desc',
         '_fields': _listFields,
+        '_embed': '1',
       });
       final response =
           await _client.get(uri).timeout(const Duration(seconds: 35));
@@ -673,6 +683,7 @@ class ArticleRepository {
         'orderby': 'date',
         'order': 'desc',
         '_fields': _listFields,
+        '_embed': '1',
       });
       final response =
           await _client.get(uri).timeout(const Duration(seconds: 35));
@@ -698,6 +709,7 @@ class ArticleRepository {
         'orderby': 'date',
         'order': 'desc',
         '_fields': _listFields,
+        '_embed': '1',
       });
       final response =
           await _client.get(uri).timeout(const Duration(seconds: 35));

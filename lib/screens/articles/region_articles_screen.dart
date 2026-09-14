@@ -205,11 +205,17 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                     ),
                   );
                 }
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) =>
-                        ArticleCard(article: displayArticles[index]),
-                    childCount: displayArticles.length,
+                return SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index.isOdd) return const SizedBox(height: 12);
+                        final i = index ~/ 2;
+                        return ArticleCard(article: displayArticles[i]);
+                      },
+                      childCount: displayArticles.length * 2 - 1,
+                    ),
                   ),
                 );
               },

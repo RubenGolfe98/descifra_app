@@ -6,10 +6,12 @@ import '../../models/article.dart';
 import '../../repositories/article_repository.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/article_card.dart';
-import '../search/search_screen.dart';
 import '../../utils/access_helper.dart';
 import '../../utils/date_formatter.dart';
+import '../../utils/image_url.dart';
+import '../../widgets/article_card.dart';
+import '../../widgets/content_card.dart';
+import '../search/search_screen.dart';
 
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 class HomeScreen extends StatefulWidget {
@@ -274,8 +276,7 @@ class _ArticleFeed extends StatelessWidget {
       );
     }
 
-    final featuredArticle = articles.first;
-    final restArticles = articles.skip(1).toList();
+    final rest = articles.skip(1).toList();
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -287,17 +288,28 @@ class _ArticleFeed extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-              child: _FeaturedArticle(article: featuredArticle, isDark: isDark),
+              child: _FeaturedArticle(
+                article: articles.first,
+                isDark: isDark,
+              ),
             ),
           ),
-          SliverToBoxAdapter(
-              child: _SectionTitle(title: 'Lo último', isDark: isDark)),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => ArticleCard(article: restArticles[index]),
-              childCount: restArticles.length,
+          if (rest.isNotEmpty) ...[
+            SliverToBoxAdapter(
+                child: _SectionTitle(title: 'Lo último', isDark: isDark)),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    if (index.isOdd) return const SizedBox(height: 12);
+                    return ArticleCard(article: rest[index ~/ 2]);
+                  },
+                  childCount: rest.length * 2 - 1,
+                ),
+              ),
             ),
-          ),
+          ],
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -322,22 +334,19 @@ class _ArticleFeed extends StatelessWidget {
     );
   }
 }
-
-// ─── Tarjeta destacada ────────────────────────────────────────────────────────
+// ─── Tarjeta destacada (hero) ─────────────────────────────────────────────────
 class _FeaturedArticle extends StatelessWidget {
   final Article article;
   final bool isDark;
 
   const _FeaturedArticle({required this.article, required this.isDark});
 
-  void _handleTap(BuildContext context) {
-    openArticle(context, article);
-  }
-
   @override
   Widget build(BuildContext context) {
     final justified =
         context.select<ThemeNotifier, bool>((t) => t.justifiedText);
+    final (categoryColor, categoryLabel) = _badgeFor(article.category);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Material(
@@ -345,15 +354,16 @@ class _FeaturedArticle extends StatelessWidget {
         elevation: 0,
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _handleTap(context),
-          child: SizedBox(
-            height: 210,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                _ArticleImage(
-                    url: article.imageUrl, height: 210, isDark: isDark),
-                const DecoratedBox(
+          onTap: () => openArticle(context, article),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                  child: _HeroImage(
+                      url: article.imageUrl,
+                      sizes: article.imageSizes,
+                      isDark: isDark)),
+              const Positioned.fill(
+                child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -367,11 +377,13 @@ class _FeaturedArticle extends StatelessWidget {
                     ),
                   ),
                 ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Padding(
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 140), // espacio visible de la imagen
+                  Padding(
                     padding: const EdgeInsets.all(14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,35 +391,31 @@ class _FeaturedArticle extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 3),
-                              decoration: BoxDecoration(
-                                  color: AppColors.accent,
-                                  borderRadius: BorderRadius.circular(4)),
-                              child: const Text('DESTACADO',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.8)),
-                            ),
+                            const CardBadge(
+                                label: 'DESTACADO',
+                                background: AppColors.accent,
+                                foreground: Colors.white),
                             const SizedBox(width: 6),
-                            ArticleCategoryBadge(
-                                category: article.category, overlay: true),
+                            CardBadge(
+                                label: categoryLabel,
+                                background: categoryColor,
+                                foreground: Colors.white),
                             if (article.isPremium) ...[
                               const SizedBox(width: 6),
-                              const ArticlePremiumBadge(overlay: true),
+                              const CardBadge(
+                                  label: 'Exclusivo',
+                                  background: Color(0xFFC0392B),
+                                  foreground: Colors.white,
+                                  icon: Icons.lock_outline),
                             ],
                           ],
                         ),
                         const SizedBox(height: 6),
                         Text(
                           article.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign:
-                              justified ? TextAlign.justify : TextAlign.start,
+                          textAlign: justified
+                              ? TextAlign.justify
+                              : TextAlign.start,
                           style: const TextStyle(
                               color: Colors.white,
                               fontSize: 15,
@@ -415,48 +423,59 @@ class _FeaturedArticle extends StatelessWidget {
                               height: 1.35),
                         ),
                         const SizedBox(height: 6),
-                        _ArticleMeta(date: article.date, isDark: isDark),
+                        Text(DateFormatter.short(article.date),
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 10)),
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  /// Colores fijos del badge de categoría sobre el gradiente del hero.
+  static (Color, String) _badgeFor(ArticleCategory category) {
+    switch (category) {
+      case ArticleCategory.analisis:
+        return (const Color(0xFF185FA5), 'Análisis');
+      case ArticleCategory.entrevista:
+        return (const Color(0xFFA0522D), 'Entrevista');
+      case ArticleCategory.noticia:
+        return (const Color(0xFF1D9E75), 'Noticia');
+    }
+  }
 }
 
-// ─── Imagen con caché y placeholder ──────────────────────────────────────────
-class _ArticleImage extends StatelessWidget {
+// ─── Imagen del hero con caché por DPR ───────────────────────────────────────
+class _HeroImage extends StatelessWidget {
   final String url;
-  final double? width;
-  final double? height;
+  final Map<int, String> sizes;
   final bool isDark;
 
-  const _ArticleImage({required this.url, this.height, required this.isDark})
-      : width = null;
+  const _HeroImage(
+      {required this.url, required this.sizes, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    final dpr = MediaQuery.of(context).devicePixelRatio;
-    final cacheWidth = width != null
-        ? (width! * dpr).toInt()
-        : (MediaQuery.of(context).size.width * dpr).toInt().clamp(0, 1200);
+    if (url.isEmpty) {
+      return Container(color: AppColors.surf(isDark));
+    }
+    final cacheWidth = imageCacheWidth(context);
+    final resolvedUrl = bestImageUrl(
+        sizes: sizes, fallbackUrl: url, targetWidth: cacheWidth);
     return CachedNetworkImage(
-      imageUrl: url,
-      width: width,
-      height: height,
+      imageUrl: resolvedUrl,
+      width: double.infinity,
       fit: BoxFit.cover,
       memCacheWidth: cacheWidth,
       fadeInDuration: const Duration(milliseconds: 200),
-      placeholder: (_, __) => Container(
-          width: width, height: height, color: AppColors.surf(isDark)),
+      placeholder: (_, __) => Container(color: AppColors.surf(isDark)),
       errorWidget: (_, __, ___) => Container(
-        width: width,
-        height: height,
         color: AppColors.surf(isDark),
         child: Icon(Icons.image_not_supported,
             color: AppColors.textMut(isDark), size: 20),
@@ -465,35 +484,17 @@ class _ArticleImage extends StatelessWidget {
   }
 }
 
-// ─── Meta (fecha) ─────────────────────────────────────────────────────────────
-class _ArticleMeta extends StatelessWidget {
-  final DateTime date;
-  final bool isDark;
-
-  const _ArticleMeta({required this.date, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final mut = AppColors.textPri(isDark);
-    return Row(
-      children: [
-        Text(DateFormatter.short(date),
-            style: TextStyle(color: mut, fontSize: 10)),
-      ],
-    );
-  }
-}
-
-// ─── Widgets auxiliares ───────────────────────────────────────────────────────
+// ─── Título de sección ────────────────────────────────────────────────────────
 class _SectionTitle extends StatelessWidget {
   final String title;
   final bool isDark;
+
   const _SectionTitle({required this.title, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
@@ -506,6 +507,7 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+// ─── Widgets auxiliares ───────────────────────────────────────────────────────
 class _LoadingView extends StatelessWidget {
   final bool isDark;
   const _LoadingView({required this.isDark});
