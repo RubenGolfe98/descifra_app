@@ -3,13 +3,41 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/auth_state.dart';
+import '../../services/auth_notifier.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 
-class NewsletterScreen extends StatelessWidget {
+class NewsletterScreen extends StatefulWidget {
   final MembershipInfo membership;
 
   const NewsletterScreen({super.key, required this.membership});
+
+  @override
+  State<NewsletterScreen> createState() => _NewsletterScreenState();
+}
+
+class _NewsletterScreenState extends State<NewsletterScreen> {
+  bool _loading = true;
+  late MembershipInfo _membership;
+
+  @override
+  void initState() {
+    super.initState();
+    _membership = widget.membership;
+    _refreshNewsletter();
+  }
+
+  Future<void> _refreshNewsletter() async {
+    final auth = context.read<AuthNotifier>();
+    final updated = await auth.refreshMembership();
+    if (!mounted) return;
+    setState(() {
+      if (updated != null && updated.membership != null) {
+        _membership = updated.membership!;
+      }
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,15 +57,29 @@ class NewsletterScreen extends StatelessWidget {
         iconTheme: IconThemeData(color: pri),
         elevation: 0,
       ),
-      body: membership.hasNewsletter
-          ? _NewsletterContent(
-              html: membership.newsletterHtml!,
-              isDark: isDark,
-              pri: pri,
-              sec: sec,
-              bg: bg,
+      body: _loading
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppColors.accent),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Cargando newsletter…',
+                    style: TextStyle(color: sec, fontSize: 14),
+                  ),
+                ],
+              ),
             )
-          : _Paywall(isDark: isDark, pri: pri, sec: sec),
+          : _membership.hasNewsletter
+              ? _NewsletterContent(
+                  html: _membership.newsletterHtml!,
+                  isDark: isDark,
+                  pri: pri,
+                  sec: sec,
+                  bg: bg,
+                )
+              : _Paywall(isDark: isDark, pri: pri, sec: sec),
     );
   }
 }

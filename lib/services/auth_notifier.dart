@@ -160,6 +160,18 @@ class AuthNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Refresca la membresía desde el servidor y actualiza el estado.
+  /// Devuelve el [AuthState] actualizado o null si falla o no hay sesión.
+  Future<AuthState?> refreshMembership() async {
+    if (_state.cookies == null) return null;
+    final updated = await _service.refreshMembership(_state.cookies!);
+    if (updated != null) {
+      _state = updated;
+      notifyListeners();
+    }
+    return updated;
+  }
+
   void clearSessionExpired() {
     _sessionExpired = false;
     notifyListeners();
