@@ -16,6 +16,10 @@ class FavoritesService extends ChangeNotifier {
   final List<Article> _savedArticles = [];
   bool _loaded = false;
 
+  /// Petición de carga en curso. Evita que varias reconstrucciones del árbol
+  /// lancen la misma consulta en paralelo y saturen el pool de conexiones.
+  Future<void>? _loading;
+
   FavoritesService({http.Client? client})
       : _client = client ?? SharedHttp.client;
 
@@ -25,8 +29,15 @@ class FavoritesService extends ChangeNotifier {
 
   bool isSaved(int postId) => _savedIds.contains(postId);
 
-  /// Carga los favoritos actuales desde el servidor usando action=favorites_array
-  Future<void> loadFavorites(String cookies) async {
+  /// Carga los favoritos actuales desde el servidor usando action=favorites_array.
+  /// Si ya hay una carga en curso, se reutiliza en lugar de lanzar otra.
+  Future<void> loadFavorites(String cookies) {
+    return _loading ??= _doLoadFavorites(cookies).whenComplete(() {
+      _loading = null;
+    });
+  }
+
+  Future<void> _doLoadFavorites(String cookies) async {
     try {
       final response = await _client
           .post(
@@ -40,10 +51,6 @@ class FavoritesService extends ChangeNotifier {
           .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
-        if (kDebugMode) {
-          debugPrint(
-              '⭐ [Favorites] raw: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
-        }
         final raw = jsonDecode(response.body);
         // El servidor puede devolver Map con {status, favorites} o List directa
         if (raw is Map<String, dynamic>) {

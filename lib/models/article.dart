@@ -5,7 +5,8 @@ class Article {
   final String description;
   final String author;
   final String imageUrl;
-  final Map<int, String> imageSizes; // ancho(px) → URL (tamaños generados por WP)
+  final Map<int, String>
+      imageSizes; // ancho(px) → URL (tamaños generados por WP)
   final bool isPremium;
   final ArticleCategory category;
   final String slug;

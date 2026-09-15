@@ -40,8 +40,9 @@ class DlgApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthNotifier()..initialize()),
         ChangeNotifierProvider(create: (_) => ThemeNotifier()..initialize()),
         ChangeNotifierProvider(create: (_) => ConnectivityService()),
-        ChangeNotifierProvider(
-            create: (_) => FavoritesService(client: SharedHttp.bgClient)),
+        // Los favoritos son datos del usuario, no una tarea de fondo: van por
+        // el pool principal para no competir con tags y autores.
+        ChangeNotifierProvider(create: (_) => FavoritesService()),
       ],
       child: const _AppRoot(),
     );
@@ -96,6 +97,11 @@ class _AppGate extends StatefulWidget {
 }
 
 class _AppGateState extends State<_AppGate> {
+  /// Margen tras el arranque antes de lanzar las taxonomías, para que el
+  /// listado de artículos —que es lo que el usuario está esperando— tenga
+  /// la red para él solo.
+  static const _taxonomiesDelay = Duration(seconds: 3);
+
   bool _minTimeElapsed = false;
   bool _taxonomiesStarted = false;
   bool _showOnboarding = !OnboardingService.completed;
@@ -111,10 +117,11 @@ class _AppGateState extends State<_AppGate> {
   }
 
   Future<void> _loadTaxonomies() async {
-    await Future.wait([
-      TagService.initialize(client: SharedHttp.bgClient),
-      AuthorService.initialize(client: SharedHttp.bgClient),
-    ]).timeout(const Duration(seconds: 8), onTimeout: () => []);
+    // Secuencial a propósito: ambas comparten el pool de fondo, que solo
+    // admite dos conexiones. Lanzarlas en paralelo hacía que se bloquearan
+    // mutuamente y agotaran su plazo sin llegar a salir.
+    await TagService.initialize(client: SharedHttp.bgClient);
+    await AuthorService.initialize(client: SharedHttp.bgClient);
 
     // Forzar reconstrucción para que ArticleTagBadge y ArticleDetailScreen
     // recojan los tags cargados (si aún no se habían cargado antes).
@@ -133,6 +140,7 @@ class _AppGateState extends State<_AppGate> {
         final favorites = context.read<FavoritesService>();
         if (auth.state.isLoggedIn) {
           if (!favorites.loaded) {
+            // Si ya hay una carga en vuelo, el servicio la reutiliza.
             favorites.loadFavorites(auth.state.cookies ?? '');
           }
         } else {
@@ -141,10 +149,11 @@ class _AppGateState extends State<_AppGate> {
 
         // Tags y autores se cargan en segundo plano DESPUÉS de que MainScreen
         // y la petición de artículos ya se hayan lanzado.
-        // Así no compiten por ancho de banda con el contenido principal.
         if (!_taxonomiesStarted) {
           _taxonomiesStarted = true;
-          _loadTaxonomies();
+          Future.delayed(_taxonomiesDelay, () {
+            if (mounted) _loadTaxonomies();
+          });
         }
       });
     }
