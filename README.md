@@ -8,8 +8,8 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 
 ### Inicio y lectura
 <p align="center">
-  <img src="screenshots/home_dark.png" width="180" alt="Inicio — tema oscuro"/>
-  <img src="screenshots/home_white.png" width="180" alt="Inicio — tema claro"/>
+  <img src="screenshots/home_dark.jpeg" width="180" alt="Inicio — tema oscuro"/>
+  <img src="screenshots/home_white.jpeg" width="180" alt="Inicio — tema claro"/>
   <img src="screenshots/detail_article_dark.png" width="180" alt="Detalle artículo — oscuro"/>
   <img src="screenshots/detail_article_white.png" width="180" alt="Detalle artículo — claro"/>
 </p>
@@ -18,15 +18,15 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 <p align="center">
   <img src="screenshots/regions.png" width="180" alt="Regiones"/>
   <img src="screenshots/detail_region.png" width="180" alt="Detalle región"/>
-  <img src="screenshots/region_articles.png" width="180" alt="Artículos por región"/>
+  <img src="screenshots/region_articles.jpeg" width="180" alt="Artículos por región"/>
   <img src="screenshots/region_maps.png" width="180" alt="Mapas por región"/>
 </p>
 
 ### Explorar
 <p align="center">
   <img src="screenshots/explore_screen.png" width="180" alt="Explorar"/>
-  <img src="screenshots/analisis_list.png" width="180" alt="Listado análisis"/>
-  <img src="screenshots/interviews.png" width="180" alt="Entrevistas"/>
+  <img src="screenshots/analisis_list.jpeg" width="180" alt="Listado análisis"/>
+  <img src="screenshots/interviews.jpeg" width="180" alt="Entrevistas"/>
   <img src="screenshots/detail_interview.png" width="180" alt="Detalle entrevista"/>
 </p>
 
