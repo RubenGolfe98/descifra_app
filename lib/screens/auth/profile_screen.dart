@@ -222,7 +222,7 @@ class _LoggedInView extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Redes sociales
-          _buildSocialRow(bord, sec),
+          _SocialSection(isDark: isDark),
           const SizedBox(height: 12),
 
           // Cerrar sesión
@@ -251,60 +251,6 @@ class _LoggedInView extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
-  }
-
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Widget _buildSocialRow(Color bord, Color sec) {
-    final socials = [
-      _Social('Instagram', 'assets/icons/instagram.svg',
-          'https://www.instagram.com/descifraguerra/'),
-      _Social('Twitter', 'assets/icons/twitter.svg',
-          'https://twitter.com/descifraguerra'),
-      _Social('Telegram', 'assets/icons/telegram.svg',
-          'https://t.me/descifrandolaguerra'),
-      _Social('TikTok', 'assets/icons/tiktok.svg',
-          'https://www.tiktok.com/@descifraguerra'),
-      _Social('Twitch', 'assets/icons/twitch.svg',
-          'https://www.twitch.tv/descifrandolaguerra'),
-      _Social('YouTube', 'assets/icons/youtube.svg',
-          'https://www.youtube.com/channel/UCvLrMnloIn_RqITF4Ly5ZEA'),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      decoration: BoxDecoration(
-        border: Border.all(color: bord, width: 0.5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Síguenos',
-            style: TextStyle(
-              color: sec,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: socials
-                .map((s) =>
-                    _SocialButton(social: s, onTap: () => _openUrl(s.url)))
-                .toList(),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildAvatar(String name) {
@@ -431,7 +377,7 @@ class _LoginView extends StatelessWidget {
     final pri = AppColors.textPri(isDark);
     final sec = AppColors.textSec(isDark);
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -555,6 +501,10 @@ class _LoginView extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: 24),
+
+          // Redes sociales (siempre visibles, haya sesión o no)
+          _SocialSection(isDark: isDark),
           const SizedBox(height: 24),
         ],
       ),
@@ -715,6 +665,71 @@ class _Social {
   final String iconAsset;
   final String url;
   const _Social(this.label, this.iconAsset, this.url);
+}
+
+/// Sección "Síguenos" con los botones de redes sociales del periódico.
+/// Se muestra siempre, haya sesión iniciada o no.
+class _SocialSection extends StatelessWidget {
+  final bool isDark;
+  const _SocialSection({required this.isDark});
+
+  static const _socials = [
+    _Social('Instagram', 'assets/icons/instagram.svg',
+        'https://www.instagram.com/descifraguerra/'),
+    _Social('Twitter', 'assets/icons/twitter.svg',
+        'https://twitter.com/descifraguerra'),
+    _Social('Telegram', 'assets/icons/telegram.svg',
+        'https://t.me/descifrandolaguerra'),
+    _Social('TikTok', 'assets/icons/tiktok.svg',
+        'https://www.tiktok.com/@descifraguerra'),
+    _Social('Twitch', 'assets/icons/twitch.svg',
+        'https://www.twitch.tv/descifrandolaguerra'),
+    _Social('YouTube', 'assets/icons/youtube.svg',
+        'https://www.youtube.com/channel/UCvLrMnloIn_RqITF4Ly5ZEA'),
+  ];
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bord = AppColors.bord(isDark);
+    final sec = AppColors.textSec(isDark);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: bord, width: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Síguenos',
+            style: TextStyle(
+              color: sec,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: _socials
+                .map((s) =>
+                    _SocialButton(social: s, onTap: () => _openUrl(s.url)))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SocialButton extends StatelessWidget {

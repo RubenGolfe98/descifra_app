@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.5.6] — 2026-09-23
+
+### Corregido
+- La sección "Síguenos" del Perfil, con las redes sociales del periódico, ahora se muestra siempre, también sin sesión iniciada
+
 ## [1.5.5] — 2026-09-14
 
 ### Mejorado
