@@ -92,9 +92,9 @@ String authorsBody(int count, {int startId = 1}) {
   ]);
 }
 
-/// Marca de tiempo anterior al TTL de 7 días.
+/// Marca de tiempo anterior al TTL de 30 días.
 int staleTimestamp() =>
-    DateTime.now().subtract(const Duration(days: 8)).millisecondsSinceEpoch;
+    DateTime.now().subtract(const Duration(days: 31)).millisecondsSinceEpoch;
 
 /// Espera a que terminen los refrescos lanzados sin await.
 Future<void> settle() =>
@@ -279,23 +279,21 @@ void main() {
   });
 
   group('Refresco silencioso', () {
-    test('actualiza en segundo plano cuando la caché está caducada', () async {
+    test('actualiza la caché caducada durante initialize', () async {
       installStore({
         'flutter.$_prefsKey': jsonEncode({'Antiguo': 1}),
         'flutter.$_prefsKeyTimestamp': staleTimestamp(),
       });
 
+      // El refresco silencioso va awaitado dentro de initialize (para no
+      // saturar el pool de conexiones del arranque), así que al regresar
+      // los datos ya son los del servidor.
       await AuthorService.initialize(
         client: clientReturning(jsonEncode([
           {'id': 99, 'name': 'Nuevo'}
         ])),
       );
 
-      // La caché se sirve de inmediato...
-      expect(AuthorService.getAuthorId('Antiguo'), 1);
-
-      // ...y el refresco silencioso la sustituye poco después.
-      await settle();
       expect(AuthorService.getAuthorId('Nuevo'), 99);
       expect(AuthorService.getAuthorId('Antiguo'), isNull);
     });

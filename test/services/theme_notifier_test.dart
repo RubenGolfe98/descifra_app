@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,6 +37,21 @@ void installStorage() {
         return null;
     }
   });
+}
+
+/// Ejecuta [body] tolerando el error que lanza google_fonts al no poder
+/// cargar las tipografías en tests: no hay red y las fuentes no van en
+/// assets (la app las descarga en runtime). Los tests solo comprueban
+/// propiedades del TextStyle/TextTheme, nunca los glifos, así que la carga
+/// es incidental; cualquier otro error inesperado se relanza.
+void ignoringFontLoadErrors(void Function() body) {
+  final unexpected = <Object>[];
+  runZonedGuarded(body, (error, _) {
+    if (!error.toString().contains('allowRuntimeFetching')) {
+      unexpected.add(error);
+    }
+  });
+  if (unexpected.isNotEmpty) throw unexpected.first;
 }
 
 void main() {
@@ -125,47 +142,57 @@ void main() {
     });
 
     test('todas devuelven un TextTheme aplicable', () {
-      final base = ThemeData.light().textTheme;
-      for (final font in AppFont.values) {
-        expect(font.textTheme(base), isA<TextTheme>(),
-            reason: 'falla ${font.name}');
-      }
+      ignoringFontLoadErrors(() {
+        final base = ThemeData.light().textTheme;
+        for (final font in AppFont.values) {
+          expect(font.textTheme(base), isA<TextTheme>(),
+              reason: 'falla ${font.name}');
+        }
+      });
     });
 
     test('el TextTheme conserva la base sobre la que se aplica', () {
-      final base = ThemeData.dark().textTheme;
-      final theme = AppFont.lora.textTheme(base);
+      ignoringFontLoadErrors(() {
+        final base = ThemeData.dark().textTheme;
+        final theme = AppFont.lora.textTheme(base);
 
-      expect(theme.bodyMedium, isNotNull);
+        expect(theme.bodyMedium, isNotNull);
+      });
     });
 
     test('todas devuelven un TextStyle con los valores indicados', () {
-      for (final font in AppFont.values) {
-        final style = font.style(
-          color: const Color(0xFFC0392B),
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
-        );
+      ignoringFontLoadErrors(() {
+        for (final font in AppFont.values) {
+          final style = font.style(
+            color: const Color(0xFFC0392B),
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+          );
 
-        expect(style.color, const Color(0xFFC0392B), reason: font.name);
-        expect(style.fontSize, 15, reason: font.name);
-        expect(style.fontWeight, FontWeight.w700, reason: font.name);
-        expect(style.letterSpacing, 0.2, reason: font.name);
-      }
+          expect(style.color, const Color(0xFFC0392B), reason: font.name);
+          expect(style.fontSize, 15, reason: font.name);
+          expect(style.fontWeight, FontWeight.w700, reason: font.name);
+          expect(style.letterSpacing, 0.2, reason: font.name);
+        }
+      });
     });
 
     test('el estilo admite que no se le pase ningún parámetro', () {
-      for (final font in AppFont.values) {
-        expect(font.style(), isA<TextStyle>(), reason: font.name);
-      }
+      ignoringFontLoadErrors(() {
+        for (final font in AppFont.values) {
+          expect(font.style(), isA<TextStyle>(), reason: font.name);
+        }
+      });
     });
 
     test('cada tipografía genera una familia distinta', () {
-      final families =
-          AppFont.values.map((f) => f.style().fontFamily).toSet();
+      ignoringFontLoadErrors(() {
+        final families =
+            AppFont.values.map((f) => f.style().fontFamily).toSet();
 
-      expect(families, hasLength(AppFont.values.length));
+        expect(families, hasLength(AppFont.values.length));
+      });
     });
   });
 

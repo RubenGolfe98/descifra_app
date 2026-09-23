@@ -109,9 +109,9 @@ Map<String, Object> cachedTags({
   };
 }
 
-/// Marca de tiempo anterior al TTL de 7 días.
+/// Marca de tiempo anterior al TTL de 30 días.
 int staleTimestamp() =>
-    DateTime.now().subtract(const Duration(days: 8)).millisecondsSinceEpoch;
+    DateTime.now().subtract(const Duration(days: 31)).millisecondsSinceEpoch;
 
 /// Espera a que terminen los refrescos lanzados sin await.
 Future<void> settle() =>
@@ -381,20 +381,18 @@ void main() {
   });
 
   group('Refresco silencioso', () {
-    test('actualiza en segundo plano cuando la caché está caducada', () async {
+    test('actualiza la caché caducada durante initialize', () async {
       installStore(cachedTags(timestamp: staleTimestamp()));
 
+      // El refresco silencioso va awaitado dentro de initialize (para no
+      // saturar el pool de conexiones del arranque), así que al regresar
+      // los datos ya son los del servidor.
       await TagService.initialize(
         client: clientReturning(jsonEncode([
           {'id': 99, 'slug': 'nuevo', 'name': 'Nuevo'}
         ])),
       );
 
-      // La caché se sirve de inmediato...
-      expect(TagService.getTagName('tag-espana'), 'España');
-
-      // ...y el refresco silencioso la sustituye poco después.
-      await settle();
       expect(TagService.getTagName('tag-nuevo'), 'Nuevo');
       expect(TagService.getTagId('nuevo'), 99);
       expect(TagService.getTagName('tag-espana'), isNull);

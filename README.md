@@ -24,38 +24,44 @@ App móvil no oficial para [Descifrando la Guerra](https://www.descifrandolaguer
 
 ### Explorar
 <p align="center">
-  <img src="screenshots/explore_screen.png" width="180" alt="Explorar"/>
+  <img src="screenshots/explore_screen.jpeg" width="180" alt="Explorar"/>
+  <img src="screenshots/news.jpeg" width="180" alt="Explorar"/>
   <img src="screenshots/analisis_list.jpeg" width="180" alt="Listado análisis"/>
   <img src="screenshots/interviews.jpeg" width="180" alt="Entrevistas"/>
-  <img src="screenshots/detail_interview.png" width="180" alt="Detalle entrevista"/>
+  <img src="screenshots/detail_interview.jpeg" width="180" alt="Detalle entrevista"/>
 </p>
 
 ### Coberturas
 <p align="center">
-  <img src="screenshots/coverages.png" width="180" alt="Coberturas"/>
+  <img src="screenshots/coverages.jpeg" width="180" alt="Coberturas"/>
   <img src="screenshots/detail_coverage.png" width="180" alt="Detalle cobertura"/>
 </p>
 
 ### Seminarios
 <p align="center">
-  <img src="screenshots/seminars.png" width="180" alt="Seminarios"/>
-  <img src="screenshots/seminar_sessions.png" width="180" alt="Sesiones de seminario"/>
-  <img src="screenshots/detail_seminar_session.png" width="180" alt="Detalle sesión"/>
+  <img src="screenshots/seminars.jpeg" width="180" alt="Seminarios"/>
+  <img src="screenshots/seminar_sessions.jpeg" width="180" alt="Sesiones de seminario"/>
+  <img src="screenshots/detail_seminar_session.jpeg" width="180" alt="Detalle sesión"/>
 </p>
 
 ### Libros
 <p align="center">
   <img src="screenshots/book_list.png" width="180" alt="Listado de libros"/>
-  <img src="screenshots/detail_book.png" width="180" alt="Detalle de libro"/>
+  <img src="screenshots/detail_book.jpeg" width="180" alt="Detalle de libro"/>
 </p>
 
 ### Perfil y cuenta
 <p align="center">
-  <img src="screenshots/login_app.png" width="180" alt="Pantalla de login"/>
-  <img src="screenshots/logged_profile.png" width="180" alt="Perfil con membresía"/>
-  <img src="screenshots/newsletter.png" width="180" alt="Newsletter"/>
-  <img src="screenshots/saved_articles.png" width="180" alt="Artículos guardados"/>
-  <img src="screenshots/settings.png" width="180" alt="Ajustes"/>
+  <img src="screenshots/login_app.jpeg" width="180" alt="Pantalla de login"/>
+  <img src="screenshots/logged_profile.jpeg" width="180" alt="Perfil con membresía"/>
+  <img src="screenshots/newsletter.jpeg" width="180" alt="Newsletter"/>
+  <img src="screenshots/saved_articles.jpeg" width="180" alt="Artículos guardados"/>
+</p>
+
+### Ajustes
+<p align="center">
+  <img src="screenshots/settings.jpeg" width="180" alt="Ajustes"/>
+  <img src="screenshots/settings2.jpeg" width="180" alt="Ajustes"/>
 </p>
 
 ---

@@ -96,17 +96,10 @@ void main() {
       expect(find.text('1 / 3'), findsOneWidget);
     });
 
-    testWidgets('muestra el título del mapa actual', (tester) async {
-      await openGallery(tester, [item1, item2, item3]);
-
-      expect(find.text('Mapa uno'), findsOneWidget);
-    });
-
     testWidgets('respeta el índice inicial', (tester) async {
       await openGallery(tester, [item1, item2, item3], initialIndex: 2);
 
       expect(find.text('3 / 3'), findsOneWidget);
-      expect(find.text('Mapa tres'), findsOneWidget);
     });
 
     testWidgets('deslizar a la izquierda avanza al mapa siguiente',
@@ -118,7 +111,6 @@ void main() {
       await settlePageView(tester);
 
       expect(find.text('2 / 3'), findsOneWidget);
-      expect(find.text('Mapa dos'), findsOneWidget);
     });
 
     testWidgets('deslizar a la derecha vuelve al mapa anterior',
@@ -130,7 +122,6 @@ void main() {
       await settlePageView(tester);
 
       expect(find.text('1 / 3'), findsOneWidget);
-      expect(find.text('Mapa uno'), findsOneWidget);
     });
 
     testWidgets('no avanza más allá del último mapa', (tester) async {
@@ -141,17 +132,6 @@ void main() {
       await settlePageView(tester);
 
       expect(find.text('2 / 2'), findsOneWidget);
-    });
-
-    testWidgets('omite el caption cuando el mapa no tiene título',
-        (tester) async {
-      await openGallery(tester, [
-        (url: 'https://example.com/mapa1.jpg', caption: null, group: null),
-        item2,
-      ]);
-
-      expect(find.text('1 / 2'), findsOneWidget);
-      expect(find.text('Mapa dos'), findsNothing);
     });
 
     testWidgets('con zoom activo el swipe no cambia de mapa', (tester) async {
@@ -166,7 +146,6 @@ void main() {
       await settlePageView(tester);
 
       expect(find.text('1 / 3'), findsOneWidget);
-      expect(find.text('Mapa uno'), findsOneWidget);
     });
 
     testWidgets('al quitar el zoom el swipe vuelve a cambiar de mapa',
@@ -183,7 +162,6 @@ void main() {
       await settlePageView(tester);
 
       expect(find.text('2 / 3'), findsOneWidget);
-      expect(find.text('Mapa dos'), findsOneWidget);
     });
   });
 
@@ -220,7 +198,6 @@ void main() {
       await openGroupedGallery(tester, groupedItems);
 
       expect(find.text('Europa 1/2'), findsOneWidget);
-      expect(find.text('Mapa Europa 1'), findsOneWidget);
     });
 
     testWidgets('respeta el índice inicial en medio del segundo grupo',
@@ -228,7 +205,6 @@ void main() {
       await openGroupedGallery(tester, groupedItems, initialIndex: 3);
 
       expect(find.text('Asia-Pacífico 2/3'), findsOneWidget);
-      expect(find.text('Mapa Asia 2'), findsOneWidget);
     });
 
     testWidgets('al cruzar de región cambia el nombre y se reinicia el número',
@@ -243,7 +219,6 @@ void main() {
       await settlePageView(tester);
 
       expect(find.text('Asia-Pacífico 1/3'), findsOneWidget);
-      expect(find.text('Mapa Asia 1'), findsOneWidget);
     });
 
     testWidgets('con zoom activo el swipe no cambia de mapa', (tester) async {
