@@ -18,61 +18,18 @@ class CoveragesScreen extends StatefulWidget {
 
 class _CoveragesScreenState extends State<CoveragesScreen> {
   final _repository = CoverageRepository();
-  final _scrollController = ScrollController();
-  final _coverages = <Coverage>[];
 
-  late Future<List<Coverage>> _firstPageFuture;
-  int _currentPage = 1;
-  bool _isLoadingMore = false;
-  bool _hasMore = true;
+  late Future<List<Coverage>> _coveragesFuture;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
-    _firstPageFuture = _repository.fetchCoverages(perPage: 5);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 300 &&
-        !_isLoadingMore &&
-        _hasMore) {
-      _loadNextPage();
-    }
-  }
-
-  Future<void> _loadNextPage() async {
-    if (_isLoadingMore) return;
-    setState(() => _isLoadingMore = true);
-    final more = await _repository.fetchCoverages(page: _currentPage + 1, perPage: 5);
-    if (mounted) {
-      setState(() {
-        if (more.isEmpty) {
-          _hasMore = false;
-        } else {
-          _coverages.addAll(more);
-          _currentPage++;
-          // Si el servidor devuelve menos elementos de los pedidos, es la última página
-          if (more.length < 5) _hasMore = false;
-        }
-        _isLoadingMore = false;
-      });
-    }
+    _coveragesFuture = _repository.fetchCoverages();
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _currentPage = 1;
-      _hasMore = true;
-      _coverages.clear();
-      _firstPageFuture = _repository.fetchCoverages(perPage: 5);
+      _coveragesFuture = _repository.fetchCoverages();
     });
   }
 
@@ -86,16 +43,18 @@ class _CoveragesScreenState extends State<CoveragesScreen> {
       backgroundColor: bg,
       appBar: DlgAppBar(title: 'Coberturas', isDark: isDark),
       body: FutureBuilder<List<Coverage>>(
-        future: _firstPageFuture,
+        future: _coveragesFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting &&
-              _coverages.isEmpty) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
             );
           }
 
-          if (snapshot.hasError && _coverages.isEmpty) {
+          final coverages = snapshot.data ?? const <Coverage>[];
+
+          // El repositorio devuelve una lista vacía ante cualquier fallo
+          if (snapshot.hasError || coverages.isEmpty) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -112,41 +71,14 @@ class _CoveragesScreenState extends State<CoveragesScreen> {
             );
           }
 
-          if (snapshot.data != null && _coverages.isEmpty) {
-            _coverages.addAll(snapshot.data!);
-          }
-
           return RefreshIndicator(
             onRefresh: _refresh,
             color: AppColors.accent,
             backgroundColor: AppColors.surf(isDark),
             child: ListView.builder(
-              controller: _scrollController,
-              itemCount: _coverages.length + 1,
-              itemBuilder: (context, index) {
-                if (index == _coverages.length) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: _isLoadingMore
-                        ? const Center(
-                            child: SizedBox(
-                              width: 20, height: 20,
-                              child: CircularProgressIndicator(
-                                  color: AppColors.accent, strokeWidth: 2),
-                            ),
-                          )
-                        : _hasMore
-                            ? const SizedBox.shrink()
-                            : Center(
-                                child: Text('No hay más coberturas',
-                                    style: TextStyle(
-                                        color: AppColors.textMut(isDark),
-                                        fontSize: 12)),
-                              ),
-                  );
-                }
-                return _CoverageCard(coverage: _coverages[index]);
-              },
+              itemCount: coverages.length,
+              itemBuilder: (context, index) =>
+                  _CoverageCard(coverage: coverages[index]),
             ),
           );
         },

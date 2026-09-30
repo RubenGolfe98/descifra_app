@@ -125,37 +125,6 @@ void main() {
       expect(recording.requests, isEmpty);
     });
 
-    test('las páginas siguientes nunca salen de caché', () async {
-      final recording = RecordingClient(body: coveragesBody(5));
-      final repo = CoverageRepository(client: recording.client);
-
-      await repo.fetchCoverages();
-      await repo.fetchCoverages(page: 2);
-      await repo.fetchCoverages(page: 2);
-
-      expect(recording.requests, hasLength(3),
-          reason: 'solo la primera página se cachea');
-    });
-
-    test('la página 2 no sobrescribe la caché de la primera', () async {
-      var call = 0;
-      final repo = CoverageRepository(
-        client: MockClient((_) async {
-          call++;
-          return http.Response(
-            call == 1 ? coveragesBody(2) : coveragesBody(7, startId: 100),
-            200,
-          );
-        }),
-      );
-
-      await repo.fetchCoverages();
-      await repo.fetchCoverages(page: 2);
-      final primera = await repo.fetchCoverages();
-
-      expect(primera, hasLength(2));
-    });
-
     test('sigue usando la caché justo antes de que expire', () {
       fakeAsync((async) {
         final recording = RecordingClient(body: coveragesBody(1));
@@ -226,14 +195,15 @@ void main() {
       expect(await repo.fetchCoverages(), isEmpty);
     });
 
-    test('envía los parámetros de paginación y orden', () async {
+    test('pide el listado completo en una sola petición', () async {
       final recording = RecordingClient(body: coveragesBody(1));
       final repo = CoverageRepository(client: recording.client);
 
-      await repo.fetchCoverages(page: 3, perPage: 12);
+      await repo.fetchCoverages();
 
-      expect(recording.lastQuery['page'], '3');
-      expect(recording.lastQuery['per_page'], '12');
+      expect(recording.requests, hasLength(1));
+      expect(recording.lastQuery.containsKey('page'), isFalse);
+      expect(recording.lastQuery['per_page'], '100');
       expect(recording.lastQuery['orderby'], 'date');
       expect(recording.lastQuery['order'], 'desc');
       expect(recording.requests.last.path, contains('/cobertura'));

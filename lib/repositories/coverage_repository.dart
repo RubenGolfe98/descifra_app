@@ -30,15 +30,16 @@ class CoverageRepository {
       _listCachedAt != null &&
       DateTime.now().difference(_listCachedAt!) < _ttl;
 
-  Future<List<Coverage>> fetchCoverages({int page = 1, int perPage = 5}) async {
-    if (page == 1 && _listCacheValid) {
+  /// Descarga el listado completo de coberturas en una sola petición.
+  /// El número de coberturas es pequeño, así que no se pagina.
+  Future<List<Coverage>> fetchCoverages() async {
+    if (_listCacheValid) {
       if (kDebugMode) debugPrint('📰 [Coverages] Desde caché');
       return _listCache!;
     }
     try {
       final uri = Uri.parse('$_baseUrl/cobertura').replace(queryParameters: {
-        'per_page': perPage.toString(),
-        'page': page.toString(),
+        'per_page': '100',
         'orderby': 'date',
         'order': 'desc',
         '_fields': 'id,title,slug,link,yoast_head_json.og_image,yoast_head_json.description',
@@ -47,10 +48,8 @@ class CoverageRepository {
       if (response.statusCode != 200) return [];
       final List<dynamic> data = jsonDecode(response.body);
       final coverages = data.map((j) => Coverage.fromJson(j)).toList();
-      if (page == 1) {
-        _listCache = coverages;
-        _listCachedAt = DateTime.now();
-      }
+      _listCache = coverages;
+      _listCachedAt = DateTime.now();
       return coverages;
     } catch (e) {
       if (kDebugMode) debugPrint('📰 [Coverages] Error: $e');
@@ -101,7 +100,7 @@ class CoverageRepository {
   static void prefetch() {
     final repo = CoverageRepository();
     if (repo._listCacheValid) return;
-    repo.fetchCoverages(page: 1, perPage: 5).ignore();
+    repo.fetchCoverages().ignore();
     if (kDebugMode) debugPrint('📰 [Coverages] Precarga iniciada');
   }
 }
