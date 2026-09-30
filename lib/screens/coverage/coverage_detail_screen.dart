@@ -9,6 +9,7 @@ import '../../services/auth_notifier.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/html_styles.dart';
+import '../../utils/image_url.dart';
 import '../../utils/snackbar_utils.dart';
 import '../../widgets/image_viewer.dart';
 import '../articles/article_detail_screen.dart';
@@ -89,7 +90,7 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                         ? CachedNetworkImage(
                             imageUrl: widget.coverage.imageUrl,
                             fit: BoxFit.cover,
-                            memCacheWidth: 800,
+                            memCacheWidth: imageCacheWidth(context),
                           )
                         : Container(color: Colors.black),
                   ),
@@ -233,27 +234,30 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                         if (src.isEmpty) return const SizedBox.shrink();
                         final srcset =
                             extensionContext.attributes['srcset'] ?? '';
-                        String imgUrl = src;
-                        if (srcset.isNotEmpty) {
-                          final match = RegExp(r'(https?://\S+)\s+600w')
-                              .firstMatch(srcset);
-                          if (match != null) imgUrl = match.group(1)!;
-                        }
+                        final imgUrl = bestHtmlImageUrl(src, srcset);
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: GestureDetector(
-                            onTap: () => showImageViewer(context, src),
+                            onTap: () => showImageViewer(context, imgUrl),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: CachedNetworkImage(
                                 imageUrl: imgUrl,
                                 width: screenWidth - 40,
                                 fit: BoxFit.cover,
-                                memCacheWidth: (screenWidth * 2).toInt(),
+                                memCacheWidth: imageCacheWidth(context,
+                                    width: screenWidth - 40),
                                 placeholder: (_, __) =>
                                     Container(height: 180, color: surf),
-                                errorWidget: (_, __, ___) =>
-                                    const SizedBox.shrink(),
+                                errorWidget: (_, __, ___) => imgUrl == src
+                                    ? const SizedBox.shrink()
+                                    : CachedNetworkImage(
+                                        imageUrl: src,
+                                        width: screenWidth - 40,
+                                        fit: BoxFit.cover,
+                                        errorWidget: (_, __, ___) =>
+                                            const SizedBox.shrink(),
+                                      ),
                               ),
                             ),
                           ),

@@ -91,4 +91,41 @@ void main() {
       expect(result, 2560);
     });
   });
+
+  group('wpFullSizeUrl', () {
+    const up = 'https://www.descifrandolaguerra.es/wp-content/uploads/2024/05';
+
+    test('quita el sufijo de tamaño de WordPress', () {
+      expect(wpFullSizeUrl('$up/mapa-300x200.jpg'), '$up/mapa.jpg');
+      expect(wpFullSizeUrl('$up/mapa-scaled-1024x683.webp'),
+          '$up/mapa-scaled.webp');
+    });
+
+    test('conserva la query string', () {
+      expect(wpFullSizeUrl('$up/mapa-768x512.png?v=2'), '$up/mapa.png?v=2');
+    });
+
+    test('no toca URLs sin sufijo ni externas', () {
+      expect(wpFullSizeUrl('$up/mapa.jpg'), '$up/mapa.jpg');
+      expect(wpFullSizeUrl('https://e.com/foto-300x200.jpg'),
+          'https://e.com/foto-300x200.jpg');
+    });
+  });
+
+  group('bestHtmlImageUrl', () {
+    const up = 'https://www.descifrandolaguerra.es/wp-content/uploads';
+
+    test('elige el candidato más ancho del srcset', () {
+      expect(
+        bestHtmlImageUrl('$up/a-1024x576.jpg',
+            '$up/a-300x169.jpg 300w, $up/a.jpg 1920w, $up/a-1024x576.jpg 1024w'),
+        '$up/a.jpg',
+      );
+    });
+
+    test('sin srcset usa el original de src', () {
+      expect(bestHtmlImageUrl('$up/a-1024x576.jpg', ''), '$up/a.jpg');
+      expect(bestHtmlImageUrl('$up/a-1024x576.jpg', 'basura'), '$up/a.jpg');
+    });
+  });
 }

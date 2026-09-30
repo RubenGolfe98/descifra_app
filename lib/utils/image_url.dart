@@ -32,3 +32,31 @@ String bestImageUrl({
   }
   return fallbackUrl;
 }
+
+final _wpSizeSuffix = RegExp(r'-\d+x\d+(?=\.[a-zA-Z0-9]+(?:\?|$))');
+
+/// Devuelve la URL del original de una imagen de WordPress quitando el sufijo
+/// de tamaño generado (`foto-300x200.jpg` → `foto.jpg`). Las URLs que no son
+/// de `/wp-content/uploads/` se devuelven sin cambios.
+String wpFullSizeUrl(String url) {
+  if (!url.contains('/wp-content/uploads/')) return url;
+  return url.replaceFirst(_wpSizeSuffix, '');
+}
+
+/// URL de mayor resolución para un `<img>` del contenido HTML: el candidato
+/// más ancho del [srcset] (`url 1024w, url 2048w`), o el original de [src]
+/// si no hay `srcset` utilizable.
+String bestHtmlImageUrl(String src, String srcset) {
+  String? best;
+  var bestWidth = -1;
+  for (final candidate in srcset.split(',')) {
+    final parts = candidate.trim().split(RegExp(r'\s+'));
+    if (parts.length < 2 || !parts[1].endsWith('w')) continue;
+    final width = int.tryParse(parts[1].substring(0, parts[1].length - 1));
+    if (width != null && width > bestWidth) {
+      bestWidth = width;
+      best = parts[0];
+    }
+  }
+  return best ?? wpFullSizeUrl(src);
+}

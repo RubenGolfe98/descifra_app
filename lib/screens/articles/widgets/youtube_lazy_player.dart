@@ -76,7 +76,11 @@ class _YoutubeLazyPlayerState extends State<YoutubeLazyPlayer> {
   }
 
   Widget _buildThumbnail(bool isDark, double screenWidth) {
+    // maxresdefault (1280×720) no existe en todos los vídeos: si da 404 se
+    // recurre a hqdefault (480×360).
     final thumbUrl =
+        'https://img.youtube.com/vi/${widget.videoId}/maxresdefault.jpg';
+    final fallbackUrl =
         'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg';
     return GestureDetector(
       onTap: _play,
@@ -93,7 +97,12 @@ class _YoutubeLazyPlayerState extends State<YoutubeLazyPlayer> {
                 height: 200,
                 color: AppColors.surf(isDark),
               ),
-              errorWidget: (_, __, ___) => const SizedBox.shrink(),
+              errorWidget: (_, __, ___) => CachedNetworkImage(
+                imageUrl: fallbackUrl,
+                width: screenWidth - 40,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
             Container(
               width: 56,

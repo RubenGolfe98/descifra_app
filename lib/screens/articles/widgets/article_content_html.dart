@@ -77,14 +77,16 @@ class ArticleContentHtml extends StatelessWidget {
                 builder: (extensionContext) {
                   final src = extensionContext.attributes['src'] ?? '';
                   if (src.isEmpty) return const SizedBox.shrink();
+                  final imgUrl = bestHtmlImageUrl(
+                      src, extensionContext.attributes['srcset'] ?? '');
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: GestureDetector(
-                      onTap: () => showImageViewer(context, src),
+                      onTap: () => showImageViewer(context, imgUrl),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: CachedNetworkImage(
-                          imageUrl: src,
+                          imageUrl: imgUrl,
                           width: screenWidth - 40,
                           fit: BoxFit.cover,
                           memCacheWidth: imageCacheWidth(context,
@@ -93,7 +95,15 @@ class ArticleContentHtml extends StatelessWidget {
                             height: 200,
                             color: AppColors.surf(isDark),
                           ),
-                          errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                          errorWidget: (_, __, ___) => imgUrl == src
+                              ? const SizedBox.shrink()
+                              : CachedNetworkImage(
+                                  imageUrl: src,
+                                  width: screenWidth - 40,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) =>
+                                      const SizedBox.shrink(),
+                                ),
                         ),
                       ),
                     ),

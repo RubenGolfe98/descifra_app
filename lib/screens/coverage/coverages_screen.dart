@@ -5,6 +5,7 @@ import '../../models/coverage.dart';
 import '../../repositories/coverage_repository.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/image_url.dart';
 import '../../widgets/dlg_app_bar.dart';
 import 'coverage_detail_screen.dart';
 
@@ -188,7 +189,7 @@ class _CoverageCard extends StatelessWidget {
                   imageUrl: coverage.imageUrl,
                   fit: BoxFit.cover,
                   alignment: Alignment.center,
-                  memCacheWidth: 800,
+                  memCacheWidth: imageCacheWidth(context),
                   fadeInDuration: const Duration(milliseconds: 300),
                   errorWidget: (_, __, ___) => const SizedBox.shrink(),
                 ),

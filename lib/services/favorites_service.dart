@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/article.dart';
 import '../repositories/article_repository.dart';
+import '../utils/image_url.dart';
 
 class FavoritesService extends ChangeNotifier {
   static const _ajaxUrl =
@@ -170,7 +171,7 @@ class FavoritesService extends ChangeNotifier {
 
     final thumbHtml = entry['thumbnails']?['medium'] as String? ?? '';
     final imgMatch = RegExp(r'src="([^"]+)"').firstMatch(thumbHtml);
-    final imageUrl = imgMatch?.group(1) ?? '';
+    final imageUrl = wpFullSizeUrl(imgMatch?.group(1) ?? '');
 
     final title = (entry['title'] as String? ?? '')
         .replaceAll('&#8230;', '…')

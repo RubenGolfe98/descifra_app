@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/map_image.dart';
@@ -6,6 +5,7 @@ import '../../repositories/maps_repository.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/image_viewer.dart';
+import '../../widgets/map_grid_image.dart';
 
 class AllMapsScreen extends StatefulWidget {
   const AllMapsScreen({super.key});
@@ -230,14 +230,10 @@ class _RegionSection extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    CachedNetworkImage(
-                      imageUrl: map.thumbUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: surf),
-                      errorWidget: (_, __, ___) => Container(
-                        color: surf,
-                        child: Icon(Icons.map_outlined, color: bord, size: 32),
-                      ),
+                    MapGridImage(
+                      map: map,
+                      background: surf,
+                      iconColor: bord,
                     ),
                   ],
                 ),

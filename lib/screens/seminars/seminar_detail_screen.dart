@@ -198,13 +198,16 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
                                   if (src.isEmpty) {
                                     return const SizedBox.shrink();
                                   }
+                                  final imgUrl = bestHtmlImageUrl(src,
+                                      extensionContext.attributes['srcset'] ??
+                                          '');
                                   return Padding(
                                     padding:
                                         const EdgeInsets.symmetric(vertical: 8),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
                                       child: CachedNetworkImage(
-                                        imageUrl: src,
+                                        imageUrl: imgUrl,
                                         width: screenWidth - 40,
                                         fit: BoxFit.cover,
                                         memCacheWidth: imageCacheWidth(
@@ -215,7 +218,15 @@ class _SeminarDetailScreenState extends State<SeminarDetailScreen> {
                                           color: surf,
                                         ),
                                         errorWidget: (_, __, ___) =>
-                                            const SizedBox.shrink(),
+                                            imgUrl == src
+                                                ? const SizedBox.shrink()
+                                                : CachedNetworkImage(
+                                                    imageUrl: src,
+                                                    width: screenWidth - 40,
+                                                    fit: BoxFit.cover,
+                                                    errorWidget: (_, __, ___) =>
+                                                        const SizedBox.shrink(),
+                                                  ),
                                       ),
                                     ),
                                   );
