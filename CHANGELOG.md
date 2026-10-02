@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.7] — 2026-10-02
+
+### Corregido
+- Cargar todas las imágenes a máxima resolución
+- Cargar el listado completo de coberturas sin paginación
+
 ## [1.5.6] — 2026-09-23
 
 ### Corregido
