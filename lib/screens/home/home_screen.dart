@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +9,10 @@ import '../../repositories/article_repository.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/access_helper.dart';
+import '../../utils/article_list_merge.dart';
 import '../../utils/date_formatter.dart';
 import '../../utils/image_url.dart';
+import '../../widgets/appear_animation.dart';
 import '../../widgets/article_card.dart';
 import '../../widgets/content_card.dart';
 import '../search/search_screen.dart';
@@ -31,6 +35,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   bool _initialized = false;
+
+  // Ids añadidos en el último refresco, que entran con animación
+  Set<int> _justAdded = {};
+  bool _staggered = false;
 
   // Estado del banner de refresco
   _RefreshStatus _refreshStatus = _RefreshStatus.idle;
@@ -64,10 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) {
           final hasNewContent = fresh.isNotEmpty &&
               (_articles.isEmpty || fresh.first.id != _articles.first.id);
+          _mergeFresh(fresh);
           setState(() {
-            _articles
-              ..clear()
-              ..addAll(fresh);
             _refreshStatus = hasNewContent
                 ? _RefreshStatus.updated
                 : _RefreshStatus.upToDate;
@@ -115,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
         } else if (more.isEmpty) {
           _hasMore = false; // fin real del listado
         } else {
-          _articles.addAll(more);
+          appendNewArticles(_articles, more);
           _currentPage++;
         }
         _isLoadingMore = false;
@@ -123,7 +129,47 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Pull-to-refresh: mantiene los cards visibles y solo anima los nuevos.
   Future<void> _refresh() async {
+    var waitingNetwork = false;
+    final networkDone = Completer<void>();
+    void finish() {
+      if (!networkDone.isCompleted) networkDone.complete();
+    }
+
+    final result = await _repository.fetchLatestArticles(
+      onBackgroundRefreshStarted: () => waitingNetwork = true,
+      onBackgroundRefreshFailed: finish,
+      onRefreshed: (fresh) {
+        if (mounted) _mergeFresh(fresh);
+        finish();
+      },
+    );
+    if (waitingNetwork) {
+      // Había caché: el listado de red llega por onRefreshed
+      await networkDone.future;
+    } else if (mounted && result.isNotEmpty) {
+      _mergeFresh(result);
+    }
+  }
+
+  void _mergeFresh(List<Article> fresh) => setState(() => _absorbFresh(fresh));
+
+  /// Fusiona sin setState (en la carga inicial se llama desde build). Si el
+  /// listado estaba vacío, todos los cards entran escalonados.
+  void _absorbFresh(List<Article> fresh) {
+    final wasEmpty = _articles.isEmpty;
+    final added = mergeFreshArticles(_articles, fresh);
+    if (added.isEmpty) return;
+    _justAdded = added;
+    _staggered = wasEmpty;
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) setState(() => _justAdded = {});
+    });
+  }
+
+  /// Recarga completa desde la vista de error.
+  Future<void> _reload() async {
     setState(() {
       _currentPage = 1;
       _hasMore = true;
@@ -152,18 +198,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     return _LoadingView(isDark: isDark);
                   }
                   if (snapshot.hasError && _articles.isEmpty) {
-                    return _ErrorView(onRetry: _refresh, isDark: isDark);
+                    return _ErrorView(onRetry: _reload, isDark: isDark);
                   }
                   if (!_initialized && snapshot.data != null) {
                     _initialized = true;
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (mounted && _articles.isEmpty) {
-                        setState(() => _articles.addAll(snapshot.data!));
+                        _mergeFresh(snapshot.data!);
                       }
                     });
                   }
                   return _ArticleFeed(
                     articles: _articles,
+                    justAdded: _justAdded,
+                    staggered: _staggered,
                     onRefresh: _refresh,
                     scrollController: _scrollController,
                     isLoadingMore: _isLoadingMore,
@@ -252,6 +300,8 @@ class _AppHeader extends StatelessWidget {
 // ─── Feed ─────────────────────────────────────────────────────────────────────
 class _ArticleFeed extends StatelessWidget {
   final List<Article> articles;
+  final Set<int> justAdded;
+  final bool staggered;
   final Future<void> Function() onRefresh;
   final ScrollController scrollController;
   final bool isLoadingMore;
@@ -260,6 +310,8 @@ class _ArticleFeed extends StatelessWidget {
 
   const _ArticleFeed({
     required this.articles,
+    required this.justAdded,
+    required this.staggered,
     required this.onRefresh,
     required this.scrollController,
     required this.isLoadingMore,
@@ -288,9 +340,17 @@ class _ArticleFeed extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-              child: _FeaturedArticle(
-                article: articles.first,
-                isDark: isDark,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: AppearAnimation(
+                  key: ValueKey(articles.first.id),
+                  animate: staggered && justAdded.contains(articles.first.id),
+                  expand: false,
+                  child: _FeaturedArticle(
+                    article: articles.first,
+                    isDark: isDark,
+                  ),
+                ),
               ),
             ),
           ),
@@ -302,10 +362,28 @@ class _ArticleFeed extends StatelessWidget {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    if (index.isOdd) return const SizedBox(height: 12);
-                    return ArticleCard(article: rest[index ~/ 2]);
+                    final article = rest[index];
+                    return AppearAnimation(
+                      key: ValueKey(article.id),
+                      animate: justAdded.contains(article.id),
+                      expand: !staggered,
+                      delay: staggered
+                          ? AppearAnimation.staggerDelay(index + 1)
+                          : Duration.zero,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            bottom: index == rest.length - 1 ? 0 : 12),
+                        child: ArticleCard(article: article),
+                      ),
+                    );
                   },
-                  childCount: rest.length * 2 - 1,
+                  childCount: rest.length,
+                  findChildIndexCallback: (key) {
+                    if (key is! ValueKey<int>) return null;
+                    final id = key.value;
+                    final i = rest.indexWhere((a) => a.id == id);
+                    return i < 0 ? null : i;
+                  },
                 ),
               ),
             ),

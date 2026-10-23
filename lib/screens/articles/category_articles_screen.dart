@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../models/article.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/article_list_merge.dart';
+import '../../widgets/appear_animation.dart';
 import '../../widgets/article_card.dart';
 
 class CategoryArticlesScreen extends StatefulWidget {
@@ -38,6 +40,10 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
 
+  // Ids añadidos en el último refresco, que entran con animación
+  Set<int> _justAdded = {};
+  bool _staggered = false;
+
   @override
   void initState() {
     super.initState();
@@ -54,13 +60,7 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
   void _load() {
     _firstPageFuture = widget.fetchArticles(
       onRefreshed: (fresh) {
-        if (mounted) {
-          setState(() {
-            _articles
-              ..clear()
-              ..addAll(fresh);
-          });
-        }
+        if (mounted) _mergeFresh(fresh);
       },
     );
   }
@@ -85,7 +85,7 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
         } else if (more.isEmpty) {
           _hasMore = false;
         } else {
-          _articles.addAll(more);
+          appendNewArticles(_articles, more);
           _currentPage++;
         }
         _isLoadingMore = false;
@@ -93,14 +93,31 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
     }
   }
 
+  /// Pull-to-refresh: mantiene los cards visibles y solo anima los nuevos.
   Future<void> _refresh() async {
-    setState(() {
-      _currentPage = 1;
-      _hasMore = true;
-      _articles.clear();
-      _load();
+    if (_articles.isEmpty) {
+      setState(_load);
+      await _firstPageFuture;
+      return;
+    }
+    _load();
+    final result = await _firstPageFuture;
+    if (mounted && result.isNotEmpty) _mergeFresh(result);
+  }
+
+  void _mergeFresh(List<Article> fresh) => setState(() => _absorbFresh(fresh));
+
+  /// Fusiona sin setState (en la carga inicial se llama desde build). Si el
+  /// listado estaba vacío, todos los cards entran escalonados.
+  void _absorbFresh(List<Article> fresh) {
+    final wasEmpty = _articles.isEmpty;
+    final added = mergeFreshArticles(_articles, fresh);
+    if (added.isEmpty) return;
+    _justAdded = added;
+    _staggered = wasEmpty;
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) setState(() => _justAdded = {});
     });
-    await _firstPageFuture;
   }
 
   @override
@@ -171,7 +188,7 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
                   }
 
                   if (snapshot.hasData && _articles.isEmpty) {
-                    _articles.addAll(snapshot.data!);
+                    _absorbFresh(snapshot.data!);
                   }
                   final displayArticles = _articles;
 
@@ -212,7 +229,22 @@ class _CategoryArticlesScreenState extends State<CategoryArticlesScreen> {
                                       ),
                           );
                         }
-                        return ArticleCard(article: displayArticles[index]);
+                        final article = displayArticles[index];
+                        return AppearAnimation(
+                          key: ValueKey(article.id),
+                          animate: _justAdded.contains(article.id),
+                          expand: !_staggered,
+                          delay: _staggered
+                              ? AppearAnimation.staggerDelay(index)
+                              : Duration.zero,
+                          child: ArticleCard(article: article),
+                        );
+                      },
+                      findItemIndexCallback: (key) {
+                        if (key is! ValueKey<int>) return null;
+                        final i = displayArticles
+                            .indexWhere((a) => a.id == key.value);
+                        return i < 0 ? null : i;
                       },
                     ),
                   );

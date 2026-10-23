@@ -6,6 +6,8 @@ import '../../models/region.dart';
 import '../../repositories/article_repository.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/article_list_merge.dart';
+import '../../widgets/appear_animation.dart';
 import '../../widgets/article_card.dart';
 
 class RegionArticlesScreen extends StatefulWidget {
@@ -26,6 +28,10 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
 
+  // Ids añadidos en el último refresco, que entran con animación
+  Set<int> _justAdded = {};
+  bool _staggered = false;
+
   @override
   void initState() {
     super.initState();
@@ -43,13 +49,7 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
     _firstPageFuture = _repository.fetchArticlesByRegion(
       widget.region.id,
       onRefreshed: (fresh) {
-        if (mounted) {
-          setState(() {
-            _articles
-              ..clear()
-              ..addAll(fresh);
-          });
-        }
+        if (mounted) _mergeFresh(fresh);
       },
     );
   }
@@ -77,7 +77,7 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
         } else if (more.isEmpty) {
           _hasMore = false;
         } else {
-          _articles.addAll(more);
+          appendNewArticles(_articles, more);
           _currentPage++;
         }
         _isLoadingMore = false;
@@ -85,14 +85,31 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
     }
   }
 
+  /// Pull-to-refresh: mantiene los cards visibles y solo anima los nuevos.
   Future<void> _refresh() async {
-    setState(() {
-      _articles.clear();
-      _currentPage = 1;
-      _hasMore = true;
-      _load();
+    if (_articles.isEmpty) {
+      setState(_load);
+      await _firstPageFuture;
+      return;
+    }
+    _load();
+    final result = await _firstPageFuture;
+    if (mounted && result.isNotEmpty) _mergeFresh(result);
+  }
+
+  void _mergeFresh(List<Article> fresh) => setState(() => _absorbFresh(fresh));
+
+  /// Fusiona sin setState (en la carga inicial se llama desde build). Si el
+  /// listado estaba vacío, todos los cards entran escalonados.
+  void _absorbFresh(List<Article> fresh) {
+    final wasEmpty = _articles.isEmpty;
+    final added = mergeFreshArticles(_articles, fresh);
+    if (added.isEmpty) return;
+    _justAdded = added;
+    _staggered = wasEmpty;
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) setState(() => _justAdded = {});
     });
-    await _firstPageFuture;
   }
 
   @override
@@ -193,7 +210,7 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                   );
                 }
                 if (snapshot.hasData && _articles.isEmpty) {
-                  _articles.addAll(snapshot.data!);
+                  _absorbFresh(snapshot.data!);
                 }
                 final displayArticles = _articles;
                 if (displayArticles.isEmpty) {
@@ -210,11 +227,30 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        if (index.isOdd) return const SizedBox(height: 12);
-                        final i = index ~/ 2;
-                        return ArticleCard(article: displayArticles[i]);
+                        final article = displayArticles[index];
+                        return AppearAnimation(
+                          key: ValueKey(article.id),
+                          animate: _justAdded.contains(article.id),
+                          expand: !_staggered,
+                          delay: _staggered
+                              ? AppearAnimation.staggerDelay(index)
+                              : Duration.zero,
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                                bottom: index == displayArticles.length - 1
+                                    ? 0
+                                    : 12),
+                            child: ArticleCard(article: article),
+                          ),
+                        );
                       },
-                      childCount: displayArticles.length * 2 - 1,
+                      childCount: displayArticles.length,
+                      findChildIndexCallback: (key) {
+                        if (key is! ValueKey<int>) return null;
+                        final id = key.value;
+                        final i = displayArticles.indexWhere((a) => a.id == id);
+                        return i < 0 ? null : i;
+                      },
                     ),
                   ),
                 );
