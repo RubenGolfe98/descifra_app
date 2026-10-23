@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.0] — 2026-10-23
+
+### Mejorado
+- Animaciones en la app
+
 ## [1.5.7] — 2026-10-02
 
 ### Corregido
