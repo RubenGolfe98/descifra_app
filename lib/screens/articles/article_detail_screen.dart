@@ -547,6 +547,18 @@ class _ContentError extends StatelessWidget {
 }
 
 // ─── Botón de favorito ────────────────────────────────────────────────────────
+// Escala 0 → 1,3 → 1 al cambiar el estado guardado.
+final _bookmarkBounce = TweenSequence<double>([
+  TweenSequenceItem(
+      tween:
+          Tween(begin: 0.0, end: 1.3).chain(CurveTween(curve: Curves.easeOut)),
+      weight: 60),
+  TweenSequenceItem(
+      tween:
+          Tween(begin: 1.3, end: 1.0).chain(CurveTween(curve: Curves.easeIn)),
+      weight: 40),
+]);
+
 class _FavoriteButton extends StatelessWidget {
   final Article article;
   final bool isDark;
@@ -562,10 +574,21 @@ class _FavoriteButton extends StatelessWidget {
     final isSaved = favorites.isSaved(article.id);
 
     return IconButton(
-      icon: Icon(
-        isSaved ? Icons.bookmark : Icons.bookmark_outline,
-        color: isSaved ? AppColors.accent : AppColors.textPri(isDark),
-        size: 22,
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) => ScaleTransition(
+          // Solo rebota el icono entrante; el saliente desaparece sin más
+          scale: child.key == ValueKey(isSaved)
+              ? animation.drive(_bookmarkBounce)
+              : animation,
+          child: child,
+        ),
+        child: Icon(
+          isSaved ? Icons.bookmark : Icons.bookmark_outline,
+          key: ValueKey(isSaved),
+          color: isSaved ? AppColors.accent : AppColors.textPri(isDark),
+          size: 22,
+        ),
       ),
       onPressed: () async {
         final cookies = auth.state.cookies ?? '';

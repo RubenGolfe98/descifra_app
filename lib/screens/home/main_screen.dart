@@ -16,12 +16,25 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
+
+  // Fundido de la pestaña entrante; IndexedStack conserva el estado de todas
+  late final _tabFade = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+    value: 1,
+  );
   DateTime? _lastTabTap;
   final _scrollToTopNotifier = ValueNotifier<int?>(null);
 
-  void _jumpToProfile() => setState(() => _currentIndex = 3);
+  void _jumpToProfile() => _selectTab(3);
+
+  void _selectTab(int index) {
+    if (index != _currentIndex) _tabFade.forward(from: 0);
+    setState(() => _currentIndex = index);
+  }
 
   void _onTabTap(int index) {
     final now = DateTime.now();
@@ -29,7 +42,7 @@ class _MainScreenState extends State<MainScreen> {
         _lastTabTap != null &&
         now.difference(_lastTabTap!) < const Duration(milliseconds: 300);
     _lastTabTap = now;
-    setState(() => _currentIndex = index);
+    _selectTab(index);
     if (isDoubleTap) {
       _scrollToTopNotifier.value = index;
       Future.microtask(() => _scrollToTopNotifier.value = null);
@@ -39,6 +52,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void dispose() {
     _scrollToTopNotifier.dispose();
+    _tabFade.dispose();
     super.dispose();
   }
 
@@ -59,7 +73,10 @@ class _MainScreenState extends State<MainScreen> {
         value: _scrollToTopNotifier,
         child: Scaffold(
           backgroundColor: AppColors.bg(isDark),
-          body: IndexedStack(index: _currentIndex, children: screens),
+          body: FadeTransition(
+            opacity: CurvedAnimation(parent: _tabFade, curve: Curves.easeOut),
+            child: IndexedStack(index: _currentIndex, children: screens),
+          ),
           bottomNavigationBar: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

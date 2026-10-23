@@ -703,22 +703,51 @@ class _ErrorView extends StatelessWidget {
 
 enum _RefreshStatus { idle, refreshing, upToDate, updated }
 
-class _RefreshBanner extends StatelessWidget {
+class _RefreshBanner extends StatefulWidget {
   final _RefreshStatus status;
   final bool isDark;
 
   const _RefreshBanner({required this.status, required this.isDark});
 
   @override
-  Widget build(BuildContext context) {
-    if (status == _RefreshStatus.idle) return const SizedBox.shrink();
+  State<_RefreshBanner> createState() => _RefreshBannerState();
+}
 
+class _RefreshBannerState extends State<_RefreshBanner> {
+  // Último estado visible: se sigue pintando mientras el banner se pliega
+  late _RefreshStatus _shown = widget.status;
+
+  @override
+  void didUpdateWidget(_RefreshBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.status != _RefreshStatus.idle) _shown = widget.status;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = widget.status != _RefreshStatus.idle;
+    return ClipRect(
+      child: AnimatedAlign(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.topCenter,
+        heightFactor: visible ? 1 : 0,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: visible ? 1 : 0,
+          child: _content(_shown, widget.isDark),
+        ),
+      ),
+    );
+  }
+
+  Widget _content(_RefreshStatus shown, bool isDark) {
     final Color bg;
     final Color textColor;
     final IconData icon;
     final String text;
 
-    switch (status) {
+    switch (shown) {
       case _RefreshStatus.refreshing:
         bg = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFE8EAF6);
         textColor = isDark ? const Color(0xFF90CAF9) : const Color(0xFF1565C0);
@@ -734,8 +763,8 @@ class _RefreshBanner extends StatelessWidget {
         textColor = isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32);
         icon = Icons.new_releases_outlined;
         text = 'Nuevos artículos disponibles';
-      default:
-        return const SizedBox.shrink();
+      case _RefreshStatus.idle:
+        return const SizedBox(width: double.infinity);
     }
 
     return AnimatedContainer(
@@ -743,30 +772,34 @@ class _RefreshBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: bg,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (status == _RefreshStatus.refreshing)
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: Row(
+          key: ValueKey(shown),
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (shown == _RefreshStatus.refreshing)
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  color: textColor,
+                  strokeWidth: 2,
+                ),
+              )
+            else
+              Icon(icon, color: textColor, size: 16),
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: TextStyle(
                 color: textColor,
-                strokeWidth: 2,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
-            )
-          else
-            Icon(icon, color: textColor, size: 16),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
