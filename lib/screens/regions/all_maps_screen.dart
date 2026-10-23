@@ -6,6 +6,8 @@ import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/image_viewer.dart';
 import '../../widgets/map_grid_image.dart';
+import '../../widgets/bounce_on_tap.dart';
+import '../../widgets/press_scale.dart';
 
 class AllMapsScreen extends StatefulWidget {
   const AllMapsScreen({super.key});
@@ -46,9 +48,12 @@ class _AllMapsScreenState extends State<AllMapsScreen> {
               ),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-                    onPressed: () => Navigator.of(context).pop(),
+                  BounceOnTap(
+                    child: IconButton(
+                      icon:
+                          Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
                   ),
                   Text('Mapas',
                       style: TextStyle(
@@ -219,23 +224,32 @@ class _RegionSection extends StatelessWidget {
           itemCount: maps.length,
           itemBuilder: (context, index) {
             final map = maps[index];
-            return GestureDetector(
-              onTap: () => showImageGroupedGalleryViewer(
-                context,
-                items: galleryItems,
-                initialIndex: galleryOffset + index,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    MapGridImage(
-                      map: map,
-                      background: surf,
-                      iconColor: bord,
+            return Builder(
+              // Context de la celda: el visor se abre desde la miniatura
+              builder: (cellContext) => PressScale(
+                pressedScale: 0.96,
+                builder: (onPressedChanged) => GestureDetector(
+                  onTapDown: (_) => onPressedChanged(true),
+                  onTapUp: (_) => onPressedChanged(false),
+                  onTapCancel: () => onPressedChanged(false),
+                  onTap: () => showImageGroupedGalleryViewer(
+                    cellContext,
+                    items: galleryItems,
+                    initialIndex: galleryOffset + index,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        MapGridImage(
+                          map: map,
+                          background: surf,
+                          iconColor: bord,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             );

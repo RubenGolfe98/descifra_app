@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -78,6 +79,16 @@ class _AppRoot extends StatelessWidget {
       theme: ThemeData(
         brightness: isDark ? Brightness.dark : Brightness.light,
         scaffoldBackgroundColor: AppColors.bg(isDark),
+        // Android: transición Material 3 (fundido + deslizamiento corto).
+        // iOS: deslizamiento lateral nativo con gesto de volver.
+        pageTransitionsTheme: PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: FadeForwardsPageTransitionsBuilder(
+              backgroundColor: AppColors.bg(isDark),
+            ),
+            TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
+          },
+        ),
         textTheme: theme.font.textTheme(
           isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
         ),

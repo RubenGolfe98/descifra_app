@@ -18,6 +18,7 @@ import '../../services/tag_service.dart';
 import '../../widgets/shimmer.dart';
 import 'widgets/article_content_html.dart';
 import 'widgets/article_paywall.dart';
+import '../../widgets/bounce_on_tap.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
   final Article article;
@@ -199,23 +200,27 @@ class _ArticleShell extends StatelessWidget {
           expandedHeight: 0,
           pinned: true,
           backgroundColor: AppColors.surf(isDark),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new,
-                color: AppColors.textPri(isDark), size: 18),
-            onPressed: () => Navigator.of(context).pop(),
+          leading: BounceOnTap(
+            child: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new,
+                  color: AppColors.textPri(isDark), size: 18),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
           ),
           actions: [
             _FavoriteButton(article: article, isDark: isDark),
-            IconButton(
-              icon: Icon(Icons.share_outlined,
-                  color: AppColors.textPri(isDark), size: 20),
-              onPressed: () {
-                final url = article.slug.isNotEmpty
-                    ? 'https://www.descifrandolaguerra.es/${article.slug}/'
-                    : 'https://www.descifrandolaguerra.es/?p=${article.id}';
-                SharePlus.instance
-                    .share(ShareParams(text: '${article.title}\n\n$url'));
-              },
+            BounceOnTap(
+              child: IconButton(
+                icon: Icon(Icons.share_outlined,
+                    color: AppColors.textPri(isDark), size: 20),
+                onPressed: () {
+                  final url = article.slug.isNotEmpty
+                      ? 'https://www.descifrandolaguerra.es/${article.slug}/'
+                      : 'https://www.descifrandolaguerra.es/?p=${article.id}';
+                  SharePlus.instance
+                      .share(ShareParams(text: '${article.title}\n\n$url'));
+                },
+              ),
             ),
           ],
           bottom: PreferredSize(

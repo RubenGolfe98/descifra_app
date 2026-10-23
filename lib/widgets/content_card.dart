@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/theme_notifier.dart';
 import '../theme/app_colors.dart';
 import '../utils/image_url.dart';
+import 'press_scale.dart';
 
 /// Tarjeta de contenido unificada (estilo seminarios) para todos los listados.
 /// Imagen de portada opcional, badges, título y descripción sin límites de
@@ -36,73 +37,76 @@ class ContentCard extends StatelessWidget {
     final align = justified ? TextAlign.justify : TextAlign.start;
     final radius = BorderRadius.circular(12);
 
-    return Material(
-      elevation: 0,
-      color: AppColors.surf(isDark),
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: BorderSide(color: AppColors.bord(isDark), width: 0.5),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (imageUrl.isNotEmpty)
-              _CoverImage(url: imageUrl, sizes: imageSizes, isDark: isDark),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (badges.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: badges,
-                      ),
-                    ),
-                  Text(
-                    title,
-                    textAlign: align,
-                    style: TextStyle(
-                      color: AppColors.textPri(isDark),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
-                    ),
-                  ),
-                  if (description.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        description,
-                        textAlign: align,
-                        style: TextStyle(
-                          color: AppColors.textSec(isDark),
-                          fontSize: 13,
-                          height: 1.4,
+    return PressScale(
+      builder: (onPressedChanged) => Material(
+        elevation: 0,
+        color: AppColors.surf(isDark),
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(color: AppColors.bord(isDark), width: 0.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          onHighlightChanged: onPressedChanged,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (imageUrl.isNotEmpty)
+                _CoverImage(url: imageUrl, sizes: imageSizes, isDark: isDark),
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (badges.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: badges,
                         ),
                       ),
-                    ),
-                  if (meta != null && meta!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        meta!,
-                        style: TextStyle(
-                          color: AppColors.textMut(isDark),
-                          fontSize: 11,
-                        ),
+                    Text(
+                      title,
+                      textAlign: align,
+                      style: TextStyle(
+                        color: AppColors.textPri(isDark),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
                       ),
                     ),
-                ],
+                    if (description.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          description,
+                          textAlign: align,
+                          style: TextStyle(
+                            color: AppColors.textSec(isDark),
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    if (meta != null && meta!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          meta!,
+                          style: TextStyle(
+                            color: AppColors.textMut(isDark),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

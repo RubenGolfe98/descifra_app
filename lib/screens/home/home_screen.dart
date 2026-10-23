@@ -15,7 +15,9 @@ import '../../utils/image_url.dart';
 import '../../widgets/appear_animation.dart';
 import '../../widgets/article_card.dart';
 import '../../widgets/content_card.dart';
+import '../../widgets/press_scale.dart';
 import '../search/search_screen.dart';
+import '../../widgets/bounce_on_tap.dart';
 
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 class HomeScreen extends StatefulWidget {
@@ -280,13 +282,15 @@ class _AppHeader extends StatelessWidget {
             // Derecha — lupa
             Positioned(
               right: 0,
-              child: IconButton(
-                icon:
-                    const Icon(Icons.search, color: AppColors.accent, size: 22),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+              child: BounceOnTap(
+                child: IconButton(
+                  icon: const Icon(Icons.search,
+                      color: AppColors.accent, size: 22),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SearchScreen()),
+                  ),
                 ),
               ),
             ),
@@ -426,146 +430,151 @@ class _FeaturedArticle extends StatelessWidget {
         context.select<ThemeNotifier, bool>((t) => t.justifiedText);
     final (categoryColor, categoryLabel) = _badgeFor(article.category);
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.accent.withValues(alpha: isDark ? 0.35 : 0.22),
-          width: 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.50)
-                : AppColors.accent.withValues(alpha: 0.08),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+    return PressScale(
+      builder: (onPressedChanged) => Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.accent.withValues(alpha: isDark ? 0.35 : 0.22),
+            width: 1.0,
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: Material(
-          type: MaterialType.card,
-          elevation: 0,
-          color: AppColors.surf(isDark),
-          child: InkWell(
-            onTap: () => openArticle(context, article),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: _HeroImage(
-                    url: article.imageUrl,
-                    sizes: article.imageSizes,
-                    isDark: isDark,
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.50)
+                  : AppColors.accent.withValues(alpha: 0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: Material(
+            type: MaterialType.card,
+            elevation: 0,
+            color: AppColors.surf(isDark),
+            child: InkWell(
+              onTap: () => openArticle(context, article),
+              onHighlightChanged: onPressedChanged,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: _HeroImage(
+                      url: article.imageUrl,
+                      sizes: article.imageSizes,
+                      isDark: isDark,
+                    ),
                   ),
-                ),
-                const Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: [0.0, 0.25, 0.55, 1.0],
-                        colors: [
-                          Colors.transparent,
-                          Color(0x2B000000),
-                          Color(0xCC000000),
-                          Color(0xFA000000),
-                        ],
+                  const Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: [0.0, 0.25, 0.55, 1.0],
+                          colors: [
+                            Colors.transparent,
+                            Color(0x2B000000),
+                            Color(0xCC000000),
+                            Color(0xFA000000),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 160), // Espacio visible de la imagen
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              const CardBadge(
-                                label: 'DESTACADO',
-                                background: AppColors.accent,
-                                foreground: Colors.white,
-                                icon: Icons.star_rounded,
-                              ),
-                              CardBadge(
-                                label: categoryLabel,
-                                background: categoryColor,
-                                foreground: Colors.white,
-                              ),
-                              if (article.isPremium) ...[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                          height: 160), // Espacio visible de la imagen
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
                                 const CardBadge(
-                                  label: 'Exclusivo',
-                                  background: Color(0xFFC0392B),
+                                  label: 'DESTACADO',
+                                  background: AppColors.accent,
                                   foreground: Colors.white,
-                                  icon: Icons.lock_outline,
+                                  icon: Icons.star_rounded,
                                 ),
+                                CardBadge(
+                                  label: categoryLabel,
+                                  background: categoryColor,
+                                  foreground: Colors.white,
+                                ),
+                                if (article.isPremium) ...[
+                                  const CardBadge(
+                                    label: 'Exclusivo',
+                                    background: Color(0xFFC0392B),
+                                    foreground: Colors.white,
+                                    icon: Icons.lock_outline,
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            article.title,
-                            textAlign:
-                                justified ? TextAlign.justify : TextAlign.start,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              height: 1.28,
-                              letterSpacing: -0.2,
                             ),
-                          ),
-                          if (article.description.isNotEmpty) ...[
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 10),
                             Text(
-                              article.description,
+                              article.title,
                               textAlign: justified
                                   ? TextAlign.justify
                                   : TextAlign.start,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.88),
-                                fontSize: 13.5,
-                                height: 1.42,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                height: 1.28,
+                                letterSpacing: -0.2,
                               ),
                             ),
-                          ],
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.schedule_rounded,
-                                size: 13,
-                                color: Colors.white.withValues(alpha: 0.72),
-                              ),
-                              const SizedBox(width: 5),
+                            if (article.description.isNotEmpty) ...[
+                              const SizedBox(height: 8),
                               Text(
-                                DateFormatter.short(article.date),
+                                article.description,
+                                textAlign: justified
+                                    ? TextAlign.justify
+                                    : TextAlign.start,
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.75),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w400,
+                                  color: Colors.white.withValues(alpha: 0.88),
+                                  fontSize: 13.5,
+                                  height: 1.42,
                                 ),
                               ),
                             ],
-                          ),
-                        ],
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.schedule_rounded,
+                                  size: 13,
+                                  color: Colors.white.withValues(alpha: 0.72),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  DateFormatter.short(article.date),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.75),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

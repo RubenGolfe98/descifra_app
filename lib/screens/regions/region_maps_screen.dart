@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/dlg_app_bar.dart';
 import '../../widgets/image_viewer.dart';
 import '../../widgets/map_grid_image.dart';
+import '../../widgets/press_scale.dart';
 
 class RegionMapsScreen extends StatefulWidget {
   final Region region;
@@ -112,30 +113,39 @@ class _RegionMapsScreenState extends State<RegionMapsScreen> {
                   itemCount: maps.length,
                   itemBuilder: (context, index) {
                     final map = maps[index];
-                    return GestureDetector(
-                      onTap: () => showImageGroupedGalleryViewer(
-                        context,
-                        items: [
-                          for (final m in maps)
-                            (
-                              url: m.url,
-                              caption: m.alt.isEmpty ? null : m.alt,
-                              group: widget.region.name,
+                    return Builder(
+                      // Context de la celda: el visor se abre desde la miniatura
+                      builder: (cellContext) => PressScale(
+                        pressedScale: 0.96,
+                        builder: (onPressedChanged) => GestureDetector(
+                          onTapDown: (_) => onPressedChanged(true),
+                          onTapUp: (_) => onPressedChanged(false),
+                          onTapCancel: () => onPressedChanged(false),
+                          onTap: () => showImageGroupedGalleryViewer(
+                            cellContext,
+                            items: [
+                              for (final m in maps)
+                                (
+                                  url: m.url,
+                                  caption: m.alt.isEmpty ? null : m.alt,
+                                  group: widget.region.name,
+                                ),
+                            ],
+                            initialIndex: index,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                MapGridImage(
+                                  map: map,
+                                  background: surf,
+                                  iconColor: AppColors.bord(isDark),
+                                ),
+                              ],
                             ),
-                        ],
-                        initialIndex: index,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            MapGridImage(
-                              map: map,
-                              background: surf,
-                              iconColor: AppColors.bord(isDark),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     );

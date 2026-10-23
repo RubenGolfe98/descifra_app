@@ -123,25 +123,43 @@ class _BottomNav extends StatelessWidget {
         type: BottomNavigationBarType.fixed,
         showSelectedLabels: false,
         showUnselectedLabels: false,
-        items: const [
+        items: [
           BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
+              activeIcon: _ActiveNavIcon(Icons.home),
               label: 'Inicio'),
           BottomNavigationBarItem(
               icon: Icon(Icons.language_outlined),
-              activeIcon: Icon(Icons.language),
+              activeIcon: _ActiveNavIcon(Icons.language),
               label: 'Regiones'),
           BottomNavigationBarItem(
               icon: Icon(Icons.explore_outlined),
-              activeIcon: Icon(Icons.explore),
+              activeIcon: _ActiveNavIcon(Icons.explore),
               label: 'Explorar'),
           BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
+              activeIcon: _ActiveNavIcon(Icons.person),
               label: 'Perfil'),
         ],
       ),
+    );
+  }
+}
+
+/// Icono de la pestaña activa: rebota al seleccionarse. Al ser un widget
+/// distinto de `Icon`, se crea de nuevo en cada selección y la animación arranca.
+class _ActiveNavIcon extends StatelessWidget {
+  final IconData icon;
+  const _ActiveNavIcon(this.icon);
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.75, end: 1),
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutBack,
+      builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
+      child: Icon(icon),
     );
   }
 }

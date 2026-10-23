@@ -6,6 +6,7 @@ import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
 import 'category_articles_screen.dart';
 import '../../services/author_service.dart';
+import '../../widgets/bounce_on_tap.dart';
 
 enum FilterType { author, tag }
 
@@ -83,10 +84,12 @@ class _FilteredArticlesScreenState extends State<FilteredArticlesScreen> {
                 ),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new,
-                          color: AppColors.textPri(isDark), size: 18),
-                      onPressed: () => Navigator.of(context).pop(),
+                    BounceOnTap(
+                      child: IconButton(
+                        icon: Icon(Icons.arrow_back_ios_new,
+                            color: AppColors.textPri(isDark), size: 18),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
                     ),
                     Expanded(
                       child: Text(widget.title,

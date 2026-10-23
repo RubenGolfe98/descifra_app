@@ -13,6 +13,7 @@ import 'login_webview.dart';
 import '../newsletter/newsletter_screen.dart';
 import '../articles/saved_articles_screen.dart';
 import '../settings/settings_screen.dart';
+import '../../widgets/bounce_on_tap.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -106,10 +107,12 @@ class _LoggedInView extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.settings_outlined, color: sec, size: 22),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              BounceOnTap(
+                child: IconButton(
+                  icon: Icon(Icons.settings_outlined, color: sec, size: 22),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  ),
                 ),
               ),
             ],
@@ -391,10 +394,12 @@ class _LoginView extends StatelessWidget {
                 style: TextStyle(
                     color: pri, fontSize: 24, fontWeight: FontWeight.w500),
               ),
-              IconButton(
-                icon: Icon(Icons.settings_outlined, color: sec, size: 22),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              BounceOnTap(
+                child: IconButton(
+                  icon: Icon(Icons.settings_outlined, color: sec, size: 22),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  ),
                 ),
               ),
             ],
@@ -741,18 +746,20 @@ class _SocialButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: social.label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: SvgPicture.asset(
-            social.iconAsset,
-            width: 22,
-            height: 22,
-            colorFilter: const ColorFilter.mode(
-              AppColors.accent,
-              BlendMode.srcIn,
+      child: BounceOnTap(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: SvgPicture.asset(
+              social.iconAsset,
+              width: 22,
+              height: 22,
+              colorFilter: const ColorFilter.mode(
+                AppColors.accent,
+                BlendMode.srcIn,
+              ),
             ),
           ),
         ),

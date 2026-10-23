@@ -36,17 +36,73 @@ void showImageGroupedGalleryViewer(
   _showViewer(context, items, initialIndex.clamp(0, items.length - 1));
 }
 
+/// [context] debe ser el de la miniatura tocada: el visor crece desde su
+/// posición y, al cerrarse, vuelve a ella.
 void _showViewer(BuildContext context, List<GalleryItem> items, int index) {
+  final origin = _originRect(context);
   Navigator.of(context).push(
     PageRouteBuilder(
       opaque: false,
-      barrierColor: Colors.black87,
+      barrierColor: Colors.black.withValues(alpha: 0.98),
+      transitionDuration: const Duration(milliseconds: 300),
+      reverseTransitionDuration: const Duration(milliseconds: 250),
       pageBuilder: (_, __, ___) =>
           _ImageViewerScreen(items: items, initialIndex: index),
-      transitionsBuilder: (_, animation, __, child) =>
-          FadeTransition(opacity: animation, child: child),
+      transitionsBuilder: (context, animation, __, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        final faded = FadeTransition(opacity: curved, child: child);
+        if (origin == null) return faded;
+        return _ZoomFromOrigin(
+          animation: curved,
+          origin: origin,
+          child: faded,
+        );
+      },
     ),
   );
+}
+
+/// Rectángulo en pantalla del widget de [context], o null si no es una
+/// miniatura válida (sin tamaño o ocupando toda la pantalla).
+Rect? _originRect(BuildContext context) {
+  final box = context.findRenderObject();
+  if (box is! RenderBox || !box.hasSize || !box.attached) return null;
+  final rect = box.localToGlobal(Offset.zero) & box.size;
+  final screen = Offset.zero & MediaQuery.sizeOf(context);
+  if (rect.width >= screen.width && rect.height >= screen.height) return null;
+  return rect.overlaps(screen) ? rect : null;
+}
+
+/// Lleva el visor desde el tamaño y la posición de [origin] a pantalla
+/// completa según [animation].
+class _ZoomFromOrigin extends AnimatedWidget {
+  final Rect origin;
+  final Widget child;
+
+  const _ZoomFromOrigin({
+    required Animation<double> animation,
+    required this.origin,
+    required this.child,
+  }) : super(listenable: animation);
+
+  @override
+  Widget build(BuildContext context) {
+    final t = (listenable as Animation<double>).value;
+    final screen = MediaQuery.sizeOf(context);
+    final startScale = (origin.width / screen.width).clamp(0.2, 1.0);
+    final startOffset = origin.center - screen.center(Offset.zero);
+    return Transform.translate(
+      offset: Offset.lerp(startOffset, Offset.zero, t)!,
+      child: Transform.scale(
+        scale: startScale + (1 - startScale) * t,
+        child: child,
+      ),
+    );
+  }
 }
 
 class _ImageViewerScreen extends StatefulWidget {
@@ -152,10 +208,12 @@ class _ImageViewerScreenState extends State<_ImageViewerScreen> {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // Fondo negro al tocar para cerrar
+          // Tocar el fondo cierra. El color lo pone la barrera de la ruta,
+          // que hace fundido aparte mientras la imagen crece desde la miniatura.
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.of(context).pop(),
-            child: Container(color: Colors.black87),
+            child: const SizedBox.expand(),
           ),
 
           // Imagen(es) con zoom y swipe lateral

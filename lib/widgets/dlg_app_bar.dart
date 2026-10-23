@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'bounce_on_tap.dart';
 
 class DlgAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -23,9 +24,11 @@ class DlgAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: AppColors.surf(isDark),
       elevation: 0,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-        onPressed: () => Navigator.of(context).pop(),
+      leading: BounceOnTap(
+        child: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       title: Text(
         title,

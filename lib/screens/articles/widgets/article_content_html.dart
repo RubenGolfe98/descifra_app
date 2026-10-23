@@ -81,29 +81,32 @@ class ArticleContentHtml extends StatelessWidget {
                       src, extensionContext.attributes['srcset'] ?? '');
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: GestureDetector(
-                      onTap: () => showImageViewer(context, imgUrl),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: CachedNetworkImage(
-                          imageUrl: imgUrl,
-                          width: screenWidth - 40,
-                          fit: BoxFit.cover,
-                          memCacheWidth: imageCacheWidth(context,
-                              width: screenWidth - 40),
-                          placeholder: (_, __) => Container(
-                            height: 200,
-                            color: AppColors.surf(isDark),
+                    child: Builder(
+                      // Context de la miniatura: el visor se abre desde ella
+                      builder: (imageContext) => GestureDetector(
+                        onTap: () => showImageViewer(imageContext, imgUrl),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: imgUrl,
+                            width: screenWidth - 40,
+                            fit: BoxFit.cover,
+                            memCacheWidth: imageCacheWidth(context,
+                                width: screenWidth - 40),
+                            placeholder: (_, __) => Container(
+                              height: 200,
+                              color: AppColors.surf(isDark),
+                            ),
+                            errorWidget: (_, __, ___) => imgUrl == src
+                                ? const SizedBox.shrink()
+                                : CachedNetworkImage(
+                                    imageUrl: src,
+                                    width: screenWidth - 40,
+                                    fit: BoxFit.cover,
+                                    errorWidget: (_, __, ___) =>
+                                        const SizedBox.shrink(),
+                                  ),
                           ),
-                          errorWidget: (_, __, ___) => imgUrl == src
-                              ? const SizedBox.shrink()
-                              : CachedNetworkImage(
-                                  imageUrl: src,
-                                  width: screenWidth - 40,
-                                  fit: BoxFit.cover,
-                                  errorWidget: (_, __, ___) =>
-                                      const SizedBox.shrink(),
-                                ),
                         ),
                       ),
                     ),

@@ -16,6 +16,7 @@ import '../articles/article_detail_screen.dart';
 import '../../repositories/article_repository.dart';
 import '../../data/coverage_maps.dart';
 import '../../widgets/coverage_map.dart';
+import '../../widgets/bounce_on_tap.dart';
 
 class CoverageDetailScreen extends StatefulWidget {
   final Coverage coverage;
@@ -77,10 +78,12 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
             expandedHeight: 240,
             pinned: true,
             backgroundColor: surf,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white, size: 18),
-              onPressed: () => Navigator.of(context).pop(),
+            leading: BounceOnTap(
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new,
+                    color: Colors.white, size: 18),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
@@ -237,27 +240,31 @@ class _CoverageDetailScreenState extends State<CoverageDetailScreen> {
                         final imgUrl = bestHtmlImageUrl(src, srcset);
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: GestureDetector(
-                            onTap: () => showImageViewer(context, imgUrl),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: CachedNetworkImage(
-                                imageUrl: imgUrl,
-                                width: screenWidth - 40,
-                                fit: BoxFit.cover,
-                                memCacheWidth: imageCacheWidth(context,
-                                    width: screenWidth - 40),
-                                placeholder: (_, __) =>
-                                    Container(height: 180, color: surf),
-                                errorWidget: (_, __, ___) => imgUrl == src
-                                    ? const SizedBox.shrink()
-                                    : CachedNetworkImage(
-                                        imageUrl: src,
-                                        width: screenWidth - 40,
-                                        fit: BoxFit.cover,
-                                        errorWidget: (_, __, ___) =>
-                                            const SizedBox.shrink(),
-                                      ),
+                          child: Builder(
+                            // Context propio de la miniatura: el visor se abre desde ella
+                            builder: (imageContext) => GestureDetector(
+                              onTap: () =>
+                                  showImageViewer(imageContext, imgUrl),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: CachedNetworkImage(
+                                  imageUrl: imgUrl,
+                                  width: screenWidth - 40,
+                                  fit: BoxFit.cover,
+                                  memCacheWidth: imageCacheWidth(context,
+                                      width: screenWidth - 40),
+                                  placeholder: (_, __) =>
+                                      Container(height: 180, color: surf),
+                                  errorWidget: (_, __, ___) => imgUrl == src
+                                      ? const SizedBox.shrink()
+                                      : CachedNetworkImage(
+                                          imageUrl: src,
+                                          width: screenWidth - 40,
+                                          fit: BoxFit.cover,
+                                          errorWidget: (_, __, ___) =>
+                                              const SizedBox.shrink(),
+                                        ),
+                                ),
                               ),
                             ),
                           ),

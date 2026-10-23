@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/article_card.dart';
 import '../articles/article_detail_screen.dart';
+import '../../widgets/bounce_on_tap.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -113,9 +114,11 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(
         backgroundColor: surf,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: BounceOnTap(
+          child: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
         title: TextField(
           controller: _controller,
@@ -133,16 +136,20 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         actions: [
           if (_controller.text.isNotEmpty)
-            IconButton(
-              icon: Icon(Icons.close, color: sec, size: 20),
-              onPressed: () {
-                _controller.clear();
-                _focusNode.requestFocus();
-              },
+            BounceOnTap(
+              child: IconButton(
+                icon: Icon(Icons.close, color: sec, size: 20),
+                onPressed: () {
+                  _controller.clear();
+                  _focusNode.requestFocus();
+                },
+              ),
             ),
-          IconButton(
-            icon: const Icon(Icons.search, color: AppColors.accent, size: 22),
-            onPressed: _search,
+          BounceOnTap(
+            child: IconButton(
+              icon: const Icon(Icons.search, color: AppColors.accent, size: 22),
+              onPressed: _search,
+            ),
           ),
         ],
         bottom: PreferredSize(

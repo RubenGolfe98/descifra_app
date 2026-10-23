@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../utils/article_list_merge.dart';
 import '../../widgets/appear_animation.dart';
 import '../../widgets/article_card.dart';
+import '../../widgets/bounce_on_tap.dart';
 
 class RegionArticlesScreen extends StatefulWidget {
   final Region region;
@@ -134,9 +135,11 @@ class _RegionArticlesScreenState extends State<RegionArticlesScreen> {
               expandedHeight: 180,
               pinned: true,
               backgroundColor: surf,
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-                onPressed: () => Navigator.of(context).pop(),
+              leading: BounceOnTap(
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
               ),
               flexibleSpace: FlexibleSpaceBar(
                 background: Stack(

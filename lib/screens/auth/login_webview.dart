@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import '../../widgets/bounce_on_tap.dart';
 
 /// WebView que carga la página de login real.
 /// Cloudflare lo ve como un navegador legítimo.
@@ -34,9 +35,11 @@ class _LoginWebViewState extends State<LoginWebView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(null),
+        leading: BounceOnTap(
+          child: IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(null),
+          ),
         ),
         title: const Text(
           'Iniciar sesión',

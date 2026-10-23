@@ -8,6 +8,7 @@ import '../../repositories/seminar_repository.dart';
 import '../../services/auth_notifier.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/bounce_on_tap.dart';
 
 class SeminarSessionScreen extends StatefulWidget {
   final String sessionUrl;
@@ -84,9 +85,11 @@ class _SeminarSessionScreenState extends State<SeminarSessionScreen> {
       appBar: AppBar(
         backgroundColor: surf,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: BounceOnTap(
+          child: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new, color: pri, size: 18),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
         title: Row(
           children: [
