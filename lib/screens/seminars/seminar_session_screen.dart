@@ -209,11 +209,23 @@ class _VideoPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 16:9 a todo el ancho, limitado en altura para tablets en horizontal
     return Container(
       width: double.infinity,
-      height: 220,
       color: Colors.black,
-      child: visible
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.6),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: _buildContent(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return visible
           ? InAppWebView(
               initialUrlRequest: URLRequest(url: WebUri(vimeoUrl)),
               initialSettings: InAppWebViewSettings(
@@ -251,8 +263,7 @@ class _VideoPlayer extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-    );
+            );
   }
 }
 
