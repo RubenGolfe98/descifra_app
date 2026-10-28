@@ -76,14 +76,14 @@ class SeminarSession {
 class SeminarSessionDetail {
   final String title;
   final String vimeoUrl;
-  final String description;
+  final String descriptionHtml;
   final List<SeminarMaterial> materials;
   final List<SeminarSession> allSessions;
 
   const SeminarSessionDetail({
     required this.title,
     required this.vimeoUrl,
-    required this.description,
+    required this.descriptionHtml,
     required this.materials,
     required this.allSessions,
   });

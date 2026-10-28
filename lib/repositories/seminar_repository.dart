@@ -224,11 +224,39 @@ class SeminarRepository {
       r'data-widget_type="theme-post-content\.default".*?<div class="elementor-widget-container">(.*?)</div>\s*</div>\s*</div>',
       dotAll: true,
     ).firstMatch(html);
-    final descHtml = postContentMatch?.group(1) ?? '';
-    final description = descHtml
-        .replaceAll(RegExp(r'</p>'), '\n\n')
-        .replaceAll(RegExp(r'<[^>]+>'), '')
-        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+    // Se marca el aviso de contenido exclusivo para resaltarlo en la app
+    // y se quitan imágenes, iconos, botones (p. ej. el logo de la web) y enlaces
+    final descriptionHtml = (postContentMatch?.group(1) ?? '')
+        // Tras el texto se cuela una sección de Elementor con el logo, cortada a medias
+        .replaceAll(
+          RegExp(r'(<p>\s*)?<div\b[^>]*data-elementor-type=.*$',
+              dotAll: true, caseSensitive: false),
+          '',
+        )
+        .replaceAll(
+          RegExp(r'<script\b.*?</script>', dotAll: true, caseSensitive: false),
+          '',
+        )
+        .replaceAll(RegExp(r'<!--.*?-->', dotAll: true), '')
+        .replaceAll(RegExp(r'</?(html|body)\b[^>]*>', caseSensitive: false), '')
+        .replaceAll(
+          RegExp(r'<(svg|picture|figure|button|form|noscript)\b.*?</\1>',
+              dotAll: true, caseSensitive: false),
+          '',
+        )
+        .replaceAll(RegExp(r'<(img|input)\b[^>]*>', caseSensitive: false), '')
+        .replaceAll(RegExp(r'</?a\b[^>]*>', caseSensitive: false), '')
+        .replaceAll(RegExp(r'<p\b[^>]*>(\s|&nbsp;|<br\s*/?>)*</p>', caseSensitive: false), '')
+        // Contenedores vacíos que quedan al quitar el botón (varias pasadas por anidamiento)
+        .replaceAll(RegExp(r'<div\b[^>]*>\s*</div>', caseSensitive: false), '')
+        .replaceAll(RegExp(r'<div\b[^>]*>\s*</div>', caseSensitive: false), '')
+        .replaceAll(RegExp(r'(\s|&nbsp;|<br\s*/?>)+$', caseSensitive: false), '')
+        .replaceAllMapped(
+          RegExp(r'<p(?:\s[^>]*)?>(.*?)</p>', dotAll: true),
+          (m) => m.group(1)!.toLowerCase().contains('contenido exclusivo')
+              ? '<p class="dlg-exclusive">${m.group(1)}</p>'
+              : m.group(0)!,
+        )
         .trim();
 
     // Sesiones del menú lateral
@@ -237,7 +265,7 @@ class SeminarRepository {
     return SeminarSessionDetail(
       title: title,
       vimeoUrl: vimeoUrl,
-      description: description,
+      descriptionHtml: descriptionHtml,
       materials: materials,
       allSessions: allSessions,
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,6 +9,7 @@ import '../../repositories/seminar_repository.dart';
 import '../../services/auth_notifier.dart';
 import '../../services/theme_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/html_styles.dart';
 import '../../widgets/bounce_on_tap.dart';
 
 class SeminarSessionScreen extends StatefulWidget {
@@ -165,13 +167,24 @@ class _SeminarSessionScreenState extends State<SeminarSessionScreen> {
                             ],
 
                             // Descripción
-                            if (_detail!.description.isNotEmpty) ...[
+                            if (_detail!.descriptionHtml.isNotEmpty) ...[
                               Text('Sobre esta sesión',
                                 style: TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1)),
                               const SizedBox(height: 10),
-                              Text(_detail!.description,
-                                style: TextStyle(color: sec, fontSize: 14, height: 1.7)),
-                              const SizedBox(height: 20),
+                              Html(
+                                data: _detail!.descriptionHtml,
+                                style: {
+                                  ...articleHtmlStyles(isDark, justified: false),
+                                  '.dlg-exclusive': Style(
+                                    color: pri,
+                                    fontSize: FontSize(17),
+                                    fontWeight: FontWeight.w700,
+                                    lineHeight: const LineHeight(1.4),
+                                    margin: Margins.only(top: 8, bottom: 0),
+                                  ),
+                                },
+                              ),
+                              const SizedBox(height: 8),
                             ],
 
                             // Otras sesiones
