@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.1] — 2026-10-28
+
+### Corregido
+- Corregir tamaño de video de sesiones en tablets
+- La descripción de las sesiones se muestra como HTML, con el aviso de contenido exclusivo resaltado
+
 ## [1.6.0] — 2026-10-23
 
 ### Mejorado
